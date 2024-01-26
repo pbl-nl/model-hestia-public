@@ -106,3 +106,19 @@ Een specifieke aanleiding voor een tekort aan geheugen kan zijn dat er in een zi
 
 ## Meer informatie
 In het Functioneel Ontwerp wordt de werking van Hestia tot in detail beschreven. Het Functioneel Ontwerp is als pdf-document te vinden onder het pad: doc :arrow_right: PBL-2023-Functioneel-ontwerp-Hestia-1.0-5196. In hoofdstuk 3, Scenario, wordt verder ingegaan op mogelijke aanpassingen aan de scenarioinstellingen. Dit betreft onder andere klimaatscenario's, kostenontwikkelingcurves en beleid.
+
+Voordat u aan de slag gaat met Hestia, willen we u vragen om wat eenvoudige gegevens ter informatie te versturen naar het Hestia team. De reden dat we dit vragen is om een idee te krijgen van hoe Hestia wordt gebruikt. vragen we u daarom de volgende gegevens door te sturen naar info-hestia@pbl.nl:
+
+- Naam
+- Emailadres
+- Telefoonnummer
+- Organisatie/bedrijf
+- Korte beschrijving van het doel waarvoor u Hestia wil gebruiken
+
+Dit is geheel vrijblijvend, maar wordt zeer gewaardeerd.
+Ook voor andere vragen, feedback en suggestie kunt u mailen naar info-hestia@pbl.
+
+# Links:
+- <a href= "https://www.pbl.nl/publicaties/functioneel-ontwerp-hestia-10"</a>
+- <a href= "https://energy.nl/simulatiemodel-hestia"</a>
+- <a href= "https://www.tno.nl/nl/newsroom/insights/2023/06/hestia-woningvoorraad-in-beeld/"</a>
