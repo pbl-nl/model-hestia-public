@@ -1,0 +1,467 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//       Deze DMS-file wordt aangeroepen door stam.dms                                  //
+//       In deze configuratiefile worden items voor de boekhouding geconfigureerd       //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container jaarlijks: Using = "Units;Geography", KeepData = "True", isHidden = "True"
+{
+	unit<uint32> mutatieSchema: nrofrows = 75
+	{
+		parameter<uint32> nrAttr := 5;
+		unit<uint32> Elements := Range(uint32, 0, nrAttr * #.)
+		{
+			// Factors
+			parameter<string> PRR   := 'Bebouwing/@BC@/PlanRegio_rel';
+			parameter<string> VAT_F := '(Invoer/Kengetallen/BTW/BTW[Zichtjaar_rel] / 100[percent])';
+			parameter<string> VAT_E := '(Invoer/Kengetallen/BTW/BTW_Energie[Zichtjaar_rel] / 100[percent])';
+			parameter<string> VAT_R := '(1.0 + (BC/DraagtBTW[BC/V/@BC@] ? Invoer/Kengetallen/BTW/BTW[Zichtjaar_rel] / 100[percent]:  0.0))';
+			
+			attribute<string> Text := union_data(.,
+				// name //leverancier //afnemer  
+				// item 
+				// factor 
+				//left-entity-rel // right-entity-rel
+
+				
+			// ===== PELLETS BIOMASSA WATERSTOF =====
+			
+			// Inkoopkosten pellets, prijscomponent commodity en netwerk, betaling van [gebouwgebruiker] aan [Pellets]
+				'Kj_pellets_commodity', 'Pellets', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/BO/Jaarlijks/Kj_pellets',
+					PRR
+		
+			// Inkoopkosten pellets, prijscomponent BTW, betaling van [gebouwgebruiker] aan [BTW]
+			,	'Kj_pellets_BTW', 'BTW', '@BTW@/Gebruiker', 
+					'Allocatie/@BTW@/BO/Jaarlijks/Kj_pellets * '+VAT_E,
+					'Bebouwing/@BTW@/PlanRegio_rel'
+				
+			// Inkoopkosten biomassa, prijscomponent commodity en netwerk, betaling van [gebouwgebruiker] aan [Biomassa]
+			,	'Kj_biomassa_commodity', 'Biomassa', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/BO/Jaarlijks/Kj_biomassa',
+					PRR
+			
+			// Inkoopkosten biomassa, prijscomponent BTW, betaling van [gebouwgebruiker] aan [BTW]
+			,	'Kj_biomassa_BTW', 'BTW', '@BTW@/Gebruiker', 
+					'Allocatie/@BTW@/BO/Jaarlijks/Kj_biomassa * '+VAT_E,
+					'Bebouwing/@BTW@/PlanRegio_rel'
+				
+			// Inkoopkosten H2, prijscomponent commodity en netwerk, betaling van [gebouwgebruiker] aan [Waterstof]
+			,	'Kj_H2_commodity', 'Waterstof', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/BO/Jaarlijks/Kj_H2',
+					PRR
+					
+			// Inkoopkosten H2, prijscomponent BTW, betaling van [gebouwgebruiker] aan [BTW]
+			,	'Kj_H2_BTW', 'BTW', '@BTW@/Gebruiker', 
+					'Allocatie/@BTW@/BO/Jaarlijks/Kj_H2 * '+VAT_E,
+					'Bebouwing/@BTW@/PlanRegio_rel'
+				
+			// Inkoopkosten H2, prijscomponent energiebelasting, betaling van [gebouwgebruiker] aan [EnergieHeffing]
+			,	'Kj_H2_EH', 'EnergieHeffing', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/BO/Jaarlijks/Kj_H2_EH',
+					PRR
+
+			// Inkoopkosten huisbrandolie, prijscomponent commodity en netwerk, betaling van [gebouwgebruiker] aan [Olie]
+			,	'Kj_olie_commodity', 'Olie', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/BO/Jaarlijks/Kj_olie',
+					PRR
+					
+			// Inkoopkosten huisbrandolie, prijscomponent BTW, betaling van [gebouwgebruiker] aan [BTW]
+			,	'Kj_olie_BTW', 'BTW', '@BTW@/Gebruiker', 
+					'Allocatie/@BTW@/BO/Jaarlijks/Kj_olie * '+VAT_E,
+					'Bebouwing/@BTW@/PlanRegio_rel'
+				
+			// Inkoopkosten huisbrandolie, prijscomponent energiebelasting, betaling van [gebouwgebruiker] aan [EnergieHeffing]
+			,	'Kj_olie_EH', 'EnergieHeffing', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/BO/Jaarlijks/Kj_olie_EH',
+					PRR
+				
+				
+			// ===== GASKOSTEN GEBOUWEN =====
+				
+			// Inkoopkosten aardgas, prijscomponent commodity en netwerk, betaling van [gebouwgebruiker] aan [aardgas]
+			,	'Kj_gas_commodity', 'AardGas', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/BO/Jaarlijks/Km_Gas',
+					PRR
+			
+			// Inkoopkosten aardgas, prijscomponent energiebelasting, betaling van [gebouwgebruiker] aan [EnergieHeffing]
+			,	'Kj_gas_heffing' , 'EnergieHeffing', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/BO/Jaarlijks/Kj_gas_EH',
+					PRR
+
+			// Inkoopkosten aardgas, prijscomponent BTW, betaling van [gebouwgebruiker] aan [BTW]
+			,	'Kj_gas_BTW', 'BTW', '@BTW@/Gebruiker',
+					'Allocatie/@BTW@/BO/Jaarlijks/Kj_gas * '+VAT_E, 
+					'Bebouwing/@BTW@/PlanRegio_rel'
+					
+			
+			// Inkoopkosten aardgas, prijscomponent netwerkkosten, betaling van [AardGas] aan [GasNet]
+			,	'Kj_gas_net@BC@', 'GasNet', 'AardGas', 
+					'Allocatie/@BC@/AardGas/netwerk',
+					PRR
+
+			// Jaarlijkse vastrechtkosten gasnet, betaling van [gebouwgebruiker] aan [GasNet]
+			,	'Kj_gas_vastrecht', 'GasNet', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/AardGas/Vastrecht',
+					PRR
+
+			// BTW over Jaarlijkse vastrechtkosten gasnet, betaling van [gebouwgebruiker] aan [BTW]
+			,	'Kj_gas_vastrecht_BTW', 'BTW', '@BTW@/Gebruiker',
+					'Allocatie/@BTW@/AardGas/VastRecht * '+VAT_E,
+					'Bebouwing/@BTW@/PlanRegio_rel'
+
+			// Jaarlijkse kapitaallasten (eindgebruiker) van aansluitbijdrages gasnet, betaling van [gebouweigenaar] aan [KL_e]
+			,	'Kji_asl_Gnet', 'KL_e', '@BC@/Eigenaar',
+					'Allocatie/@BC@/BO/Kapitaallasten/Kji_Asl_Gnet * '+VAT_R,
+					'Bebouwing/@BC@/PlanRegio_rel'
+
+			// Jaarlijkse kapitaallasten (maatschappelijk) van aansluitbijdrages gasnet, betaling van [KL_e] aan [GasNet]
+			,	'Kmi_asl_Gnet_@BC@', 'GasNet', 'KL_e',
+					'Allocatie/@BC@/BO/Kapitaallasten/Kmi_Asl_Gnet',
+					PRR
+
+			// Jaarlijkse kapitaallasten (eindgebruiker) BTW over aansluitbijdrage gasnet, betaling van [KL_e] aan [BTW]
+			,	'Kji_asl_GnetBTW@BTW@', 'BTW', 'KL_e',
+					'Allocatie/@BTW@/BO/Kapitaallasten/Kmi_Asl_Gnet * '+VAT_F,
+					'Bebouwing/@BTW@/PlanRegio_rel'
+			
+					
+			// ===== ELEKTRICITEITSKOSTEN GEBOUWEN =====
+					
+			// Inkoopkosten elektriciteit, prijscomponent commodity en netwerk, betaling van [gebouwgebruiker] aan [Elektriciteit]
+			,	'Kj_elek_commodity', 'Elektriciteit', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/Elektriciteit/Maatschappelijk',
+					PRR
+
+			// Inkoopkosten elektriciteit, prijscomponent energiebelasting, betaling van [gebouwgebruiker] aan [EnergieHeffing]
+			,	'Kj_elek_heffing', 'EnergieHeffing', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/Elektriciteit/EnergieHeffing', 
+					PRR
+
+			// Inkoopkosten elektriciteit, prijscomponent BTW, betaling van [gebouwgebruiker] aan [BTW]
+			,	'Kj_elek_BTW', 'BTW', '@BTW@/Gebruiker',
+					'Allocatie/@BTW@/Elektriciteit/eindgebruik_excl * '+VAT_E,
+					'Bebouwing/@BTW@/PlanRegio_rel'
+
+			// Inkoopkosten elektriciteit, prijscomponent netwerkkosten, betaling van [Elektriciteit] aan [GasNet]
+			,	'Kj_elek_net@BC@', 'ElektriciteitsNet', 'Elektriciteit', 
+					'Allocatie/@BC@/Elektriciteit/netwerk',
+					PRR
+
+			// Jaarlijkse vastrechtkosten elektriciteitsnet, betaling van [gebouwgebruiker] aan [elektriciteitsnet]
+			,	'Kj_elek_vastrecht', 'ElektriciteitsNet', '@BC@/Gebruiker', 
+					'Allocatie/@BC@/Elektriciteit/Vastrecht',
+					PRR
+
+			// BTW over Jaarlijkse vastrechtkosten elektriciteitsnet, betaling van [gebouwgebruiker] aan [BTW]
+			,	'Kj_elek_vastrecht_BTW', 'BTW', '@BTW@/Gebruiker',
+					'Allocatie/@BTW@/Elektriciteit/VastRecht * '+VAT_F,
+					'Bebouwing/@BTW@/PlanRegio_rel'
+
+			// Jaarlijkse kapitaallasten (incl. BTW) (eindgebruiker) van aansluitbijdrages elektriciteitsnet, betaling van [gebouweigenaar] aan [KL_e]
+			,	'Kji_asl_Enet', 'KL_e', '@BC@/Eigenaar',
+					'Allocatie/@BC@/BO/Kapitaallasten/Kji_Asl_Enet * '+VAT_R,
+					'Bebouwing/@BC@/PlanRegio_rel'
+
+			// Jaarlijkse kapitaallasten (maatschappelijk) van aansluitbijdrages elektriciteitsnet, betaling van [KL_e] aan [elektriciteitsnet]
+			,	'Kmi_asl_Enet_@BC@', 'ElektriciteitsNet', 'KL_e',
+					'Allocatie/@BC@/BO/Kapitaallasten/Kmi_Asl_Enet',
+					PRR
+
+			// Jaarlijkse kapitaallasten (maatschappelijk) BTW over aansluitbijdrage elektriciteitsnet, betaling van [KL_e] aan [BTW]
+			,	'Kji_asl_EnetBTW@BTW@', 'BTW', 'KL_e',
+					'Allocatie/@BTW@/BO/Kapitaallasten/Kmi_Asl_Enet * '+VAT_F,
+					'Bebouwing/@BTW@/PlanRegio_rel'
+
+					
+			// ===== NETWERKKOSTEN =====
+					
+			// Jaarlijkse kapitaallasten instandhouding gasnet, betaling van [GasNet] (netbeheerder) aan [Netwerk]
+			,	'Kji_KL_Gnet', 'Netwerk', 'GasNet',
+					'netwerken/aardgas/Kji_infra',
+					''
+
+			// Jaarlijkse kapitaallasten verwijderen gasnet, betaling van [GasNet] (netbeheerder) aan [Netwerk]
+			,	'Kji_verwijderen', 'Netwerk', 'GasNet',
+					'netwerken/aardgas/Kji_verwijderen',
+					''
+
+			// Jaarlijkse kapitaallasten vervangen gasnet, betaling van [GasNet] (netbeheerder) aan [Netwerk]
+			,	'Kji_vervangen', 'Netwerk', 'GasNet',
+					'netwerken/aardgas/Kji_vervangen',
+					''
+
+			// Jaarlijkse kosten onderhoud gasnet, betaling van [GasNet] (netbeheerder) aan [Onderhoud]
+			,	'Kj_oh_Gnet', 'Onderhoud', 'GasNet',
+					'netwerken/aardgas/Kj_oh',
+					''
+
+			// Jaarlijkse kapitaallasten instandhouding elektriciteitsnet, betaling van [ElektriciteitsNet] (netbeheerder) aan [Netwerk]
+			,	'Kji_KL_Enet', 'Netwerk', 'ElektriciteitsNet',
+					'netwerken/elektriciteit/Kji_infra',
+					''
+
+			// Jaarlijkse kapitaallasten netverzwaring elektriciteitsnet, betaling van [GasNet] (ElektriciteitsNet) aan [Netwerk]
+			,	'Kji_verzwaren', 'Netwerk', 'ElektriciteitsNet',
+					'netwerken/elektriciteit/Kji_verzwaren',
+					''
+
+			// Jaarlijkse kosten onderhoud elektriciteitsnet, betaling van [GasNet] (ElektriciteitsNet) aan [Netwerk]
+			,	'Kj_oh_Enet', 'Onderhoud', 'ElektriciteitsNet',
+					'netwerken/elektriciteit/Kj_oh',
+					''
+
+					
+			// ===== INVESTERINGEN LOKALE OPWEKKING ===
+			
+			// Kapitaallasten (eindgebruiker) investeringen (incl. BTW) lokale opwekking met looptijd 30 jaar, betaling van [GebouwEigenaar] naar [KL_e]
+			,	'Kji30_LO', 'KL_e', '@BC@/Eigenaar',
+					'Allocatie/@BC@/BO/Kapitaallasten/Kji30_LO * '+VAT_R,
+					'Bebouwing/@BC@/PlanRegio_rel'
+			
+			// Kapitaallasten (maatschappelijk) investeringen lokale opwekking met looptijd 30 jaar, betaling van [KL_e] naar [LokaleOpwekking]
+			,	'Kmi30_LO@BC@30j', 'LokaleOpwekking', 'KL_e', 
+					'Allocatie/@BC@/BO/Kapitaallasten/Kmi30_LO',
+					PRR
+
+			// Kapitaallasten (maatschappelijk) BTW over investeringen lokale opwekking looptijd 30 jaar, betaling van [KL_e] aan [BTW]
+			,	'BTW30_LO@BTW@30j', 'BTW', 'KL_e', 
+					'Allocatie/@BTW@/BO/Kapitaallasten/Kmi30_LO * '+VAT_F,
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+
+			// Kapitaallasten (eindgebruiker) investeringen (incl. BTW) lokale opwekking met looptijd 20 jaar, betaling van [GebouwEigenaar] naar [KL_e]
+			,	'Kji20_LO', 'KL_e', '@BC@/Eigenaar',
+					'Allocatie/@BC@/BO/Kapitaallasten/Kji20_LO * '+VAT_R,
+					'Bebouwing/@BC@/PlanRegio_rel'
+			
+			// Kapitaallasten (maatschappelijk) investeringen lokale opwekking met looptijd 20 jaar, betaling van [KL_e] naar [LokaleOpwekking]
+			,	'Kmi20_LO@BC@20j', 'LokaleOpwekking', 'KL_e', 
+					'Allocatie/@BC@/BO/Kapitaallasten/Kmi20_LO',
+					PRR
+
+			// Kapitaallasten (maatschappelijk) BTW over investeringen lokale opwekking looptijd 20 jaar, betaling van [KL_e] aan [BTW]
+			,	'BTW20_LO@BTW@20j', 'BTW', 'KL_e', 
+					'Allocatie/@BTW@/BO/Kapitaallasten/Kmi20_LO * '+VAT_F,
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+
+			// Kapitaallasten (eindgebruiker) investeringen (incl. BTW) lokale opwekking met looptijd 15 jaar, betaling van [GebouwEigenaar] naar [KL_e]
+			,	'Kji15_LO', 'KL_e', '@BC@/Eigenaar',
+					'Allocatie/@BC@/BO/Kapitaallasten/Kji15_LO * '+VAT_R,
+					'Bebouwing/@BC@/PlanRegio_rel'
+			
+			// Kapitaallasten (maatschappelijk) investeringen lokale opwekking met looptijd 15 jaar, betaling van [KL_e] naar [LokaleOpwekking]
+			,	'Kmi15_LO@BC@15j', 'LokaleOpwekking', 'KL_e', 
+					'Allocatie/@BC@/BO/Kapitaallasten/Kmi15_LO',
+					PRR
+
+			// Kapitaallasten (maatschappelijk) BTW over investeringen lokale opwekking looptijd 15 jaar, betaling van [KL_e] aan [BTW]
+			,	'BTW15_LO@BTW@150j', 'BTW', 'KL_e', 
+					'Allocatie/@BTW@/BO/Kapitaallasten/Kmi15_LO * '+VAT_F,
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+
+			// Kapitaallasten (eindgebruiker) investeringen (incl. BTW) voor gebouwverbetering, betaling van [GebouwEigenaar] naar [KL_e]
+			,	'Kji_gv', 'KL_e', '@BC@/Eigenaar', 
+					'Allocatie/@BC@/BO/Kapitaallasten/Kji_gv * (1.0 + (BC/DraagtBTW[BC/V/@BC@] ? Invoer/Kengetallen/BTW/BTW_gv[Zichtjaar_rel] / 100[percent] : 0.0))',
+					PRR
+
+			// Kapitaallasten (maatschappelijk) investeringen voor gebouwverbetering, betaling van [KL_e] naar [Gebouw]
+			,	'Kmi_gv@BC@', 'Gebouw', 'KL_e', 
+					'Allocatie/@BC@/BO/Kapitaallasten/Kmi_gv',
+					PRR
+
+			// Kapitaallasten (maatschappelijk) BTW over investeringen voor gebouwverbetering, betaling van [KL_e] aan [BTW]
+			,	'BTW_gv@BTW@', 'BTW', 'KL_e', 
+					'Allocatie/@BTW@/BO/Kapitaallasten/Kmi_gv * (Invoer/Kengetallen/BTW/BTW_gv[Zichtjaar_rel] / 100[percent])',
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+					
+			// Kapitaallasten (eindgebruiker) investeringen (incl. BTW) voor afgiftesystemen, betaling van [GebouwEigenaar] naar [KL_e]
+			,	'Kji_LTAS', 'KL_e', '@BC@/Eigenaar', 
+					'Allocatie/@BC@/BO/Kapitaallasten/Kji_LTAS * (1.0 + (BC/DraagtBTW[BC/V/@BC@] ? Invoer/Kengetallen/BTW/BTW_gv[Zichtjaar_rel] / 100[percent] : 0.0))',
+					PRR
+
+			// Kapitaallasten (maatschappelijk) investeringen voor afgiftesystemen [KL_e] naar [LokaleOpwekking]
+			,	'Kmi_LTAS@BC@', 'LokaleOpwekking', 'KL_e', 
+					'Allocatie/@BC@/BO/Kapitaallasten/Kmi_LTAS',
+					PRR
+
+			// Kapitaallasten (maatschappelijk) BTW over investeringen voor afgiftesystemen, betaling van [KL_e] aan [BTW]
+			,	'BTW_LTAS@BTW@', 'BTW', 'KL_e', 
+					'Allocatie/@BTW@/BO/Kapitaallasten/Kmi_LTAS * (Invoer/Kengetallen/BTW/BTW_gv[Zichtjaar_rel] / 100[percent])',
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+					
+					
+			// ===== ONDERHOUD EN ADMINISTRATIE GEBOUWEN =====
+			
+			// Administratiekosten lokale opwekkingsinstallaties, betaling van [GebouwEigenaar] naar [Admin]
+			,	'Kj_adm_LO', 'Admin', '@BC@/Eigenaar', 
+					'Allocatie/@BC@/BO/jaarlijks/Kj_adm_LO
+					',
+					PRR
+			
+			// Onderhoudskosten lokale opwekkingsinstallaties, betaling van [GebouwEigenaar] naar [Onderhoud]		
+			,	'Kj_OH_LO', 'Onderhoud', '@BC@/Eigenaar', 
+					'Allocatie/@BC@/BO/jaarlijks/Kj_OH_LO
+					',
+					PRR
+
+			// BTW over Administratiekosten lokale opwekkingsinstallaties, betaling van [GebouwEigenaar] naar [BTW]
+			,	'BTW_adm_LO', 'BTW', '@BTW@/Eigenaar', 
+					'Allocatie/@BTW@/BO/jaarlijks/Kj_adm_LO * ' + VAT_F,
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+
+			// BTW over Onderhoudskosten lokale opwekkingsinstallaties, betaling van [GebouwEigenaar] naar [BTW]	
+			,	'BTW_OH_LO', 'BTW', '@BTW@/Eigenaar', 
+					'Allocatie/@BTW@/BO/jaarlijks/Kj_OH_LO * ' + VAT_F,
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+					
+
+			// ===== SUBSIDIES =====
+
+			// Geannualiseerde subsidies (eindgebruiker) investeringen lokale opwekking met looptijd 30 jaar, Betaling van [KL_e] aan [GebouwEigenaar]
+			,	'EIA30', '@BC@/Eigenaar', 'KL_e',
+					'Allocatie/@BC@/BO/Kapitaallasten/Oji30_LO',
+					PRR
+
+			// Geannualiseerde subsidies (maatschappelijk) investeringen lokale opwekking met looptijd 30 jaar, Betaling van [Subsidie] aan [KL_e]
+			,	'EIA30@BC@', 'KL_e', 'Subsidie',
+					'Allocatie/@BC@/BO/Eenmalig/Oi30_LO * NCW/mr30/AnnualisationFactor',
+					PRR
+
+			// Geannualiseerde subsidies (eindgebruiker) investeringen lokale opwekking met looptijd 20 jaar, Betaling van [KL_e] aan [GebouwEigenaar]
+			,	'EIA20', '@BC@/Eigenaar', 'KL_e',
+					'Allocatie/@BC@/BO/Kapitaallasten/Oji20_LO',
+					PRR
+
+			// Geannualiseerde subsidies (maatschappelijk) investeringen lokale opwekking met looptijd 20 jaar, Betaling van [Subsidie] aan [KL_e]
+			,	'EIA20@BC@', 'KL_e', 'Subsidie',
+					'Allocatie/@BC@/BO/Eenmalig/Oi20_LO * NCW/mr20/AnnualisationFactor',
+					PRR
+
+			// Geannualiseerde subsidies (eindgebruiker) investeringen lokale opwekking met looptijd 15 jaar, Betaling van [KL_e] aan [GebouwEigenaar]
+			,	'EIA15', '@BC@/Eigenaar', 'KL_e',
+					'Allocatie/@BC@/BO/Kapitaallasten/Oji15_LO',
+					PRR
+
+			// Geannualiseerde subsidies (maatschappelijk) investeringen lokale opwekking met looptijd 15 jaar, Betaling van [Subsidie] aan [KL_e]
+			,	'EIA15@BC@', 'KL_e', 'Subsidie',
+					'Allocatie/@BC@/BO/Eenmalig/Oi15_LO * NCW/mr15/AnnualisationFactor',
+					PRR
+
+					
+			// ===== VERGOEDINGEN AAN LEVERANCIER =====
+		
+			// Geannualiseerde kapitaallasten aansluitbijdragen (eindgebruiker) incl. BTW, looptijd 28 jaar, betaling van [GebouwEigenaar] aan [KL_e]
+			,	'Kji_Aansl_@RO@', 'KL_e', '@BC@/Eigenaar',
+					'float64(Allocatie/@BC@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@)' +
+					'* Allocatie/@BC@/BO/Opbrengsten/AansluitBijdrageT' +
+					'* ((1.0 + (BC/DraagtBTW[BC/V/@BC@] ? Invoer/Kengetallen/BTW/BTW[Zichtjaar_rel] / 100[percent] : 0.0)) ' +
+					'* BebouwingsComponenten/@BC@/NcwRefs/_28/StartDiscountFactor * BebouwingsComponenten/@BC@/NcwRefs/AF_28)', 
+					PRR
+
+			// Geannualiseerde BTW (maatschappelijk) van aansluitbijdragen, looptijd 28 jaar, betaling van [KL_e] aan [BTW]
+			,	'BTW_Aansl_@RO@_@BTW@', 'BTW', 'KL_e',
+					'float64(Allocatie/@BTW@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@)' +
+					'* Allocatie/@BTW@/BO/Opbrengsten/AansluitBijdrageT * ' +
+					'('+VAT_F + ' * NCW/mr28/StartDiscountFactor * NCW/mr28/AnnualisationFactor)',
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+
+			// Verschil in kapitaallasten tussen warmteleverancier en eindgebruiker (aansluitbijdragen), betaling van [KL_e] aan [KL_p]
+			,	'Kmi_aansl_@RO@_@BC@', 'KL_p', 'KL_e',
+					'float64(Allocatie/@BC@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@)'
+					'* Allocatie/@BC@/BO/Opbrengsten/AansluitBijdrageT '+
+					'* (NCW/mr28/StartDiscountFactor * NCW/mr28/AnnualisationFactor)', 
+					PRR
+
+			// Verrekening kapitaallasten aansluitbijdragen aan leverancier, betaling van [KL_p] aan [Leverancier]
+			,	'Kmi_aansl_lv_@RO@_@BC@', 'Leverancier', 'KL_p',
+					'float64(Allocatie/@BC@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@)'+
+					'* Allocatie/@BC@/BO/Opbrengsten/AansluitBijdrageT '+
+					'* (NCW/ow28/StartDiscountFactor * NCW/ow28/AnnualisationFactor)', 
+					PRR
+
+			// Vastrechtbetaling warmtelevering, betaling van [GebouwGebruiker] aan [Leverancier]
+			,	'Kj_Vastrecht_@RO@', 'Leverancier', '@BC@/Gebruiker',
+					'float64(Allocatie/@BC@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@)' +
+					'* Allocatie/@BC@/Vastrecht/Kj_Vastrecht', 
+					PRR
+
+			// BTW over Vastrechtbetaling warmtelevering, betaling van [GebouwGebruiker] aan [BTW]
+			,	'BTW_Vastrecht_@RO@', 'BTW', '@BTW@/Gebruiker',
+					'float64(Allocatie/@BTW@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@)' +
+					'* Allocatie/@BTW@/Vastrecht/Kj_Vastrecht * '+VAT_E,
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+
+			// Betaling voor warmtelevering, betaling van [GebouwGebruiker] aan [Leverancier]
+			,	'Kj_Warmte_@RO@', 'Leverancier', '@BC@/Gebruiker',
+					'float64(Allocatie/@BC@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@)' +
+					'* Allocatie/@BC@/BO/metervraag/V_Warmte * Allocatie/@BC@/BO/WarmteWet/WarmtePrijs', 
+					PRR
+					
+			// Betaling voor koudelevering, betaling van [GebouwGebruiker] aan [Leverancier]
+			,	'Kj_Koude_@RO@', 'Leverancier', '@BC@/Gebruiker',
+					'float64(Allocatie/@BC@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@) * float64(Allocatie/@BC@/BO/KoudeGebied)' +
+					'* Allocatie/@BC@/BO/metervraag/V_Koude * Allocatie/@BC@/BO/WarmteWet/KoudePrijs', 
+					PRR
+
+			// BTW over Betaling voor warmtelevering, betaling van [GebouwGebruiker] aan [BTW]
+			,	'BTW_Warmte_@RO@', 'BTW', '@BTW@/Gebruiker',
+					'float64(Allocatie/@BTW@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@)' +
+					'* Allocatie/@BTW@/BO/metervraag/V_Warmte * Allocatie/@BTW@/BO/WarmteWet/WarmtePrijs * '+VAT_E,
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+
+			// BTW over Betaling voor koudelevering, betaling van [GebouwGebruiker] aan [BTW]
+			,	'BTW_Koude_@RO@', 'BTW', '@BTW@/Gebruiker',
+					'float64(Allocatie/@BTW@/BO/WarmteOptie_rel == Classifications/WarmteOptie/V/@RO@) * float64(Allocatie/@BTW@/BO/KoudeGebied)' +
+					'* Allocatie/@BTW@/BO/metervraag/V_Koude * Allocatie/@BTW@/BO/WarmteWet/KoudePrijs * '+VAT_E,
+					'Allocatie/@BTW@/BO/PlanRegio_rel'
+					
+			// Vergoeding van investeringen door gebouweigenaar in warmtenet, betaling van [Leverancier] aan [GebouwEigenaar]
+			,	'VergoedingEG@RO@', 'Woning/Eigenaar', 'Leverancier',
+					Classifications/GebiedsOptie_jaarlijks/GebiedsOptie_Expr[Classifications/GebiedsOptieActor/V/ge], 
+					''
+
+			// Vergoeding van investeringen aan inpandige distributie in warmtenet, betaling van [Leverancier] aan [InpandigeDistributeur]
+			,	'VergoedingID@RO@', 'InpandigeDistributeur', 'Leverancier',
+					Classifications/GebiedsOptie_jaarlijks/GebiedsOptie_Expr[Classifications/GebiedsOptieActor/V/id], 
+					''
+
+			// Vergoeding van investeringen in wijkdistributie in warmtenet, betaling van [Leverancier] aan [WijkDistributeur]
+			,	'VergoedingWD@RO@', 'WijkDistributeur', 'Leverancier',
+					Classifications/GebiedsOptie_jaarlijks/GebiedsOptie_Expr[Classifications/GebiedsOptieActor/V/wd], 
+					''
+
+			// Vergoeding van investeringen in primair transport in warmtenet, betaling van [Leverancier] aan [PrimairTransporteur]
+			,	'VergoedingPT@RO@', 'PrimairTransporteur', 'Leverancier',
+					Classifications/GebiedsOptie_jaarlijks/GebiedsOptie_Expr[Classifications/GebiedsOptieActor/V/pt], 
+					''
+
+			// Vergoeding van investeringen in primaire warmtebronnen in warmtenet, betaling van [Leverancier] aan [Opwekker]
+			,	'VergoedingOW', '@RO@', 'Leverancier',
+					Classifications/GebiedsOptie_jaarlijks/GebiedsOptie_Expr[Classifications/GebiedsOptieActor/V/ow], 
+					''
+			);
+		}
+
+		attribute<string> name         := Elements/Text[value(id(.)* nrAttr + 0, Elements)];
+		attribute<string> Leverancier  := Elements/Text[value(id(.)* nrAttr + 1, Elements)];
+		attribute<string> Afnemer      := Elements/Text[value(id(.)* nrAttr + 2, Elements)];
+		attribute<string> Expr         := Elements/Text[value(id(.)* nrAttr + 3, Elements)];
+
+		attribute<string> PlanRegioRel := Elements/Text[value(id(.)* nrAttr + 4, Elements)];
+		attribute<string> FullDescr    := 
+				name + ': ' + Leverancier + ' -> ' + Afnemer +
+				' = ' + Expr 
+				+ (PlanRegioRel == '' ? '' : ' per '+PlanRegioRel);
+	}
+
+	// TODO_OV: Checken dat amounts wel opgesplitst zijn per BTW component
+	container applyBTW := CalculationSchemes/Payments/substitute(mutatieSchema, '@BTW@', Classifications/BtwComponent);
+	unit<uint32> mutatie := applyBTW/result;
+}

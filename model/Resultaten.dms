@@ -1,0 +1,59 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Resultaten := for_each_ne(Classifications/Zichtjaar/name
+		, 'Model/CalculationSchemes/ResultatenT(' + quote(Classifications/Zichtjaar/name) + ')'
+	)
+	, using = "Model"
+{
+	container Exports: isHidden = "True"
+	{
+		container impl
+		{
+			parameter<string> GenerateAllIndicatorenList := AsList(Rekenstap/name+'/Generate/All', ';');
+		}
+
+		parameter<string> GenerateAllIndicatoren := 'Ready', ExplicitSuppliers = "= impl/GenerateAllIndicatorenList";
+
+		container StartTables := =(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name != 'NL') ? 'StartJaar/InputOutput/totaal/Ongewogen' : 'StartJaar/InputOutput/NL/Ongewogen';
+		container LastTables  := =(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name != 'NL') ? Last(Rekenstap/name)+'/InputOutput/totaal/Ongewogen' : Last(Rekenstap/name)+'/InputOutput/NL/Ongewogen';
+
+		container BAG
+		{
+			unit<uint32> vbo := Invoer/RuimtelijkeData/BAG/import/vbo;
+			unit<uint32> vbo_oppervlak_gecorrigeerd_INV := vbo
+			{
+				attribute<Units/m2> wonen :=
+					(oppervlak_filters/rare_waarden  || (vbo/Oppervlakte > 10000i && vbo/pand_bouwlagen_fictief > 10f))
+						? vbo/Oppervlakte[Units/m2]
+						: (0 / 0)[Units/m2]
+				,	Descr    = "Dataset van records die afvallen door het filter, statistieken geven inzicht in de verdeling in oppervlaktes";
+
+				attribute<Units/m2> utiliteit :=
+					(oppervlak_filters/rare_waarden  || (vbo/Oppervlakte > 160000i && vbo/pand_bouwlagen_fictief > 45f))
+						? Oppervlakte[Units/m2]
+						: (0 / 0)[Units/m2]
+				,	Descr = "Dataset van records die afvallen door het filter, statistieken geven inzicht in de verdeling in oppervlaktes";
+			
+				unit<uint32> utiliteit_sub := select_with_org_rel(vbo/oppervlakte <> 999999i && vbo/oppervlakte > 160000i && vbo/pand_bouwlagen_fictief > 45f)
+				{
+					attribute<Units/m2> Oppervlakte      := vbo/Oppervlakte[org_rel][Units/m2];
+					attribute<float32> bouwlagen_fictief := vbo/pand_bouwlagen_fictief[org_rel];
+				}
+			}
+
+			unit<uint32> vbo_utiliteit := Invoer/RuimtelijkeData/BAG/vbo_utiliteit_studiegebied;
+			unit<uint32> combine_BouwjaarUtil_utiliteit := combine(Classifications/BouwjaarUtilBestaand ,Classifications/UtilTypeBestaand)
+			{
+				attribute<string>  name_bj                          := Classifications/BouwjaarUtilBestaand/label[nr_1];
+				attribute<string>  name_gd                          := Classifications/UtilTypeBestaand/label[nr_2];
+				attribute<.>       combine_bj_gd_rel(vbo_utiliteit) := combine_data(., Invoer/RuimtelijkeData/BAG/vbo_utiliteit_studiegebied/BouwjaarUtilBestaand_rel,  Invoer/RuimtelijkeData/BAG/vbo_utiliteit_studiegebied/gebruiksdoel);
+				attribute<uint32>  count(.)                         := pcount(combine_bj_gd_rel);
+				attribute<float64> sum(.)                           := sum(Invoer/RuimtelijkeData/BAG/vbo_utiliteit_studiegebied/Oppervlakte,combine_bj_gd_rel);
+			}
+		}
+	}
+}

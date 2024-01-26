@@ -1,0 +1,237 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//       Deze DMS-file wordt aangeroepen door stam.dms                                  //
+//       In deze configuratiefile wordt de brondata voor de Warmtebronnen geconfigureerd//
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container WarmteBronnen : IsHidden = "True"
+{
+	unit<uint32> Brontype := Kengetallen/WarmteBronnen/MetaData/Brontype, IsHidden = "True";
+
+	container Puntbronnen
+	{
+		unit<uint32> MTsrc : StorageName = "%HestiaDataDir%/aanbod/puntbronnen/20200311_puntbronnen_MT.csv"
+			,	StorageType     = "gdal.vect"
+			,	StorageReadOnly = "True"
+		{
+			attribute<string> label := bron_naam, DialogType = "LabelText";
+		}
+
+		unit<uint32> LTsrc : StorageName = "%HestiaDataDir%/aanbod/puntbronnen/20200311_Puntbronnen_LT.csv"
+			,	StorageType     = "gdal.vect"
+			,	StorageReadOnly = "True"
+		{
+			attribute<string> label := bron_naam, DialogType = "LabelText";
+		}
+
+		unit<uint32> BronSrc := union_unit(MTsrc,LTsrc)
+		{
+			attribute<string>    Label           := union_data(., MTsrc/label, LTsrc/label);
+			attribute<rdc_meter> geometry        := union_data(., point(float64(MTsrc/Y), float64(MTsrc/X), rdc_meter), point(float64(LTsrc/Y), float64(LTsrc/X), rdc_meter));
+			attribute<string>    Type_str        := union_data(., MTsrc/type_bron, LTsrc/Type_bron);
+			attribute<Brontype>  BronType_rel    := makedefined(rlookup(Type_str, BronType/Type), BronType/V/Industrie);
+			attribute<yr_uint16> ingebruik       := makedefined(union_data(., MTsrc/ingebruik[yr_uint16], LTsrc/ingebruik[yr_uint16]), 1999[yr_uint16]);
+			attribute<yr_uint16> uitgebruik      := makedefined(union_data(., MTsrc/uitgebruik[yr_uint16], LTsrc/uitgebruik[yr_uint16]), 2100[yr_uint16]);
+			attribute<celsius>   T_bron          := makedefined(union_data(., MTsrc/Brontemperatuur[celsius], LTsrc/Brontemperatuur[celsius]), Brontype/T_bron[BronType_rel]);
+			attribute<MW>        MWth_max        := makedefined(union_data(., MTsrc/MWcapaciteit[MW], LTsrc/MWcapaciteit[MW]), Brontype/MWth_max[BronType_rel]);
+			attribute<Eur_kW>    Ki_cap_min      := makedefined(union_data(., MTsrc/uitkoppel_min[Eur_kW], LTsrc/uitkoppel_min[Eur_kW]), Brontype/Ki_cap_min[BronType_rel]);
+			attribute<Eur_kW>    Ki_cap_max      := makedefined(union_data(., MTsrc/uitkoppel_max[Eur_kW], LTsrc/uitkoppel_max[Eur_kW]), Brontype/Ki_cap_max[BronType_rel]);
+			attribute<ratio>     P_vol           := makedefined(union_data(., MTsrc/volfactor[ratio], LTsrc/volfactor[ratio]), Brontype/P_vol[BronType_rel]);
+			attribute<ratio>     P_cap           := makedefined(union_data(., MTsrc/capfactor[ratio], LTsrc/capfactor[ratio]), Brontype/P_cap[BronType_rel]);
+			attribute<_yr>       R_oh            := Brontype/R_oh[BronType_rel];
+			attribute<_yr>       R_adm           := Brontype/R_adm[BronType_rel];
+			attribute<string>    code            := union_data(., MTsrc/nr, LTsrc/nr);
+			attribute<bool>      IsStudieGebied  := IsDefined(point_in_polygon(geometry, StudieGebied/Gemeente/geometry));
+		}
+
+		template BronSelectie: IsHidden = "True"
+		{
+			// begin case parameters
+			parameter<string> RekenjaarName;
+			// end case parameters
+
+			parameter<classifications/Rekenjaar> Rekenjaar_rel    := rlookup(RekenjaarName, classifications/Rekenjaar/name);
+			parameter<units/yr_uint16>           Jaar             := classifications/Rekenjaar/Values[Rekenjaar_rel];
+
+			unit<uint32> BronElementen := select_with_org_rel(BronSrc/IsStudieGebied && BronSrc/ingebruik <= Jaar && BronSrc/uitgebruik > Jaar && BronSrc/MWth_max > 0[mw]) 
+				, DialogType = "Map"
+				, DialogData = "geometry"
+			{
+				attribute<string>    Label        := BronSrc/Label[org_rel];
+				attribute<rdc_meter> geometry     := BronSrc/geometry[org_rel];
+				attribute<Brontype>  BronType_rel := BronSrc/BronType_rel[org_rel];
+				attribute<celsius>   T_bron       := BronSrc/T_bron[org_rel];
+				attribute<ratio>     P_vol        := BronSrc/P_vol[org_rel];
+				attribute<ratio>     P_cap        := BronSrc/P_cap[org_rel];
+				attribute<Eur_kW>    Ki_cap_min   := BronSrc/Ki_cap_min[org_rel];
+				attribute<Eur_kW>    Ki_cap_max   := BronSrc/Ki_cap_max[org_rel];
+				attribute<_yr>       R_adm        := BronSrc/R_adm[org_rel];
+				attribute<_yr>       R_oh         := BronSrc/R_oh[org_rel];
+				attribute<MW>        MWth_max     := BronSrc/MWth_max[org_rel];
+				attribute<Eur_GJ>    K_GJ         := ='BronType/K_GJ/' +RekenjaarName+'[BronType_rel]';
+				attribute<Eur_GJ>    Km_GJ        := ='BronType/Km_GJ/'+RekenjaarName+'[BronType_rel]';
+			}
+		}
+		// Vooralsnog per ZichtJaar, zou ook per rekenstap kunnnen.
+		container BronSelecties := for_each_ne(Classifications/Rekenjaar/name, 'BronSelectie('+Quote(Classifications/Rekenjaar/name)+')');
+	}
+
+	container Contourbronnen
+	{
+		container GeoThermie
+		{
+			unit<uint32> ContourSet :
+				StorageName     = "%HestiaDataDir%/aanbod/GeoThermie/technisch_pot_aardwarmte_ThermoGIS21_maart_2019_EBN.dbf",
+				StorageReadOnly = "True",
+				url             = "%HestiaDataDir%/aanbod/GeoThermie/technisch_pot_aardwarmte_ThermoGIS21_maart_2019_EBN.txt",
+				DialogType      = "Map",
+				DialogData      = "geometry"
+			{
+				attribute<rdc_meter> geometry (poly) : StorageName = "%HestiaDataDir%/aanbod/GeoThermie/technisch_pot_aardwarmte_ThermoGIS21_maart_2019_EBN.shp", StorageReadOnly = "True";
+				attribute<int32>     GRIDCODE;
+			}
+			unit<uint32> GeschikteContour := select_with_org_rel(ContourSet/GRIDCODE >= 2[int32])
+			{
+				attribute<rdc_meter> geometry     (poly) := ContourSet/geometry[org_rel];
+				attribute<Brontype>  BronType_rel        := const(Brontype/V/GeoThermie,.);
+				attribute<string>    Label               := 'GEO_' + string(id(.));
+			}
+		}
+		container WKO
+		{
+			unit<uint32> ContourSet :
+				StorageName     = "%HestiaDataDir%/Aanbod/WKO/20180802_WKO_potentiecontour.dbf",
+				StorageReadOnly = "True",
+				url             = "%HestiaDataDir%/Aanbod/WKO/20180802_metadata_wko_contour.txt",
+				DialogType      = "Map",
+				DialogData      = "geometry"
+			{
+				attribute<rdc_meter> geometry (poly) : StorageName = "%HestiaDataDir%/Aanbod/WKO/20180802_WKO_potentiecontour.shp", StorageReadOnly = "True";
+				attribute<string>    WKO;
+				attribute<bool>      Geschikt := WKO == 'geschikt' || WKO == 'zeer geschikt';
+			}
+			unit<uint32> GeschikteContour := select_with_org_rel(ContourSet/Geschikt)
+			{
+				attribute<rdc_meter> geometry     (poly) := ContourSet/geometry[org_rel];
+				attribute<Brontype>  BronType_rel        := const(Brontype/V/WKO,.);
+				attribute<string>    Label               := 'WKO_' + string(id(.));
+			}
+		}
+		container TEO: Descr = "zie FO $3.4"
+		{
+			unit<uint32> ContourSet:
+				StorageName     = "%HestiaDataDir%/Aanbod/WKO/20200211_TEO_potentiecontour.dbf",
+				StorageReadOnly = "True",
+				url             = "%HestiaDataDir%/Aanbod/WKO/20200211_TEO_potentiecontour.pdf",
+				DialogType      = "Map",
+				DialogData      = "geometry"
+			{
+				attribute<rdc_meter> geometry (poly) : StorageName = "%HestiaDataDir%/Aanbod/WKO/20200211_TEO_potentiecontour.shp", StorageReadOnly = "True";
+				attribute<bool>      Geschikt        := const(true, .);
+			}
+			unit<uint32> GeschikteContour := select_with_org_rel(ContourSet/Geschikt)
+			{
+				attribute<rdc_meter> geometry     (poly) := ContourSet/geometry[org_rel];
+				attribute<Brontype>  BronType_rel        := const(Brontype/V/TEO,.);
+				attribute<string>    Label               := 'TEO_' + string(id(.));
+
+			}
+		}
+		unit<uint32> result := union_unit(GeoThermie/GeschikteContour, WKO/GeschikteContour, TEO/GeschikteContour)
+		{
+			attribute<rdc_meter> geometry     (poly) := union_data(.,GeoThermie/GeschikteContour/geometry    , WKO/GeschikteContour/geometry    , TEO/GeschikteContour/geometry);
+			attribute<Brontype>  BronType_rel        := union_data(.,GeoThermie/GeschikteContour/BronType_rel, WKO/GeschikteContour/BronType_rel, TEO/GeschikteContour/BronType_rel);
+			attribute<String>    Label               := union_data(.,GeoThermie/GeschikteContour/Label       , WKO/GeschikteContour/Label       , TEO/GeschikteContour/Label);
+			attribute<m>         max_dist            := union_data(., const(10000[m], GeoThermie/GeschikteContour), const(1000[m], WKO/GeschikteContour), const(10000[m], TEO/GeschikteContour));
+		}
+		template BronSelectie: IsHidden = "True"
+		{
+			// begin case parameters
+			parameter<string> RekenjaarName;
+			// end case parameters
+
+			parameter<classifications/Rekenjaar> Rekenjaar_rel    := rlookup(RekenjaarName, classifications/Rekenjaar/name);
+			parameter<units/yr_uint16>           Jaar             := classifications/Rekenjaar/Values[Rekenjaar_rel];
+
+			unit<uint32> BronElementen := result 
+				, DialogType = "Map"
+				, DialogData = "geometry"
+			{
+				attribute<string>    Label               := result/Label;
+				attribute<rdc_meter> geometry     (poly) := result/geometry;
+				attribute<Brontype>  BronType_rel        := result/BronType_rel;
+				attribute<celsius>   T_bron              := BronType/T_bron[BronType_rel];
+				attribute<ratio>     P_vol               := BronType/P_vol[BronType_rel];
+				attribute<ratio>     P_cap               := BronType/P_cap[BronType_rel];
+				attribute<Eur_kW>    Ki_cap_min          := BronType/Ki_cap_min[BronType_rel];
+				attribute<Eur_kW>    Ki_cap_max          := BronType/Ki_cap_max[BronType_rel];
+				attribute<_yr>       R_adm               := BronType/R_adm[BronType_rel];
+				attribute<_yr>       R_oh                := BronType/R_oh[BronType_rel];
+				attribute<MW>        MWth_max            := BronType/MWth_max[BronType_rel];
+				attribute<Eur_GJ>    K_GJ                := ='BronType/K_GJ/' +RekenjaarName+'[BronType_rel]';
+				attribute<Eur_GJ>    Km_GJ               := ='BronType/Km_GJ/'+RekenjaarName+'[BronType_rel]';
+			}
+		}
+		// Vooralsnog per ZichtJaar, zou ook per rekenstap kunnnen.
+		container BronSelecties := for_each_ne(Classifications/Rekenjaar/name, 'BronSelectie('+Quote(Classifications/Rekenjaar/name)+')');
+	}
+
+	container Lijnbronnen
+	{
+		unit<uint32> LijnenSet :
+				StorageName     = "%HestiaDataDir%/aanbod/Lijnbronnen.dbf",
+				StorageReadOnly = "True",
+				DialogType      = "Map",
+				DialogData      = "geometry"
+			{
+				attribute<rdc_meter> geometry (arc) : StorageName = "%HestiaDataDir%/aanbod/Lijnbronnen.shp", StorageReadOnly = "True";
+				attribute<string>    bron_naam;
+				attribute<bool>      Geschikt := const(true,.);
+			}
+		unit<uint32> GeschikteLijnen := select_with_org_rel(LijnenSet/Geschikt)
+			{
+				attribute<rdc_meter> geometry      (arc) := LijnenSet/geometry[org_rel];
+				attribute<Brontype>  BronType_rel        := const(Brontype/V/Industrie,.);
+				attribute<string>    Label               := 'IND_' + string(id(.));
+
+			}
+
+		template BronSelectie: IsHidden = "True"
+		{
+			// begin case parameters
+			parameter<string> RekenjaarName;
+			// end case parameters
+
+			parameter<classifications/Rekenjaar> Rekenjaar_rel    := rlookup(RekenjaarName, classifications/Rekenjaar/name);
+			parameter<units/yr_uint16>           Jaar             := classifications/Rekenjaar/Values[Rekenjaar_rel];
+
+			unit<uint32> BronElementen := GeschikteLijnen 
+				, DialogType = "Map"
+				, DialogData = "geometry"
+			{
+				attribute<string>    Label               := GeschikteLijnen/Label;
+				attribute<rdc_meter> geometry     (arc)  := GeschikteLijnen/geometry;
+				attribute<Brontype>  BronType_rel        := GeschikteLijnen/BronType_rel;
+				attribute<celsius>   T_bron              := BronType/T_bron[BronType_rel];
+				attribute<ratio>     P_vol               := BronType/P_vol[BronType_rel];
+				attribute<ratio>     P_cap               := BronType/P_cap[BronType_rel];
+				attribute<Eur_kW>    Ki_cap_min          := BronType/Ki_cap_min[BronType_rel];
+				attribute<Eur_kW>    Ki_cap_max          := BronType/Ki_cap_max[BronType_rel];
+				attribute<_yr>       R_adm               := BronType/R_adm[BronType_rel];
+				attribute<_yr>       R_oh                := BronType/R_oh[BronType_rel];
+				attribute<MW>        MWth_max            := BronType/MWth_max[BronType_rel];
+				attribute<Eur_GJ>    K_GJ                := ='BronType/K_GJ/' +RekenjaarName+'[BronType_rel]';
+				attribute<Eur_GJ>    Km_GJ               := ='BronType/Km_GJ/'+RekenjaarName+'[BronType_rel]';
+			}
+		}
+		// Vooralsnog per ZichtJaar, zou ook per rekenstap kunnnen.
+		container BronSelecties := for_each_ne(Classifications/Rekenjaar/name, 'BronSelectie('+Quote(Classifications/Rekenjaar/name)+')');
+	}
+}

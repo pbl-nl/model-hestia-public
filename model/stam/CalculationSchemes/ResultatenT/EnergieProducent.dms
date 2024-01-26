@@ -1,0 +1,87 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container EnergieProducent: isHidden = "true"
+	{
+		container impl: IsHidden = "True"
+		{
+			attribute<string> FlowExpr (Classifications/GebiedsOptie) := 
+				replace(
+				'
+					  StateNaAllocatie/Cumulaties/@RO@/jaarlijks/ge/Kj_ge_hv
+					- StateNaAllocatie/Cumulaties/@RO@/jaarlijks/lv/Oj_lv_verbruik
+					- StateNaAllocatie/Cumulaties/@RO@/jaarlijks/lv/Oj_lv_vastrecht
+					- StateNaAllocatie/Cumulaties/@RO@/jaarlijks/lv/Oj_lv_SDE
+
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/id/Kj_id_gas
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/id/Kj_id_elek
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/id/Kj_id_oh
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/id/Kj_id_adm
+					- StateNaAllocatie/Cumulaties/@RO@/jaarlijks/id/Oj_id_SDE
+
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/wd/Kj_wd_gas
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/wd/Kj_wd_elek
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/wd/Kj_wd_oh
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/wd/Kj_wd_adm
+					- StateNaAllocatie/Cumulaties/@RO@/jaarlijks/wd/Oj_wd_SDE
+
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/pt/Kj_pt_oh
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/pt/Kj_pt_adm
+
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/ow/Kj_ow_gas
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/ow/Kj_ow_elek
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/ow/Kj_ow_oh
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/ow/Kj_ow_adm
+					- StateNaAllocatie/Cumulaties/@RO@/jaarlijks/ow/Oj_ow_SDE
+					+ StateNaAllocatie/Cumulaties/@RO@/jaarlijks/ow/Kj_ow_productie
+				'
+				,'@RO@'
+				, Classifications/GebiedsOptie/name
+				);
+
+			attribute<string> StockExpr(Classifications/GebiedsOptie) :=
+				replace(
+				'
+					  StateNaAllocatie/Cumulaties/@RO@/eenmalig/Ki_id
+					+ StateNaAllocatie/Cumulaties/@RO@/eenmalig/Ki_wd
+					+ StateNaAllocatie/Cumulaties/@RO@/eenmalig/Ki_pt
+					+ StateNaAllocatie/Cumulaties/@RO@/eenmalig/Ki_ow
+					+ StateNaAllocatie/Cumulaties/@RO@/eenmalig/Ki_ge_pm
+					+ StateNaAllocatie/Cumulaties/@RO@/eenmalig/Ki_ge_ov
+
+					- StateNaAllocatie/Cumulaties/@RO@/eenmalig/Oi_lv_aansl
+					- StateNaAllocatie/Cumulaties/@RO@/eenmalig/Oi_ge_EIA
+					- StateNaAllocatie/Cumulaties/@RO@/eenmalig/Oi_id_EIA
+					- StateNaAllocatie/Cumulaties/@RO@/eenmalig/Oi_wd_EIA
+					- StateNaAllocatie/Cumulaties/@RO@/eenmalig/Oi_pt_EIA
+					- StateNaAllocatie/Cumulaties/@RO@/eenmalig/Oi_ow_EIA
+				'
+				,'@RO@'
+				, Classifications/GebiedsOptie/name
+				);
+		}
+
+		container CashFlow := for_each_nedv(Classifications/GebiedsOptie/name
+			, IsDefined(invert(Voorkeuren/ActieveGebiedsOptie/GebiedsOptie_rel))
+				? impl/FlowExpr
+				: 'const(0[Eur_yr], PlanRegio)'
+			, PlanRegio
+			, Eur_yr)
+		{
+			attribute<Eur_yr> Kj_Totaal (PlanRegio) := = 'add(' + AsItemList(Classifications/GebiedsOptie/name) + ')';
+		}
+
+		attribute<Eur_yr> Kj_Totaal (PlanRegio):= CashFlow/Kj_Totaal;
+
+		container eenmalig := for_each_nedv(Classifications/GebiedsOptie/name
+			, IsDefined(invert(Voorkeuren/ActieveGebiedsOptie/GebiedsOptie_rel)) ? impl/StockExpr : 'const(0[Eur], PlanRegio)'
+			, PlanRegio
+			, Eur)
+		{
+			attribute<Eur> Ki_Totaal(PlanRegio) := ='add(' + AsItemList(Classifications/GebiedsOptie/name) + ')';
+		}
+		attribute<Eur> Ki_Totaal(PlanRegio) := eenmalig/Ki_Totaal; // totale investeringen zonder aftrek van de te ontvangen aansluitbijdrage.
+	}

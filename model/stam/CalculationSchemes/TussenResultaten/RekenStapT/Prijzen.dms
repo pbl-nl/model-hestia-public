@@ -1,0 +1,122 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Prijzen
+{
+	parameter<Eur_yr_asl> Heffingskorting := AardGas/bron/Heffingskorting[AardGas/JaarIndex] + Elektriciteit/bron/Heffingskorting[Elektriciteit/JaarIndex];
+
+	container AardGas
+	{
+		unit<uint32> Tabel := Invoer/EnergiePrijzen/AardGas/Table;
+		container    bron  := Invoer/EnergiePrijzen/AardGas/results;
+		
+		parameter<Tabel>      JaarIndex := classify(Zichtjaar_jaar, bron/Jaar);
+		parameter<kg_GJ>      CO2_GJ    := bron/CO2_GJ[JaarIndex];
+		parameter<Eur_yr_asl> Vastrecht := bron/Vastrecht/vastrecht[JaarIndex];
+			
+		container LuchtEmissie
+		{
+			parameter<kg_GJ> NOx_GJ := bron/LuchtEmissie/NOx_GJ[JaarIndex] ;
+			parameter<kg_GJ> SO2_GJ := bron/LuchtEmissie/SO2_GJ[JaarIndex] ;
+			parameter<kg_GJ> VOS_GJ := bron/LuchtEmissie/VOS_GJ[JaarIndex] ;
+			parameter<kg_GJ> TS_GJ  := bron/LuchtEmissie/TS_GJ[JaarIndex]  ;
+		}
+		
+		unit<uint8> Staffel := classifications/gebruiksgrootteklasse 
+		{
+			attribute<GJ_yr>  ClassBreak := gas_break;
+			attribute<Eur_GJ> KGJ_Commodity        := ='union_data(., ' + AsItemList('bron/' + name + '/CommodityPrice  [JaarIndex] ') + ')';
+			attribute<Eur_GJ> KGJ_netwerk          := ='union_data(., ' + AsItemList('bron/' + name + '/netwerk         [JaarIndex] ') + ')';
+			attribute<Eur_GJ> KGJ_eindgebruik_excl := ='union_data(., ' + AsItemList('bron/' + name + '/eindgebruik_excl[JaarIndex] ') + ')';
+			attribute<Eur_GJ> KGJ_Maatschappelijk  := ='union_data(., ' + AsItemList('bron/' + name + '/Maatschappelijk [JaarIndex] ') + ')';
+			attribute<Eur_GJ> KGJ_EnergieHeffing   := ='union_data(., ' + AsItemList('bron/' + name + '/EnergieHeffing  [JaarIndex] ') + ')';
+		}
+
+		container Bijstook
+		{
+			parameter<Eur_GJ> KGJ_eindgebruik_excl := bron/GrootGebruik/eindgebruik_excl[JaarIndex] ;
+			parameter<Eur_GJ> KGJ_Maatschappelijk  := bron/GrootGebruik/Maatschappelijk [JaarIndex] ;
+			parameter<Eur_GJ> KGJ_netwerk          := bron/GrootGebruik/netwerk         [JaarIndex] ;
+			parameter<Eur_GJ> KGJ_EnergieHeffing   := bron/GrootGebruik/EnergieHeffing  [JaarIndex] ;
+		}
+	}
+
+	container Elektriciteit
+	{
+		unit<uint32> Tabel := Invoer/EnergiePrijzen/Elektriciteit/Table;
+		container    bron  := Invoer/EnergiePrijzen/Elektriciteit/results;
+
+		parameter<Tabel>      JaarIndex := classify(Zichtjaar_jaar, bron/Jaar);
+		parameter<kg_GJ>      CO2_GJ    := bron/CO2_GJ[JaarIndex];	
+		parameter<Eur_yr_asl> Vastrecht := bron/Vastrecht/vastrecht[JaarIndex];		
+
+		container LuchtEmissie
+		{
+			parameter<kg_GJ> NOx_GJ := bron/LuchtEmissie/NOx_GJ[JaarIndex] ;
+			parameter<kg_GJ> SO2_GJ := bron/LuchtEmissie/SO2_GJ[JaarIndex] ;
+			parameter<kg_GJ> VOS_GJ := bron/LuchtEmissie/VOS_GJ[JaarIndex] ;
+			parameter<kg_GJ> TS_GJ  := bron/LuchtEmissie/TS_GJ[JaarIndex]  ;
+		}
+		
+		unit<uint8> Staffel := classifications/gebruiksgrootteklasse
+		{
+			attribute<GJ_yr>  ClassBreak           := elek_break_kWh [GJ_yr];		
+			attribute<Eur_GJ> KGJ_Commodity        := ='union_data(., ' + AsItemList('bron/' + name + '/CommodityPrice  [JaarIndex]') + ')';
+			attribute<Eur_GJ> KGJ_Marge            := ='union_data(., ' + AsItemList('bron/' + name + '/Marge           [JaarIndex]') + ')';
+			attribute<Eur_GJ> KGJ_netwerk          := ='union_data(., ' + AsItemList('bron/' + name + '/netwerk         [JaarIndex]') + ')';
+			attribute<Eur_GJ> KGJ_eindgebruik_excl := ='union_data(., ' + AsItemList('bron/' + name + '/eindgebruik_excl[JaarIndex]') + ')';
+			attribute<Eur_GJ> KGJ_Maatschappelijk  := ='union_data(., ' + AsItemList('bron/' + name + '/Maatschappelijk [JaarIndex]') + ')';
+			attribute<Eur_GJ> KGJ_EnergieHeffing   := ='union_data(., ' + AsItemList('bron/' + name + '/EnergieHeffing  [JaarIndex]') + ')';
+		}
+	}
+	
+	container overig
+	{
+		container bron := Invoer/EnergiePrijzen/Overig/results;
+
+		parameter<Eur_GJ> Pj_biomassa := bron/Biomassa [rlookup(Zichtjaar_jaar, bron/jaar)];
+		parameter<Eur_GJ> Pj_olie     := bron/olie     [rlookup(Zichtjaar_jaar, bron/jaar)];
+		parameter<Eur_GJ> Pj_olie_EH  := bron/olie_EH  [rlookup(Zichtjaar_jaar, bron/jaar)];
+		parameter<Eur_GJ> Pj_pellets  := bron/Pellets  [rlookup(Zichtjaar_jaar, bron/jaar)];
+		parameter<Eur_GJ> Pj_H2       := bron/Waterstof[rlookup(Zichtjaar_jaar, bron/jaar)];
+
+		parameter<Eur_GJ> Pm_biomassa := Pj_biomassa;
+		parameter<Eur_GJ> Pm_pellets  := Pj_pellets;
+		parameter<Eur_GJ> Pm_H2       := Pj_H2;
+		parameter<Eur_GJ> Pm_olie     := Pj_olie;
+
+		parameter<kg_GJ> CO2_pellets  := bron/CO2pellets [rlookup(Zichtjaar_jaar, bron/jaar)];
+		parameter<kg_GJ> CO2_biomassa := bron/CO2biomassa[rlookup(Zichtjaar_jaar, bron/jaar)];
+		parameter<kg_GJ> CO2_olie     := bron/CO2olie    [rlookup(Zichtjaar_jaar, bron/jaar)];
+		
+
+		// ======== Overige emissies pellets, biomassa en olie (placeholder)
+		container LuchtEmissie
+		{
+			container Pellets
+			{
+				parameter<kg_GJ> NOx := 0.0[kg_GJ];
+				parameter<kg_GJ> SO2 := 0.0[kg_GJ];
+				parameter<kg_GJ> VOS := 0.0[kg_GJ];
+				parameter<kg_GJ> TS  := 0.0[kg_GJ];
+			}
+			container Biomassa
+			{
+				parameter<kg_GJ> NOx := 0.0[kg_GJ];
+				parameter<kg_GJ> SO2 := 0.0[kg_GJ];
+				parameter<kg_GJ> VOS := 0.0[kg_GJ];
+				parameter<kg_GJ> TS  := 0.0[kg_GJ];
+			}
+			container Olie
+			{
+				parameter<kg_GJ> NOx := 0.0[kg_GJ];
+				parameter<kg_GJ> SO2 := 0.0[kg_GJ];
+				parameter<kg_GJ> VOS := 0.0[kg_GJ];
+				parameter<kg_GJ> TS  := 0.0[kg_GJ];
+			}
+		}
+	}
+}

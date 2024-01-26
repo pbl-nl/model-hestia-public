@@ -1,0 +1,81 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+container Dimensies
+{
+	unit<uint32> input
+	:	StorageName     = "%HestiaDataDir%/vraag/wonen/BAG_dimensies_energie_v6.csv"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	,	url             = "%HestiaDataDir%/vraag/wonen/Verrijken_BAG_woningvoorraad_met_fysieke_dimensies_en_energetische_kwaliteit_individuele_bouwdelen.docx"
+	{
+		attribute<m2> RB := replace(gl_slaap_opp,',','.')[m2];
+		attribute<m2> RO := replace(gl_woon_opp,',','.')[m2];
+		attribute<m2> DR := replace(de_opp,',','.')[m2];
+		attribute<m2> PL := replace(pn_opp,',','.')[m2];
+		attribute<m2> MG := replace(mg_buiten_opp,',','.')[m2];
+		attribute<m2> MS := replace(sp_buiten_opp,',','.')[m2];
+		attribute<m2> DP := replace(pd_opp,',','.')[m2];
+		attribute<m2> DS := replace(hd_opp,',','.')[m2];
+		attribute<m2> VL := replace(vl_opp,',','.')[m2];
+	}
+	
+	unit<uint32> VBO := BAG/import/vbo
+	{
+		attribute<input>     Data_rel        := rlookup(BAG/import/vbo/identificatie, input/vbo_id), IsHidden = "True";
+		attribute<string>    VBOtype         := input/VBO_type[Data_rel], IsHidden = "True";
+
+		unit<uint32> Bouwdeel := BAG/import/vbo
+		{
+			//====== direct over te nemen uit invoerbestand: raam, deur, paneel, gevel, dak, vloer
+			attribute<m2> RB (VBO) := input/RB[Data_rel];
+			attribute<m2> RO (VBO) := input/RO[Data_rel];
+			attribute<m2> DR (VBO) := input/DR[Data_rel];
+			attribute<m2> PL (VBO) := input/PL[Data_rel];
+			attribute<m2> MG (VBO) := input/MG[Data_rel];
+			attribute<m2> MS (VBO) := input/MS[Data_rel];
+			attribute<m2> DP (VBO) := input/DP[Data_rel];
+			attribute<m2> DS (VBO) := input/DS[Data_rel];
+			attribute<m2> VL (VBO) := input/VL[Data_rel];
+
+			//====== Oppervlak Kieren wordt oppervlak vbo voor aangehouden
+			attribute<m2> KR (VBO) := VBO/oppervlakte[m2];
+		}
+	}
+
+	//de resultaten van bovenstaande analyse wordt als snel fss bestand weggeschreven
+	unit<uint32> Bouwdeel_writer := BAG/import/vbo, Storagename = "%HestiaDataDir%/vraag/Wonen/Bouwdeel.fss", IsHidden = "True"
+	{
+		attribute<m2> RB := VBO/Bouwdeel/RB;
+		attribute<m2> RO := VBO/Bouwdeel/RO;
+		attribute<m2> DR := VBO/Bouwdeel/DR;
+		attribute<m2> PL := VBO/Bouwdeel/PL;
+		attribute<m2> VL := VBO/Bouwdeel/VL;
+		attribute<m2> MG := VBO/Bouwdeel/MG;
+		attribute<m2> MS := VBO/Bouwdeel/MS;
+		attribute<m2> DP := VBO/Bouwdeel/DP;
+		attribute<m2> DS := VBO/Bouwdeel/DS;
+		attribute<m2> KR := VBO/Bouwdeel/KR;
+	}
+	//de resultaten van een eerdere analyse die als fss zijn weggeschreven worden weer ingelezen
+	unit<uint32> Bouwdeel_reader := BAG/import/vbo, StorageName = "%HestiaDataDir%/vraag/Wonen/Bouwdeel.fss", StorageReadOnly = "true"
+	{
+		attribute<m2> RB;
+		attribute<m2> RO;
+		attribute<m2> DR;
+		attribute<m2> PL;
+		attribute<m2> VL;
+		attribute<m2> MG;
+		attribute<m2> MS;
+		attribute<m2> DP;
+		attribute<m2> DS;
+		attribute<m2> KR;
+	}
+
+	//indien HerberekenStartsituatie = true, wordt een nieuwe omzetting van de pandeigenschappen gedaan, anders wordt het invoerbestand gebruikt
+	unit<uint32>    Bouwdelen   := = Invoer/HerberekenStartsituatie ?  'VBO/Bouwdeel' : 'Bouwdeel_reader', IsHidden = "True";
+}

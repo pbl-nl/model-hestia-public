@@ -1,0 +1,223 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Transformations
+{
+	template substitute
+	{
+		// begin case parameters
+		unit<uint32> src;
+		parameter<string> name_key;
+		parameter<string> code_key;
+		unit<uint8> valueset;
+		// end case parameters
+
+		attribute<bool>   conditionN   (src) := strpos(src/name,  name_key) >= 0 || strpos(src/name,  code_key) >= 0;
+		attribute<bool>   conditionA   (src) := strpos(src/Actor, name_key) >= 0 || strpos(src/Actor, code_key) >= 0;
+		attribute<bool>   tooManyCodes (src) :=(conditionN && conditionA);
+		attribute<bool>   condition1   (src) := conditionN || conditionA, IntegrityCheck = "!tooManyCodes"; // save on double naming		
+		attribute<bool>   condition2   (src) := strpos(src/expr, name_key) >= 0 || strpos(src/expr, code_key) >= 0;
+		attribute<bool>   condition    (src) := condition1 || condition2; // distributed expressions substututed by a group will be added. 
+		attribute<uint32> firstResult  (src) := uint32(int32(id(src)) + makedefined(cumulate(int32(condition))[id(src)-1]*(int32(#valueset)-1i),0i));
+
+		unit<uint32> result := range(uint32, 0, uint32(int32(#src) + sum(int32(condition))*(int32(#valueset)-1i)))
+		{
+			attribute<src>    src_rel       := classify(id(.), firstResult);
+			attribute<string> valueset_name := MakeDefined(valueset/name[value(id(.)-firstResult[src_rel], valueset)], 'xxx');
+			attribute<string> valueset_code := MakeDefined(valueset/code[value(id(.)-firstResult[src_rel], valueset)], 'yyy');
+			attribute<string> name          := replace(src/name        [src_rel], name_key, valueset_name, code_key, valueset_code);
+			attribute<string> Actor         := replace(src/Actor       [src_rel], name_key, valueset_name, code_key, valueset_code);
+			attribute<string> Expr          := replace(src/Expr        [src_rel], name_key, valueset_name, code_key, valueset_code);
+			attribute<string> PlanRegioRel  := replace(src/PlanRegioRel[src_rel], name_key, valueset_name, code_key, valueset_code);
+			attribute<string> EmissionExpr  := replace(src/EmissionExpr[src_rel], name_key, valueset_name, code_key, valueset_code);
+		}
+	}
+
+	template mut_table
+	{
+		unit<uint32>          Technology;
+		unit<uint32>          Location;
+		parameter<Technology> Technology_rel;
+		unit<float64>         Quantity;
+		unit<float64>         EmissionFActorUnit;
+
+		unit<uint32> mutatie := impl/mutatie;
+
+		unit<uint32> mut := select_with_org_rel(mutatie/technology_rel == Technology_rel)
+		{
+			attribute<mutatie>           mutatie_rel           := org_rel;
+			attribute<location>          location_rel          := mutatie/location_rel[mutatie_rel];
+			attribute<string>            name                  := mutatie/name[mutatie_rel];
+			attribute<string>            location_name         := location/values[mutatie/location_rel[mutatie_rel]];
+			attribute<string>            expr                  := mutatie/FinalExpr[org_rel];
+			attribute<location_with_mut> location_with_mut_rel := rlookup(location_rel, location_with_mut/values);
+		}
+
+		unit<uint32> location_with_mut := unique(mut/location_rel)
+		{
+			attribute<location> Values; // auto-result
+			attribute<string> name := location/values[Values];
+		}
+
+		unit<float64> MQuantity   := 1000000 * Quantity; // '#unique(mut/full_name_ORG) == #mut'
+		unit<uint32>  ActorEntity := Invoer/SpecifiekeInstellingen/PlanRegio;
+
+		container aggr_muts := for_each_nedv(location_with_mut/name, 'add('+AsItemList(mut/Expr, mut/location_with_mut_rel)+')', ActorEntity, Quantity);
+		attribute<Quantity> Saldo (ActorEntity) := =#location_with_mut > 0 ? 'add('+AsItemList('aggr_muts/'+location/values[location_with_mut/values])+')' : 'const(0[Quantity], ActorEntity)';
+
+		container totals: KeepData = "True" 
+		{
+			attribute<string>    name      (location_with_mut) := location_with_mut/name;
+			attribute<MQuantity> aggr_muts (location_with_mut) := =#location_with_mut>0 ? 'union_data(location_with_mut, '+AsItemList('sum(../aggr_muts/'+location_with_mut/name+')')+')[MQuantity]' : 'const(0[MQuantity], location_with_mut)';
+			parameter<MQuantity> saldo := sum(aggr_muts);
+		}
+
+		parameter<string> Empty := 'empty';
+		parameter<string> all_csv := =count(totals/aggr_muts) > 0 ? 'all_csv_muts' : 'Empty';
+		parameter<string> all_csv_muts :=
+			'titel;quantity\n'
+			'[text];[PJ_yr]\n'
+			+ AsList(string(totals/name)+';'+string(totals/aggr_muts)+'\n', '')
+		, StorageType = "str"
+		, StorageName = "=OutputSubFolder+'/mut_' + Technology/values[Technology_rel]+'.csv'";
+	}
+
+	template Main
+	{
+		// begin case parameters
+		container          Accounting1;
+		unit<float64>      Quantity;
+		parameter<string>  UnitLabel;
+		parameter<string>  OutputSubFolder;
+		attribute<float64> fraction (PR);
+		parameter<string>  EmissionPrefix;
+		unit<float64>      EmissionFActorUnit;
+		// end case parameters
+
+		unit<float64> MQuantity := 1000000 * Quantity, isHidden = "True";
+		unit<uint32>  PR        := Invoer/SpecifiekeInstellingen/PlanRegio, isHidden = "True";
+
+		container impl: isHidden = "True"
+		{
+			parameter<string> EmissionExprE := (EmissionPrefix == '' ? 'const('''', .)' : EmissionPrefix);
+			unit<uint32> Accounting := Accounting1/mutatie {
+				attribute<string> EmissionExpr  := =EmissionExprE;
+			}
+			unit<uint8> BC   := Classifications/BebouwingsSector;
+			unit<uint8> WKOC := BC
+			{
+				attribute<string> name := BC/name;
+				attribute<string> code := BC/code;
+			}
+			container applyBC  := substitute(Accounting     ,'@BC@'  , '@BN@'   , BC);
+			container applyWKO := substitute(applyBC/result ,'@WKOC@', '@WKON@' ,WKOC);
+			container applyRO  := substitute(applyWKO/result,'@ROC@' , '@RON@'  ,Voorkeuren/ActieveGebiedsOptie);
+			unit<uint32> mutatie := applyRO/result
+			{
+				attribute<technology> technology_rel := rlookup(name,  technology/values), IntegrityCheck = "IsDefined(this)";
+				attribute<location>   location_rel   := rlookup(Actor, location/values), IntegrityCheck = "IsDefined(this)";
+				attribute<string>     entityRel      := PlanRegioRel;
+				attribute<string>     ExprSum        := entityRel <> '' ? 'sum('+expr + ', '+entityRel+')' : expr;
+				attribute<string>     FinalExpr      := ExprSum +' * fraction' + (EmissionExpr == '' ? '' : ' * -value(' + EmissionExpr+',EmissionFActorUnit)');
+			}
+			unit<uint32> technology := unique(mutatie/name ) { attribute<string> name := values; attribute<string> label := values; }
+			unit<uint32> location   := unique(mutatie/Actor) { attribute<string> name := values; attribute<string> label := values; }
+			unit<uint32> active_technology := technology { attribute<technology> technology_rel := id(.); }
+			unit<uint32> active_location   := location   { attribute<location>   location_rel   := id(.); }
+			container applyAllRO := substitute(applyWKO/result,   '@ROC@', '@RON@' , Classifications/GebiedsOptie);
+			unit<uint32> all_technology := unique(applyAllRO/result/name)
+			{
+				attribute<string>     name           := values;
+				attribute<string>     label          := values;
+				attribute<technology> technology_rel := rlookup(name, technology/values);
+			}
+			unit<uint32> all_location := unique(applyAllRO/result/Actor)
+			{
+				attribute<string>   name         := values;
+				attribute<string>   label        := values;
+				attribute<location> location_rel := rlookup(name, location/values);
+			}
+		}
+
+		container active_mut_tables := for_each_ne(impl/active_technology/name, 'Transformations/mut_table(impl/Technology, impl/Location,'+string(impl/active_technology/technology_rel)+'[impl/technology], Quantity, EmissionFActorUnit)'), IsHidden = "True";
+		container mut_tables        := for_each_ne(impl/all_technology/name,    'Transformations/mut_table(impl/Technology, impl/Location,'+MakeDefined(string(impl/all_technology/technology_rel), '(0 / 0)')+'[impl/technology], Quantity, EmissionFActorUnit)'), IsHIdden = "True";
+
+		container matrix
+		{
+			unit<uint32> aggr := ='union_unit('+AsItemList('mut_tables/'+impl/technology/name+'/location_with_mut')+')', IsHidden = "True"
+			{
+				attribute<MQuantity>       Saldo          := ='union_data(.,'+AsItemList('mut_tables/'+impl/technology/name+'/totals/aggr_muts')+')';
+				attribute<impl/technology> technology_rel := ='union_data(.,'+AsItemList('const(mut_tables/'+impl/technology/name+'/Technology_rel, mut_tables/'+impl/technology/name+'/location_with_mut)')+')';
+				attribute<impl/location>   location_rel   := ='union_data(.,'+AsItemList('mut_tables/'+impl/technology/name+'/location_with_mut/values')+')';
+			}
+			unit<uint32> ColSet := impl/all_location, IsHidden = "True";   // impl/active_location;
+			unit<uint32> RowSet := impl/all_technology, IsHidden = "True"; // impl/active_technology;
+			container TableData := for_each_nedv(
+				 ColSet/name
+				,MakeDefined(
+					 'sum(aggr/Saldo * float64(aggr/location_rel == '+string(ColSet/location_rel)+'), aggr/technology_rel)[RowSet/technology_rel]'
+					,'const(0[MQuantity], RowSet)
+				')
+				,RowSet
+				,MQuantity
+				), IsHidden = "True"
+			{
+				attribute<string>    name      (RowSet) := RowSet/name;
+				attribute<MQuantity> Oj_Totaal (RowSet) := =' add('+AsItemList('max_elem(sum(aggr/Saldo * float64(aggr/location_rel == '+string(ColSet/location_rel)+'), aggr/technology_rel)[RowSet/technology_rel], 0[MQuantity])')+')';
+				attribute<MQuantity> Kj_Totaal (RowSet) := ='-add('+AsItemList('-max_elem(-sum(aggr/Saldo * float64(aggr/location_rel == '+string(ColSet/location_rel)+'), aggr/technology_rel)[RowSet/technology_rel], 0[MQuantity])')+')';
+				attribute<MQuantity> Oj_Netto  (RowSet) := =' add('+AsItemList('sum(aggr/Saldo * float64(aggr/location_rel == '+string(ColSet/location_rel)+'), aggr/technology_rel)[RowSet/technology_rel]')+')';
+			}
+			container Table := for_each_nedv(
+				 ColSet/name
+				,'(1.0 / 1000000.0) * float64(round_64(1000000.0*TableData/'+ColSet/name+'))'
+				,RowSet
+				,MQuantity
+				), IsHidden = "True"
+			{
+				attribute<string>    name      (RowSet) := RowSet/name;
+				attribute<MQuantity> Oj_Totaal (RowSet) := ='(1.0 / 1000000.0) * float64(round_64(1000000.0*TableData/Oj_Totaal))';
+				attribute<MQuantity> Kj_Totaal (RowSet) := ='(1.0 / 1000000.0) * float64(round_64(1000000.0*TableData/Kj_Totaal))';
+				attribute<MQuantity> Oj_Netto  (RowSet) := ='(1.0 / 1000000.0) * float64(round_64(1000000.0*TableData/Oj_Netto))';
+			}
+
+			unit<uint32> RowSetWithTotal := union_unit(RowSet, void), IsHidden = "True";
+
+			container TableWithTotal := for_each_nedv(
+				 ColSet/name
+				,replace('
+					 (1.0 / 1000000.0) * float64(round_64(1000000.0*union_data(RowSetWithTotal,TableData/@X,sum(TableData/@X))))'
+					,'@X'
+					, ColSet/name
+				 )
+				,RowSetWithTotal
+				,MQuantity
+			)
+			{
+				attribute<string>    name      (RowSetWithTotal) := union_data(RowSetWithTotal, RowSet/name, 'TOTAL');
+				attribute<MQuantity> Oj_Totaal (RowSetWithTotal) := (1.0 / 1000000.0) * float64(round_64(1000000.0 * union_data(RowSetWithTotal, TableData/Oj_Totaal, sum(TableData/Oj_Totaal))));
+				attribute<MQuantity> Kj_Totaal (RowSetWithTotal) := (1.0 / 1000000.0) * float64(round_64(1000000.0 * union_data(RowSetWithTotal, TableData/Kj_Totaal, sum(TableData/Kj_Totaal))));
+				attribute<MQuantity> Oj_Netto  (RowSetWithTotal) := (1.0 / 1000000.0) * float64(round_64(1000000.0 * union_data(RowSetWithTotal, TableData/Oj_Netto , sum(TableData/Oj_Netto ))));
+			}
+
+			attribute<string> rows (RowSet) := ='add('+AsItemList(quote(';')+'+string(Table/'+ColSet/name+')')+')', IsHidden = "True";
+
+			parameter<string> csv :=
+				'name;Oj_Totaal;Kj_Totaal;Oj_Netto;'+AsList(ColSet/name,';')+'\n'+
+				'[text];'+UnitLabel+';'+UnitLabel+';'+UnitLabel+';'+AsList(const(UnitLabel, ColSet),';')+'\n'
+				+ AsList(RowSet/name+';'+string(table/Oj_Totaal)+';'+string(table/Kj_Totaal)+';'+string(table/Oj_Netto)+rows+'\n', '')
+			,	StorageType = "str"
+			,	StorageName = "=OutputSubFolder+'/Matrix.csv'";
+		}
+		
+		attribute<MQuantity> mut_overview (impl/all_technology) := matrix/table/Oj_Netto, IsHidden = "True";
+		attribute<string> mut_herkomst    (impl/all_technology) := mut_overview > 0[MQuantity] ? string( mut_overview) : '', IsHidden = "True";
+		attribute<string> mut_bestemming  (impl/all_technology) := mut_overview < 0[MQuantity] ? string(-mut_overview) : '', IsHidden = "True";
+		parameter<string> GenerateAll := 'Ready',
+			ExplicitSuppliers =
+				"=  'matrix/csv'";
+				//"+ ';' + AsList('mut_tables/'+impl/all_technology/name + '/all_csv',';')";
+	}
+}

@@ -1,0 +1,79 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2022 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//    In deze configuratiefile wordt de brondata voor de Warmtebronnen geconfigureerd   //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container WarmteBronnen : IsHidden = "True"
+{
+	container prijzen := EnergiePrijzen
+	{
+		attribute<AardGas/Table>       aardgas_tabel_rel (classifications/RekenJaar) := rlookup(classifications/RekenJaar/values, UInt16(AardGas/Table/jaar));
+		attribute<Eur_GJ>              K_Gas             (classifications/RekenJaar) := AardGas/results/GrootGebruik/eindgebruik_excl[aardgas_tabel_rel];
+		attribute<Eur_GJ>              Km_Gas            (classifications/RekenJaar) := AardGas/results/GrootGebruik/Maatschappelijk [aardgas_tabel_rel];
+		attribute<Elektriciteit/Table> elek_tabel_rel    (classifications/RekenJaar) := rlookup(classifications/RekenJaar/values, UInt16(Elektriciteit/Table/jaar));
+		attribute<Eur_GJ>              K_e               (classifications/RekenJaar) := prijzen/Elektriciteit/results/GrootGebruik/CommodityPrice [elek_tabel_rel];
+		attribute<Eur_GJ>              Km_e              (classifications/RekenJaar) := prijzen/Elektriciteit/results/GrootGebruik/Maatschappelijk[elek_tabel_rel];
+		attribute<Overig/Table>        overig_tabel_rel  (classifications/RekenJaar) := rlookup(classifications/RekenJaar/values, UInt16(Overig/Table/jaar));
+		attribute<Eur_GJ>              K_biomassa        (classifications/RekenJaar) := Overig/Results/BioBron[overig_tabel_rel];
+		attribute<Eur_GJ>              Km_biomassa       (classifications/RekenJaar) := K_biomassa;
+		attribute<Eur_GJ>              K_kolen           (classifications/RekenJaar) := Overig/Results/Kolen_excl[overig_tabel_rel] + Overig/Results/Kolen_CO2 [overig_tabel_rel];
+		attribute<Eur_GJ>              Km_kolen          (classifications/RekenJaar) := K_kolen;
+	}
+
+	container MetaData: IsHidden = "True"
+	{
+		unit<uint32> Src
+		:	StorageName     = "%EnergieDataProjDir%/TypeInfo.csv" 
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			attribute<string>  label      := src/Type, DialogType = "LabelText";
+		}
+
+		unit<uint32> BronType := Src
+		{
+			attribute<string>  label      := src/Type, DialogType = "LabelText";
+			attribute<Eur_kW>  Ki_cap_min := src/Ki_cap_min[Eur_kW];
+			attribute<Eur_kW>  Ki_cap_max := src/Ki_cap_max[Eur_kW];
+			attribute<_yr>     R_oh       := src/R_oh[_yr];
+			attribute<_yr>     R_adm      := src/R_adm[_yr];
+			attribute<Celsius> T_bron     := src/T_bron[Celsius];
+			attribute<MW>      MWth_max   := src/MWth_max[MW];
+			attribute<ratio>   P_vol      := src/P_vol[ratio];
+			attribute<ratio>   P_cap      := src/P_cap[ratio];
+			attribute<string>  input      := src/input;
+			attribute<ratio>   Rendement  := 1[ratio] / src/SPF[ratio];
+			attribute<bool>    Koude      := src/koude[bool];
+
+			container K_GJ := for_each_nedv(classifications/RekenJaar/name
+				, '(input =='+quote('e')+'        ? Prijzen/K_e       [rlookup('+quote(classifications/RekenJaar/name)+', classifications/RekenJaar/name)] 
+				  : input =='+quote('gas')+'      ? Prijzen/K_gas     [rlookup('+quote(classifications/RekenJaar/name)+', classifications/RekenJaar/name)]
+				  : input =='+quote('biomassa')+' ? Prijzen/K_biomassa[rlookup('+quote(classifications/RekenJaar/name)+', classifications/RekenJaar/name)]
+				  : input =='+quote('kolen')+'    ? Prijzen/K_kolen   [rlookup('+quote(classifications/RekenJaar/name)+', classifications/RekenJaar/name)]
+				  : 0.0[Eur_GJ]) * Rendement'
+				, .
+				, Eur_GJ
+			);
+
+			container Km_GJ := for_each_nedv(classifications/RekenJaar/name
+				, '(input =='+quote('e')+'        ? Prijzen/Km_e       [rlookup('+quote(classifications/RekenJaar/name)+', classifications/RekenJaar/name)] 
+				  : input =='+quote('gas')+'      ? Prijzen/Km_gas     [rlookup('+quote(classifications/RekenJaar/name)+', classifications/RekenJaar/name)]
+				  : input =='+quote('biomassa')+' ? Prijzen/Km_biomassa[rlookup('+quote(classifications/RekenJaar/name)+', classifications/RekenJaar/name)]
+				  : input =='+quote('kolen')+'    ? Prijzen/Km_kolen   [rlookup('+quote(classifications/RekenJaar/name)+', classifications/RekenJaar/name)]
+				  : 0.0[Eur_GJ]) * Rendement'
+				, .
+				, Eur_GJ
+			);
+
+
+		container V := for_each_nedv(Type, 'value('+string(id(.))+', ..)', void, .);
+		}
+	}
+}

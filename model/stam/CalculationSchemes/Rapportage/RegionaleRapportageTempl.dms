@@ -1,0 +1,46 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+template RegionaleRapportage
+{
+	// begin case parameters
+	unit<uint32>               RapportageRegio;
+	parameter<RapportageRegio> RapportageRegio_sel;
+	unit<uint32>               BO;
+	unit<uint8>                RapGroep;
+	parameter<string>          RapGroepNaam;
+	parameter<string>          ExportLabel;
+	unit<float64>              QuantityUnit;
+	parameter<string>          BCname;
+	// end  case parameters
+
+	parameter<string> BebouwingscomponentNaam := BCname;
+	parameter<string> ReportRegioNaam         := RapportageRegio/name[RapportageRegio_sel];
+
+	attribute<RapportageRegio> PlanRegio_RapportageRegio_rel (Invoer/SpecifiekeInstellingen/PlanRegio) := ='PlanRegio/'+RapportageRegio/RegioNaam + '_rel';
+
+	attribute<RapportageRegio> RapportageRegio_rel (BO) := PlanRegio_RapportageRegio_rel[ BO/PlanRegio_rel ];
+	attribute<RapGroep>        RapGroep_rel        (BO) := =RapGroepNaam ;
+
+	parameter<string> ReportFolder := FolderInfo/OutputFolder+'/'+ReportRegioNaam;
+
+	container impl: isHidden = "True"
+	{
+		unit<uint32> RegioSelectie := select_with_org_rel(RapportageRegio_rel == RapportageRegio_sel)
+		{
+			attribute<RapGroep> BCGroep_rel (RegioSelectie) := RapGroep_rel[org_rel];
+		}
+		attribute<nrAsl> nrAansluitingen (RapGroep) := sum(BO/nrAansluitingen[Regioselectie/org_rel], Regioselectie/BCGroep_rel);
+		attribute<m2>    Oppervlakte     (RapGroep) := sum(BO/Oppervlakte    [Regioselectie/org_rel], Regioselectie/BCGroep_rel);
+	}
+
+	#include <BebouwingsRapportage.dms>
+
+	parameter<string> GenerateAll := 'Ready',
+		ExplicitSuppliers = 
+			"BebouwingsRapportage/Gebouw/SchilLabel/csv/Result;"
+			"BebouwingsRapportage/Gebouw/WarmteOptie/csv/Result";
+}

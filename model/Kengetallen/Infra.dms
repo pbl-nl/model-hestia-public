@@ -1,0 +1,61 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Infra
+{
+	//update 10-3-22: van Euro2018 naar Euro2020 vertaald met omrekenfactor 1.03934648 (https://opendata.cbs.nl/#/CBS/en/dataset/83131ENG/table)
+
+	// constanten
+	parameter<eur_asl> Afsluitkosten_gas_egw  := 756.02[eur_asl], Descr = "Euro2020, Gemiddelde Stedin 792.78, Enexis 752.55, Liander 722.72 - 2020 (https://www.vastelastenbond.nl/blog/dit-kost-het-om-je-gas-af-te-sluiten/)";
+	parameter<eur_asl> Afsluitkosten_gas_mgw  := 250.93[eur_asl], Descr = "Euro2020, Gemiddelde Stedin 169.40, Enexis 217.26, Liander 366.12 - 2020 (https://www.vastelastenbond.nl/blog/dit-kost-het-om-je-gas-af-te-sluiten/)";
+
+	parameter<m2_Asl> gem_Aansl_area := 338[m2_Asl], Descr = "Gemiddelde oppervlakte utiliteit nieuwbouw",
+			Source = "mean(TussenResultaten/StartJaar/BebouwingsComponenten/BestaandeUtil/BO/oppervlakte) / 1.0[nrAsl]";
+
+	parameter<ratio>  AF             :=         0.75[ratio] , Descr = "aansluitbijdragefactor voor verhouding aansluitbijdrage utiliteit ten opzichte van woningbouw" , Source = "Functioneel Ontwerp 4.0 Bijlage A.5 tabel 24";
+	parameter<m>      L_g_HD_MD      :=  68332528[m]        , Descr = "lengte middendruk en hogedruk gasnetwerk"                                                      , Source = "Functioneel Ontwerp 4.0 Bijlage A.5 tabel 24";
+	parameter<m>      L_e_HS_MS      :=   5515556[m]        , Descr = "lengte middenspanning en hooogspanning electiciteitnetwerk"                                    , Source = "Functioneel Ontwerp 4.0 Bijlage A.5 tabel 24";
+	
+	// kostencomponenten nieuwe aansluiting
+	parameter<Eur_asl> AansluitTarief_bw_g :=   0.00[Eur_asl]                           , Descr = "Euro2020 aansluittarief bestaande woningen gas"               , Source = "energiecijfers RVO per 1 juli 2019 tbv PBL";
+	parameter<Eur_asl> AansluitTarief_bw_e :=   0.00[Eur_asl]                           , Descr = "Euro2020 aansluittarief bestaande woningen electriciteit"     , Source = "energiecijfers RVO per 1 juli 2019 tbv PBL";
+	parameter<Eur_asl> AansluitTarief_nw_g := 928.22[Eur_asl]                           , Descr = "Euro2020 aansluittarief nieuwe woningen gas"                  , Source = "energiecijfers RVO per 1 juli 2019 tbv PBL";
+	parameter<Eur_asl> AansluitTarief_nw_e := 648.00[Eur_asl]                           , Descr = "Euro2020 aansluittarief nieuwe woningen electriciteit"        , Source = "energiecijfers RVO per 1 juli 2019 tbv PBL";
+	parameter<Eur_m2>  AansluitTarief_bu_g :=   0.00[Eur_m2]                            , Descr = "Euro2020 aansluittarief bestaande utiliteit gas"              , Source = "energiecijfers RVO per 1 juli 2019 tbv PBL";
+	parameter<Eur_m2>  AansluitTarief_bu_e :=   0.00[Eur_m2]                            , Descr = "Euro2020 aansluittarief bestaande utiliteit electiciteit"     , Source = "energiecijfers RVO per 1 juli 2019 tbv PBL";
+	parameter<Eur_m2>  AansluitTarief_nu_g := AF * AansluitTarief_nw_g / gem_Aansl_area , Descr = "aansluittarief nieuwe utiliteit gas";
+	parameter<Eur_m2>  AansluitTarief_nu_e := AF * AansluitTarief_nw_e / gem_Aansl_area , Descr = "aansluittarief nieuwe utiliteit electiciteit";
+
+	// kapitaallasten netwerk
+	parameter<MEur_yr> Kji_trans_g :=  438.78[MEur_yr] , Descr = "FO 3.0 pp 91, naar inkomsten geschaald a.d.h.v. huidige (4-10-2019) netwerktarieven in Euro2020";
+	parameter<MEur_yr> Kji_trans_e :=  590.84[MEur_yr] , Descr = "FO 3.0 pp 91, naar inkomsten geschaald a.d.h.v. huidige (4-10-2019) netwerktarieven in Euro2020";
+	parameter<MEur_yr> Kji_distr_g := 1023.82[MEur_yr] , Descr = "FO 3.0 pp 91, naar inkomsten geschaald a.d.h.v. huidige (4-10-2019) netwerktarieven in Euro2020";
+	parameter<MEur_yr> Kji_distr_e := 1378.62[MEur_yr] , Descr = "FO 3.0 pp 91, naar inkomsten geschaald a.d.h.v. huidige (4-10-2019) netwerktarieven in Euro2020";
+
+	// onderhoudskosten netwerk
+	parameter<MEur_yr> Kj_oh_trans_g := 175.51[MEur_yr] , Descr = "FO 3.0 pp 91, naar inkomsten geschaald a.d.h.v. huidige (4-10-2019) netwerktarieven in Euro2020";
+	parameter<MEur_yr> Kj_oh_trans_e := 393.89[MEur_yr] , Descr = "FO 3.0 pp 91, naar inkomsten geschaald a.d.h.v. huidige (4-10-2019) netwerktarieven in Euro2020";
+	parameter<MEur_yr> Kj_oh_distr_g := 292.52[MEur_yr] , Descr = "FO 3.0 pp 91, naar inkomsten geschaald a.d.h.v. huidige (4-10-2019) netwerktarieven in Euro2020";
+	parameter<MEur_yr> Kj_oh_distr_e := 984.73[MEur_yr] , Descr = "FO 3.0 pp 91, naar inkomsten geschaald a.d.h.v. huidige (4-10-2019) netwerktarieven in Euro2020";
+
+	parameter<MEur_yr>    Kji_g_totaal        := Kji_trans_g + Kji_distr_g     , Descr = "jaarlijkse kapitaallasten gasnet";
+	parameter<MEur_yr>    Kji_e_totaal        := Kji_trans_e + Kji_distr_e     , Descr = "jaarlijkse kapitaallasten electiciteitsnet";
+
+	parameter<MEur_yr>    Kj_oh_g_totaal      := Kj_oh_trans_g + Kj_oh_distr_g , Descr = "jaarlijkse onderhoudskosten gasnet";
+	parameter<MEur_yr>    Kj_oh_e_totaal      := Kj_oh_trans_e + Kj_oh_distr_e , Descr = "jaarlijkse onderhoudskosten electiciteitsnet";
+
+	parameter<MEur_yr>    Kj_Gnet_totaal      := Kji_g_totaal + Kj_oh_g_totaal , Descr = "jaarlijkse kosten gasnet";
+	parameter<MEur_yr>    Kj_Enet_totaal      := Kji_e_totaal + Kj_oh_e_totaal , Descr = "jaarlijkse kosten electiciteitsnet";
+
+	parameter<km>         Km_lengte_LD_net_NL := 117662.360[km]                , Descr = "gebaseerd op sum(Invoer/RuimtelijkeData/infra/per_buurt/input_lengte_LD_net) voor heel NL revision 316: SD35, revision 342: Vesta35beta";
+	parameter<km>         Km_lengte_LS_net_NL := 181620.277[km]                , Descr = "gebaseerd op sum(Invoer/RuimtelijkeData/infra/per_buurt/input_lengte_LS_net) voor heel NL revision 316: SD35, revision 342: Vesta35beta";
+
+	// kostenfactoren
+	parameter<Eur_yr_m> Kji_g_meter   := (Kji_g_totaal   * 1000000 [Eur / Meur]) / (Km_lengte_LD_net_NL * 1000[m / km]), Descr = "Kapitaallasten jaarlijks per meter gasnet";
+	parameter<Eur_yr_m> Kji_e_meter   := (Kji_e_totaal   * 1000000 [Eur / Meur]) / (Km_lengte_LS_net_NL * 1000[m / km]), Descr = "Kapitaallasten jaarlijks per meter elektriciteitsnet";
+	parameter<Eur_yr_m> Kj_oh_g_meter := (Kj_oh_g_totaal * 1000000 [Eur / Meur]) / (Km_lengte_LD_net_NL * 1000[m / km]), Descr = "Operationele kosten jaarlijks per meter gasnet";
+	parameter<Eur_yr_m> Kj_oh_e_meter := (Kj_oh_e_totaal * 1000000 [Eur / Meur]) / (Km_lengte_LS_net_NL * 1000[m / km]), Descr = "Operationele kosten jaarlijks per meter elektriciteitsnet";
+}

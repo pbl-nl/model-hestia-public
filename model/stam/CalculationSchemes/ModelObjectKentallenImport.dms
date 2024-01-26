@@ -1,0 +1,115 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+template ModelObjectKentallenImport 
+{
+	// begin case parameters
+	parameter<string>                      FileName;
+	unit<uint8>                            model_type;
+	unit<uint8>                            bouwjaarindeling;
+	parameter<Classifications/GebouwOptie> GebouwOptie;
+	// end case parameters
+
+	// Ki_SXY_[min/max]_[asl/opp]
+
+	unit<uint32> Table: StorageName = "='%EnergieDataProjDir%/'+ FileName"
+		, StorageType     = "gdal.vect"
+		, StorageReadOnly = "True"
+		, IsHidden        = "True"
+		{
+			attribute<string> label := Results/label;
+		}
+
+	unit<uint32> Results := Table
+	{
+		attribute<string> label := trim(type_str) + ', ' + trim(table/BouwJaar_str) + ', ' + trim(eigendom_str), DialogType = "labelText";
+
+		unit<uint16> ModelObjectKeyD      := classifications/combines/BE, IsHidden = "True";
+		unit<uint16> ModelObjectKeyDomein := classifications/combines/WBE, IsHidden = "True";
+
+		attribute<bouwjaarindeling>         BouwJaar_rel   := rlookup(trim(lowercase(Table/BouwJaar_str)), bouwjaarindeling/excel_code);
+		attribute<model_type>               ModelType_rel  := rlookup(trim(lowercase(type_str)), model_type/Excel_code);
+		attribute<classifications/eigendom> Eigendom_rel   := rlookup(trim(lowercase(eigendom_str)), lowercase(classifications/eigendom/name));
+
+		attribute<ModelObjectKeyD>          ModelObjectK   := combine_data(ModelObjectKeyD, BouwJaar_rel, Eigendom_rel), IsHidden = "True";
+		attribute<ModelObjectKeyDomein>     ModelObjectKey := combine_data(ModelObjectKeyDomein, ModelType_rel, ModelObjectK), IsHidden = "True";
+
+		container LabelFrequentie := for_each_nedv(
+			Classifications/Schillabel/name,
+			Classifications/Schillabel/name == 'N' ? 'const(0.0[float32],..)'  : 'replace(table/freq_label_' + Classifications/Schillabel/name+',' +quote(',')+ ',' +quote('.')+')[float32]',
+			.,
+			float32);
+
+		container InstallatieFrequentie
+		{
+			attribute<ratio> R_HWP (Results) := float64(replace(table/freq_HWP, ',', '.'))[ratio];
+			attribute<ratio> R_LWP (Results) := float64(replace(table/freq_LWP, ',', '.'))[ratio];
+			attribute<ratio> R_BWP (Results) := float64(replace(table/freq_BWP, ',', '.'))[ratio];
+		}
+	
+
+		container Asl := for_each_nedv(
+				'RV_' + Classifications/Schillabel/name,
+				'table/Vrv_'+Classifications/Schillabel/name+'_asl[GJ_yr_asl]',
+				.,
+				GJ_yr_asl)
+		{
+			attribute<GJ_yr_asl> TW (Results) := table/VTW_asl[GJ_yr_asl];
+			attribute<GJ_yr_asl> VT (Results) := table/VVT_asl[GJ_yr_asl];
+			attribute<GJ_yr_asl> KD (Results) := table/VKD_asl[GJ_yr_asl];
+			attribute<GJ_yr_asl> EA (Results) := table/VEA_asl[GJ_yr_asl];
+		}
+		container Opp := for_each_nedv(
+				'RV_' + Classifications/Schillabel/name,
+				'table/Vrv_'+Classifications/Schillabel/name+'_opp[GJ_yr_m2]',
+				.,
+				GJ_yr_m2)
+		{
+			attribute<GJ_yr_m2> TW (Results) := table/VTW_opp[GJ_yr_m2];
+			attribute<GJ_yr_m2> VT (Results) := table/VVT_opp[GJ_yr_m2];
+			attribute<GJ_yr_m2> KD (Results) := table/VKD_opp[GJ_yr_m2];
+			attribute<GJ_yr_m2> EA (Results) := table/VEA_opp[GJ_yr_m2];
+		}
+		
+		attribute<Classifications/GebouwOptie> StartOptie_rel := const(GebouwOptie, .), IsHidden = "True";
+	}
+
+	unit<uint32> TWprofiel : StorageName = "='%EnergieDataProjDir%/'+ 'TWprofiel.csv'"
+		, StorageType     = "gdal.vect"
+		, StorageReadOnly = "True"
+	{
+		attribute<GJ_yr_asl> VTW_asl := V_TW[GJ_yr_asl], IsHidden = "True";
+		attribute<string>    code : IsHidden = "True";
+
+		attribute<GJ_yr_asl> VTW_asl_NTA := float64(personen) * 3.08[GJ_yr_asl], Source = "NTA8800:2022 13.2.3.1 - 856kWh/jaar per persoon";
+
+		attribute<ratio>     NTA_correctiefactor := VTW_asl_NTA / VTW_asl, IsHidden = "True";
+ 	}
+
+ 	unit<uint32> Verschilfactordata : StorageName = "='%EnergieDataProjDir%/'+ '20230203_Verschilfactor_Vivet.csv'"
+ 		, StorageType     = "gdal.vect"
+		, StorageReadOnly = "True"
+	{
+		attribute<Geography/RegioIndelingen/Wijk>  WK_rel         := rlookup(wijk2020,Geography/Regioindelingen/Wijk/name), IsHidden = "True";
+		attribute<classifications/woningtype>      Woningtype_rel := W[classifications/woningtype], IsHidden = "True";
+		attribute<classifications/eigendom>        Eigendom_rel   := E[classifications/eigendom], IsHidden = "True";
+
+		unit<uint32> W_E := combine(classifications/woningtype, classifications/eigendom), IsHidden = "True"
+		{
+			attribute<string> label := Classifications/woningtype/label[nr_1] + ', ' + Classifications/eigendom/label[nr_2];
+		}
+		unit<uint32> WK_W_E := combine(Geography/RegioIndelingen/Wijk, W_E), IsHidden = "True"
+		{
+			attribute<string> label := Geography/RegioIndelingen/Wijk/label[nr_1] + ', ' + W_E/label[nr_2];
+			attribute<ratio>  verschilfactor_i := float64(Verschilfactordata/Verschilfactor_totaal[rlookup(id(.),Verschilfactordata/WK_W_E_rel)])[ratio], IsHidden = "True";
+			attribute<ratio>  verschilfactor   := makedefined(verschilfactor_i,1.0[ratio]);
+		}
+
+		attribute<W_E> W_E_rel := combine_data(W_E,Woningtype_rel,Eigendom_rel), IsHidden = "True";
+		attribute<WK_W_E> WK_W_E_rel := combine_data(WK_W_E,WK_rel,W_E_rel), IsHidden = "True";
+		
+ 	}
+}

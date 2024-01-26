@@ -1,0 +1,143 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//       In deze configuratiefile wordt de Geography gedefinieerd:                      //
+//       - geografische basis eenheden en grid domeinen voor brondata                   //
+//       - regioindelingen (polygonen)                                                  //
+//                                                                                      //
+// ///////////////////////////////////////////////////////////////////////////////////////
+
+container Geography: Using = "Units", IsHidden = "True"
+{
+	unit<dpoint> wgs84_base       : SpatialReference = "EPSG:4326";
+	unit<dpoint> rdc_meter_base : DialogData = "wmts_layer"
+	,	Spatialreference = "EPSG:28992"
+	,	IsHidden = "True";
+
+	unit<dpoint> rdc_meter := range(rdc_meter_base, point(300000.0, 0.0), point(625000.0, 280000.0));
+	unit<ipoint> rdc_mm    := gridset(rdc_meter, point(0.001, 0.001), point(0.0,0.0), ipoint), IsHidden = "True";
+
+	#include <wmts_layer.dms>
+
+	container rdc_grids: IsHidden = "True"
+	{
+		unit<wpoint> m100 :=
+			range(
+				  gridset(rdc_meter, point( - 100.0, 100.0), point(625000.0, 10000.0), wpoint)
+				, point(0w, 0w)
+				, point(3250w, 2700w)
+			)
+			,	Descr = "rdCoords/100m van NW naar SE (2700 cols)"
+		{
+			attribute<rdc_meter>                                 point                 := id(.)[rdc_meter] + point(-50.0, 50.0, rdc_meter);
+			attribute<Invoer/RuimtelijkeData/StudieGebied/Buurt> buurt_rel_org         := point_in_polygon(point, Invoer/RuimtelijkeData/StudieGebied/Buurt/Geometry);
+			attribute<bool>                                      buurt_rel_org_defined := IsDefined(buurt_rel_org);
+			unit<uint32> NearBuurt := select_with_org_rel(potential(float32(buurt_rel_org_defined), DistMatrices/pot1000m100m/KernelDomain/Cilindrical) >= 0.000001f && !buurt_rel_org_defined);
+			container connect := connect_info(Invoer/RuimtelijkeData/StudieGebied/Buurt/Geometry, point[NearBuurt/org_rel]);
+			attribute<Invoer/RuimtelijkeData/StudieGebied/Buurt> Buurt_rel := MakeDefined(buurt_rel_org, connect/ArcID[invert(NearBuurt/org_rel)]), FreeData = "True";
+		}
+		
+		unit<wpoint> m25 :=
+			range(
+				  gridset(rdc_meter, point( - 25.0, 25.0), point(625000.0, 10000.0), wpoint)
+				, point(0w, 0w)
+				, point(13000w, 10800w)
+			)
+			,	Descr = "rdCoords/25m van NW naar SE (10800w cols)"
+		{
+			attribute<rdc_meter>                                 point                 := id(.)[rdc_meter] + point(-12.5, 12.5, rdc_meter);
+			attribute<m100> 									 m100_rel 			   := connect(m100/point, point);
+			attribute<Invoer/RuimtelijkeData/StudieGebied/Buurt> buurt_rel_org         := point_in_polygon(point, Invoer/RuimtelijkeData/StudieGebied/Buurt/Geometry);
+			attribute<bool>                                      buurt_rel_org_defined := IsDefined(buurt_rel_org);
+			unit<uint32> NearBuurt := select_with_org_rel(potential(float32(buurt_rel_org_defined), DistMatrices/pot1000m25m/KernelDomain/Cilindrical) >= 0.000001f && !buurt_rel_org_defined);
+			container connect := connect_info(Invoer/RuimtelijkeData/StudieGebied/Buurt/Geometry, point[NearBuurt/org_rel]);
+			attribute<Invoer/RuimtelijkeData/StudieGebied/Buurt> Buurt_rel := MakeDefined(buurt_rel_org, connect/ArcID[invert(NearBuurt/org_rel)]), FreeData = "True";
+		}
+	}
+
+	container RegioIndelingen // Let op, voor planregio's moeten dit uint32 domeinen zijn.
+	{
+		unit<uint32> NL: nrofrows = 1
+		{
+			attribute<string> name      := const('NL', .);
+			parameter<string> RegioNaam := 'NL';
+		}
+
+		unit<uint32> Provincie := unique(buurt/PROV_NAAM)
+		,	DialogType = "Map"
+		,	DialogData = "geometry"
+		{
+			attribute<string> label     := Values;
+			attribute<string> name      := replace_value(Replace(label, '-', ''), '', 'Elders');
+			parameter<string> RegioNaam := 'Provincie';
+			attribute<string> GM_code_list := AsItemList(Gemeente/GM_code, Gemeente/Provincie_rel);
+			attribute<rdc_meter> geometry (poly) := partitioned_union_polygon(ipolygon(Gemeente/Geometry), Gemeente/provincie_rel)[rdc_meter], FreeData = "True";
+		}
+
+		unit<uint32> Energieregio := unique(buurt/ER_NAAM)
+		,	DialogType = "Map"
+		,	DialogData = "geometry"
+		{
+			attribute<string> label        := 'RES '+string(Values);
+			attribute<string> name         := replace_value(Replace(label, '-', '', '/', '_', ' ', '', '(', '', ')', ''), '', 'Elders');
+			parameter<string> RegioNaam    := 'Energieregio';
+			attribute<string> GM_code_list := AsItemList(Gemeente/GM_code, Gemeente/Energieregio_rel);
+			attribute<rdc_meter> geometry (poly) := partitioned_union_polygon(ipolygon(Gemeente/Geometry), Gemeente/Energieregio_rel)[rdc_meter], FreeData = "True";
+		}
+
+		unit<uint32> Gemeente := unique(buurt/GM_CODE)
+		,	DialogType = "Map"
+		,	DialogData = "geometry"
+		{
+			attribute<rdc_meter> geometry (poly) := partitioned_union_polygon(ipolygon(buurt/Geometry), buurt/gemeente_rel)[rdc_meter], FreeData = "True";
+			attribute<string> GM_code   := values;
+			attribute<string> name      := GM_Code;
+			attribute<string> label     := rjoin(values, buurt/GM_CODE, buurt/GM_NAAM);
+			parameter<string> RegioNaam := 'Gemeente';
+			attribute<Energieregio> Energieregio_rel := modus(buurt/energieregio_rel, buurt/gemeente_rel);
+			attribute<Provincie> Provincie_rel    := modus(buurt/provincie_rel, buurt/gemeente_rel);
+			attribute<.> per_m100 (Geography/rdc_grids/m100) := poly2grid(geometry, Geography/rdc_grids/m100);
+		}
+
+		unit<uint32> Wijk := unique(buurt/WK_CODE)
+		{
+			attribute<rdc_meter> geometry(poly) := partitioned_union_polygon(buurt/geometry[rdc_mm], buurt/wijk_rel)[rdc_meter];
+			attribute<string> name      := string(Values);
+			attribute<string> label     := Values;
+			parameter<string> RegioNaam := 'Wijk';
+		}
+
+		#include<buurt.dms>
+	}
+
+	// for potential calculations
+	container DistMatrices : IsHidden = "True"
+	{
+		unit<uint32> Dist2Range;
+
+		template makeKernel
+		{
+			// Begin Case Parameters
+			parameter<m> gridsize;
+			parameter<m> radius_max;
+			// End Case Parameters
+
+			parameter<float64> radius       := radius_max / gridsize;
+			unit<spoint>       KernelDomain := range(spoint, point(-int16(radius), -int16(radius)), point(int16(radius) + 1s, int16(radius) + 1s))
+			{
+				attribute<Dist2Range> distMatr      := dist2(point(0s, 0s, .), Dist2Range);
+				attribute<float64>    DecayedWeight := distMatr <= uint32(radius * radius) ? 1.0 / (float64(distMatr) + 0.08) : 0.0;
+				attribute<float32>    Reciprocal    := float32(scalesum(Sqrt(DecayedWeight), 1.0 ));
+				attribute<float32>    Cilindrical   := float32(scalesum(float64(distMatr <= uint32(radius * radius)), 1.0 ));
+			}
+		}
+
+		container pot1000m100m  := makeKernel(100[m],  1000[m]);
+		container pot1000m25m   := makeKernel( 25[m],  1000[m]);
+ 	}
+}

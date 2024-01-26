@@ -1,0 +1,216 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container BeginSituatie : Using = "Units;Geography;Model;Invoer", IsHidden = "True"
+{
+	unit<uint32> PlanRegio := Invoer/SpecifiekeInstellingen/PlanRegio;
+	
+	parameter<bool> IsBeginSituatie := true, IsHidden = "True";
+
+	container StartingStateComponenten :=
+		for_each_ne(Classifications/BebouwingsSector/name
+			,'CalculationSchemes/StartingStateComponent('+
+				'RuimtelijkeData/Bebouwing/'+Classifications/BebouwingsSector/name+
+				','+ 'Kengetallen/Bebouwing/'+Classifications/BebouwingsSector/name+'/results
+				, '+ string(id(Classifications/BebouwingsSector))+'[Classifications/BebouwingsSector]'+
+			 ')'
+		);
+
+	container Bebouwing := for_each_nex(Classifications/BebouwingsSector/name, 'StartingStateComponenten/'+Classifications/BebouwingsSector/name+'/results', uint32);
+
+	container Infra_per_buurt := Invoer/RuimtelijkeData/infra/per_buurt
+	{
+		attribute<nrAsl> aant_g_aansl_util            (PlanRegio)    := sum(Invoer/RuimtelijkeData/Bebouwing/Util/nrAansluitingen_i,   /Invoer/RuimtelijkeData/Bebouwing/Util/buurt_rel);
+		attribute<nrAsl> aant_g_aansl_woning          (PlanRegio)    := sum(Invoer/RuimtelijkeData/Bebouwing/Woning/nrAansluitingen_i, /Invoer/RuimtelijkeData/Bebouwing/Woning/buurt_rel);
+
+		attribute<nrAsl> aant_g_aansl_woning_hoogb    (PlanRegio)    :=
+			sum(Classifications/WoningType/IsMeergezins[Invoer/RuimtelijkeData/Bebouwing/Woning/BebouwingsType]
+				? Invoer/RuimtelijkeData/Bebouwing/Woning/nrAansluitingen_i 
+				: 0[nrAsl]
+			, /Invoer/RuimtelijkeData/Bebouwing/Woning/buurt_rel);
+
+		attribute<nrAsl> aant_g_aansl_woning_laagb    (PlanRegio)    :=
+			sum(Classifications/WoningType/IsMeergezins[Invoer/RuimtelijkeData/Bebouwing/Woning/BebouwingsType] 
+				? 0[nrAsl]
+				: Invoer/RuimtelijkeData/Bebouwing/Woning/nrAansluitingen_i
+			, /Invoer/RuimtelijkeData/Bebouwing/Woning/buurt_rel);
+
+		attribute<kW>    capaciteit_buurt             (PlanRegio)    := vermogensvraag_aansluitingen;
+		attribute<kW>    vermogensvraag_aansluitingen (PlanRegio)    := /TussenResultaten/StartJaar/StateNaAllocatie/Infra_per_buurt/vermogensvraag_aansluitingen;
+
+		container kosten
+		{
+			attribute<Eur> kosten_verv_LD_net        (PlanRegio) := const(0[Eur], Planregio);
+			attribute<Eur> kosten_verw_g_aansl_laagb (PlanRegio) := const(0[Eur], Planregio);
+			attribute<Eur> kosten_verw_g_aansl_hoogb (PlanRegio) := const(0[Eur], Planregio);
+			attribute<Eur> kosten_verw_g_aansl_util  (PlanRegio) := const(0[Eur], Planregio);
+			attribute<Eur> kosten_verw_g_aansl       (PlanRegio) := const(0[Eur], Planregio);
+			attribute<Eur> kosten_verw_LD_net        (PlanRegio) := const(0[Eur], Planregio);
+			attribute<Eur> kosten_verzw_e_aansl      (PlanRegio) := const(0[Eur], Planregio);
+			attribute<Eur> kosten_verzw_MSR          (PlanRegio) := const(0[Eur], Planregio);
+			attribute<Eur> kosten_verzw_LS           (PlanRegio) := const(0[Eur], Planregio);
+
+			container cumulatief
+			{
+				attribute<Eur> kosten_verv_LD_net        (PlanRegio) := const(0[Eur], Planregio);
+				attribute<Eur> kosten_verw_g_aansl_laagb (PlanRegio) := const(0[Eur], Planregio);
+				attribute<Eur> kosten_verw_g_aansl_hoogb (PlanRegio) := const(0[Eur], Planregio);
+				attribute<Eur> kosten_verw_g_aansl_util  (PlanRegio) := const(0[Eur], Planregio);
+				attribute<Eur> kosten_verw_g_aansl       (PlanRegio) := const(0[Eur], Planregio);
+				attribute<Eur> kosten_verw_LD_net        (PlanRegio) := const(0[Eur], Planregio);
+				attribute<Eur> kosten_verzw_e_aansl      (PlanRegio) := const(0[Eur], Planregio);
+				attribute<Eur> kosten_verzw_MSR          (PlanRegio) := const(0[Eur], Planregio);
+				attribute<Eur> kosten_verzw_LS           (PlanRegio) := const(0[Eur], Planregio);
+			}
+		}
+	}
+
+	// =========  Initieel worden alle geregistreerde parameters per gebiedsoptie op nul gezet, om later gevuld te worden in een Rekenstap
+	container LegeGebiedsOptie
+	{
+		container Oi_Aansl  := for_each_nedv(Classifications/BebouwingsSector/name,            'const(0[Eur]   , PlanRegio)', PlanRegio, Eur);
+		container jaarlijks := for_each_nedv(classifications/gebiedsoptie_jaarlijks/full_name, 'const(0[Eur_yr], PlanRegio)', PlanRegio, Eur_yr);
+		container eenmalig  := for_each_nedv(classifications/gebiedsoptie_eenmalig/name,       'const(0[Eur]   , PlanRegio)', PlanRegio, Eur);
+		container Verbruik  := for_each_nedv(classifications/gebiedsoptie_verbruik/name,       'const(0[GJ_yr] , PlanRegio)', PlanRegio, GJ_yr);
+		container Uitstoot  := for_each_nedv(classifications/gebiedsoptie_uitstoot/name,       'const(0[kg_yr] , PlanRegio)', PlanRegio, kg_yr);
+	}
+
+	container Cumulaties := for_each_ne(Classifications/GebiedsOptie/name, 'LegeGebiedsOptie'), IsHidden = "True"
+	{
+		container BestaandWarmtenet := LegeGebiedsOptie;
+	}
+
+	container LtOptie := LegeGebiedsOptie 
+	{
+		attribute<ratio> P_vol (planregio) := const(1[ratio], planregio);
+		unit<uint32> Cluster: NrOfRows = 0
+		{
+			attribute<Eur>       Ki_A  : [];
+			attribute<Eur>       Ki_B  : [];
+			attribute<string>    label : [];
+			attribute<rdc_meter> point : [];
+		}
+	}
+
+	container MtOptie := LegeGebiedsOptie 
+	{
+		attribute<ratio> P_vol (planregio) := const(0.8[ratio], planregio);
+	}
+
+	container Wko     := LtOptie, IsHidden = "True";
+	container Lt15_30 := LtOptie, IsHidden = "True";
+	container Lt15_50 := LtOptie, IsHidden = "True";
+	container Lt15_70 := LtOptie, IsHidden = "True";
+	container Lt30_30 := LtOptie, IsHidden = "True";
+	container Lt30_50 := LtOptie, IsHidden = "True";
+	container Lt30_70 := LtOptie, IsHidden = "True";
+	container TEO     := LtOptie, IsHidden = "True";
+
+	container LtWarmte
+	{
+		unit<uint32> bron := Invoer/RuimtelijkeData/WarmteBronnen/LtWarmte/bron 
+		{
+			attribute<bool> Toegewezen := const(false, .);
+			unit<uint32> CumulativeClusterSet : nrofrows = 0
+			{
+				attribute<.> per_bron(..) : [];
+				attribute<Classifications/Rekenstap>   Rekenstap_rel   : [];
+				attribute<Classifications/ZichtJaar>   ZichtJaar_rel   : [];
+
+				unit<uint32> Feature : nrofrows = 0
+				{
+					attribute<rdc_meter> Geometry(arc) : [];
+					attribute<..> Cluster_rel          : [];
+				}
+			}
+			unit<uint32> CumulativeNetwork : nrofrows = 0, DialogType = "Map", DialogData = "Geometry"
+			{
+				attribute<rdc_meter>                   Geometry(arc)   : [];
+				attribute<Classifications/Rekenstap  > Rekenstap_rel   : [];
+				attribute<Classifications/ZichtJaar  > ZichtJaar_rel   : [];
+			}
+			
+		}
+	}
+
+	container Geothermie  := MtOptie, IsHidden = "True";
+	container BuurtWKO    := WKO, IsHidden = "True";
+	container WaterstofHR := MtOptie, IsHidden = "True";
+	container WaterstofWP := MtOptie, IsHidden = "True";
+	container BioWKK      := MtOptie, IsHidden = "True";
+	container WijkWKK     := MtOptie, IsHidden = "True";
+	container RestWarmte  := MtOptie
+	{
+		attribute<CumulatedArcSet> CumulatedArcSet_rel (PlanRegio) := invert(CumulatedArcSet/planregio_rel);
+		attribute<bool>            GebruikRestWarmte   (PlanRegio) := IsDefined(CumulatedArcSet_rel);
+		attribute<WarmteBronnen>   Welke_bron_nu       (PlanRegio) := GebruikRestWarmte ? CumulatedArcSet/bron_rel[CumulatedArcSet_rel] : (0/0)[WarmteBronnen];
+		
+		unit<uint32> WarmteBronnen := ='Invoer/RuimtelijkeData/WarmteBronnen/RestWarmte/BronSelecties/'+first(Classifications/Zichtjaar/name)+'/BronElementen';
+
+		// inlezen bestaande warmtenetten met indicatie van huidige bron en doorkoppelingen
+		unit<uint32> linkset:= Invoer/RuimtelijkeData/WarmteBronnen/RestWarmte/linkset/selected 
+		{
+			attribute<planregio>     BU_rel    := rlookup(BU_Code,    Invoer/RuimtelijkeData/StudieGebied/buurt/BU_code);
+			attribute<planregio>     BU_DK_rel := rlookup(BU_Code_dk, Invoer/RuimtelijkeData/StudieGebied/buurt/BU_code);
+
+			attribute<.>             up_rel    := rlookup(BU_DK_rel, BU_rel);
+			attribute<rdc_meter>     point     := PlanRegio/point[BU_rel];
+			attribute<WarmteBronnen> bron_rel  := rlookup(bronnaam, WarmteBronnen/bron_naam);
+			attribute<nodeset>       F1        := MakeDefined(value(bron_rel+#linkset, nodeset), value(up_rel, nodeset)), // source, a WarmteBronnen or alternatively the up_rel Planregio
+				IntegrityCheck = "isNull(point) || (IsDefined(point) && (IsDefined(bron_rel) != IsDefined(up_rel)))";
+
+			attribute<nodeset>       F2        := value(id(.), nodeset); // serviced Planregio
+		}
+
+		unit<uint32> nodeset := union_unit(linkset, WarmteBronnen)
+		{
+			attribute<rdc_meter> point := union_data(., linkset/point, WarmteBronnen/point);
+
+			unit<uint32> e :=
+				dijkstra_m(
+					'directed;startPoint(Node_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel'
+					,const(1f, linkset)
+					,linkset/f1
+					,linkset/f2
+					,value(id(WarmteBronnen)+#linkset, nodeset)
+					,1000f
+				)
+				{
+					attribute<uint32> DstZone_rel;
+					attribute<uint32> OrgZone_rel;
+				}
+		}
+
+		unit<uint32> GivenStartArcSet := linkset //: StorageName = "%projdir%/data/RestWarmteStart/CumulatedArcSet.dbf", StorageReadOnly = "True"
+		{
+			attribute</Invoer/RuimtelijkeData/StudieGebied/buurt> PlanRegio_rel := linkset/BU_rel;
+			attribute<rdc_meter>                       Prevpoint     := nodeset/point[linkset/F1];
+			attribute<WarmteBronnen>                   Bron_rel      := value(rjoin(value(id(linkset), nodeset), nodeset/e/DstZone_rel, nodeset/e/OrgZone_rel), WarmteBronnen);
+			attribute<rdc_meter>                       Bronpoint     := WarmteBronnen/point[Bron_rel];
+
+			parameter<bool> HasArcs := true; // avoid reading the dbf to find this out.
+			
+			attribute<rdc_meter> arcs (arc) := points2sequence_ps(
+					union_data(union_unit(., .), Prevpoint, PlanRegio/point[PlanRegio_rel]),
+					union_data(union_unit(., .), id(.), id(.))
+				);
+		}
+
+		unit<uint32> CumulatedArcSet : = Range(uint32, 0,0)
+		{
+			attribute<rdc_meter> arcs (CumulatedArcSet, arc) : [];
+		
+			attribute<rdc_meter> Prevpoint     : [];
+			attribute<rdc_meter> Bronpoint     : [];
+			attribute<PlanRegio> PlanRegio_rel : [];
+			attribute<Eur>       Ki_Netto      : [];
+	
+			parameter<bool> HasArcs := false; // avoid reading the dbf to find this out.
+		}
+
+		attribute<rdc_meter> CumulatedArcs(CumulatedArcSet, arc) := CumulatedArcSet/arcs, Descr = "Huidige leidingtrace hoofdnetten";
+	}
+}

@@ -1,0 +1,55 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container EigendomStaat
+{
+	// inlezen puntenbestand woningcorporaties
+	unit<uint32> Corporatiebezit_data
+	:   StorageName = "%HestiaDataDir%/EigendomStaat/CorporatieBezit.shp"
+	,   StorageType  = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+	   attribute<string>                   Label        := 'C_'+string(OBJECTID), DialogType = "LabelText";
+	   attribute<rdc_meter>                geometry;
+	   attribute<Classifications/Eigendom> Eigendom_rel := const(Classifications/Eigendom/V/WoonCorp,.); //eigendomstatus als attribuut
+	   attribute<m2>                       Oppervlak; 
+	   attribute<yr_uint16>                BOUWJAAR_W; 
+	}
+
+	// inlezen puntenbestand particuliere huur
+	unit<uint32> Particulierehuur_data
+	:   StorageName = "%HestiaDataDir%/EigendomStaat/ParticuliereHuur.shp"
+	,   StorageType  = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+	   attribute<string>                   Label        := 'H_'+string(OBJECTID), DialogType = "LabelText";
+	   attribute<rdc_meter>                geometry;
+	   attribute<Classifications/Eigendom> Eigendom_rel := const(Classifications/Eigendom/V/PartHuur,.); //eigendomstatus als attribuut
+	   attribute<m2>                       Oppervlak; 
+	   attribute<yr_uint16>                BOUWJAAR_W;
+	}
+	
+	//samenvoegen bovenstaande puntenbestanden tot gezamenlijke entiteit
+	unit<uint32> EigendomStaat_data := union_unit(Corporatiebezit_data, Particulierehuur_data)
+	{ 
+		attribute<string>                   Label        := union_data(., Corporatiebezit_data/Label       , Particulierehuur_data/Label);
+		attribute<string>                   OBJECTID     := union_data(., 'C' + string(Corporatiebezit_data/Label) , 'H' + string(Particulierehuur_data/Label));
+	  	attribute<rdc_meter>                geometry     := union_data(., Corporatiebezit_data/geometry    , Particulierehuur_data/geometry);
+	  	attribute<Classifications/Eigendom> Eigendom_rel := union_data(., Corporatiebezit_data/Eigendom_rel, Particulierehuur_data/Eigendom_rel);
+		attribute<m2>                       Oppervlakte  := union_data(., Corporatiebezit_data/Oppervlak   , Particulierehuur_data/Oppervlak);
+		attribute<yr_uint16>                Bouwjaar     := union_data(., Corporatiebezit_data/BOUWJAAR_W  , Particulierehuur_data/BOUWJAAR_W);
+
+		attribute<BAG/import/pand>          Pand_rel     := point_in_polygon(geometry, pand/geometry);
+	}
+	
+	//afgeleidde attributen vastgesteld per BAG pand
+	unit<uint32> Pand := BAG/import/pand
+	{
+		attribute<rdc_meter>                Geometry (poly) := BAG/import/pand/geometry, IsHidden = "True";
+		//eigendomstatus wordt afgeleid van gekoppelde puntattributen, uitgaande van meest voorkomende status. Indien onbekend wordt koop verondersteld.
+		attribute<Classifications/Eigendom> Eigendom_rel    := makedefined(modus(EigendomStaat_data/Eigendom_rel,       EigendomStaat_data/Pand_rel), Classifications/Eigendom/V/Koop);
+	}
+}

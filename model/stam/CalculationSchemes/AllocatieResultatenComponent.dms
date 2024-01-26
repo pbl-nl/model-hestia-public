@@ -1,0 +1,275 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+template AllocatieResultatenComponent
+{
+	// begin case parameters
+	unit<uint32>      BO_base;
+	parameter<string> BebouwingsComponent_name;
+	// end case parameters
+
+	container    VraagKentallen := BO/VraagKentallen, IsHidden = "True";
+	unit<uint32> PlanRegio      := Invoer/SpecifiekeInstellingen/PlanRegio, IsHidden = "True";
+
+	attribute<Classifications/WoningType>  BebouwingsType          (BO) := BO/BebouwingsType, IsHidden = "True";
+	attribute<bool>                        VeroorzaaktGrondroering (BO) := = 'OR('+AsItemList(replace('BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/gebiedsOptie', '@PD@', Classifications/Product/name))+')', IsHidden = "True";
+
+	attribute<bool>                        GrondroeringInPlanRegio (PlanRegio) := sum(VeroorzaaktGrondroering ? 1 : 0, BO/PlanRegio_rel) > 0, IsHidden = "True";
+
+	unit<uint32> BO := BO_base
+	{
+		attribute<Classifications/Schillabel>  Schillabel_rel   := BO_base/Schillabel_rel;
+        
+		attribute<bool> KoudeGebouw := (IsDefined(BemeterdeGebouwInput_rel/KDb) || IsDefined(BemeterdeGebouwInput_rel/KDp)) && not(KoudeGebied);
+		attribute<bool> KoudeGebied := BO/InstallatiePerProduct/Kdb == Classifications/Installatie/V/Gebiedsoptie || BO/InstallatiePerProduct/Kdp == Classifications/Installatie/V/Gebiedsoptie;
+			
+		container BemeterdeGebouwInput_rel :=  BO_base/BemeterdeGebouwInput_rel, IsHidden = "True";
+			
+		container Aansluitingen := BO_Base/Aansluitingen
+		{		
+			
+			attribute<nrAsl> Enet_hwp (BO) := nrAansluitingen * float64(BemeterdeGebouwInput_rel/RVb == Classifications/BemeterdeGebouwInput/V/e	&& BemeterdeGebouwInput_rel/RVp != Classifications/BemeterdeGebouwInput/V/e);
+			attribute<nrAsl> Enet_app (BO) := nrAansluitingen * float64((Enet_hwp + Enet_ewp) == 0[nrAsl]), descr = "gebouw heeft alleen een lektriciteitsaansluiting voor overige apparatuur";
+			attribute<nrAsl> Enet_ewp (BO) := nrAansluitingen * float64(
+				and(   BemeterdeGebouwInput_rel/RVb == Classifications/BemeterdeGebouwInput/V/e
+					 , BemeterdeGebouwInput_rel/RVp == Classifications/BemeterdeGebouwInput/V/e
+					 , BemeterdeGebouwInput_rel/TWb == Classifications/BemeterdeGebouwInput/V/e
+					 , BemeterdeGebouwInput_rel/TWp == Classifications/BemeterdeGebouwInput/V/e ));
+		}
+
+		container Functioneel := BO_Base/Functioneel
+		{
+			attribute<GJ_yr> V_RV      (BO) := BO_Base/Functioneel/RV;
+			attribute<GJ_yr> V_TW      (BO) := BO_Base/Functioneel/TW;
+			attribute<GJ_yr> V_Warmte  (BO) := V_RV + V_TW;
+			attribute<GJ_yr> V_KD      (BO) := BO_Base/Functioneel/KD;
+			attribute<GJ_yr> V_VT      (BO) := BO_Base/Functioneel/VT;
+			attribute<GJ_yr> EA        (BO) := BO_base/Functioneel/EA;
+			attribute<GJ_yr> Totaal_LO (BO) :=    V_RV * float64(Aansluitingen/Warmte == 0.0[nrAsl]) + V_TW * float64(Aansluitingen/Warmte == 0.0[nrAsl])
+												+ V_VT + V_KD * float64(KoudeGebouw);
+		}
+
+		container Func2Meter := CalculationSchemes/FunctioneelToMetervraag ( BO_Base , false);
+		
+		container Resultaten_IsolatieStandaard
+	    {
+        unit<uint32> table := select_with_org_rel(isdefined(BO/code))
+		{attribute<String> identificatie						:= BO/code[org_rel];
+		attribute<Eur_yr> Kj_gas       							:= BO/jaarlijks/Kj_gas[org_rel];
+		attribute<Eur_yr> Kj_e       							:= BO/jaarlijks/Kj_e[org_rel];
+		attribute<GJ_yr> Aardgas       							:= Woning/Metervraag/AardGas[org_rel];
+		attribute<GJ_yr> Elektriciteit       					:= Woning/Metervraag/Elektriciteit[org_rel];
+		attribute<string> heeft_gas       						:= Woning/Metervraag/Aardgas[org_rel] > 0[GJ_yr] || Woning/Metervraag/Waterstof[org_rel] > 0[GJ_yr] ? 'ja' : 'nee';
+		attribute<GJ_yr> Functioneel_RuimteVerwarming			:= Functioneel/V_RV[org_rel];
+		attribute<GJ_yr> Functioneel_Tapwater					:= Functioneel/V_TW[org_rel];
+		attribute<GJ_yr> Netto_warmtevraag						:= BebouwingsComponenten/Woning/BO/EnergielabelBerekening/warmteverlies/Totaal[org_rel];
+		attribute<Eur> Ki_gv       								:= BO/eenmalig/Ki_gv[org_rel];
+		attribute<Eur> Ki_VT		       						:= BO/eenmalig/Ki_VT[org_rel];
+		attribute<classifications/schillabel> Energielabel_rel	:= BO/Energielabel_rel[org_rel];
+		attribute<UInt16> bouwjaar								:= BO/bouwjaar[org_rel];
+		attribute<m2> oppervlakte								:= BO/oppervlakte[org_rel];
+		attribute<Uint8> BebouwingsType							:= BO/BebouwingsType[org_rel];
+		attribute<Classifications/Eigendom > EigendomsType		:= BO/Eigendom_rel_org[org_rel];
+		attribute<m2> RB_m2										:= BO/Bouwdelen/RB [org_rel];
+		attribute<m2> RO_m2										:= BO/Bouwdelen/RO [org_rel];
+		attribute<m2> DR_m2										:= BO/Bouwdelen/DR [org_rel];
+		attribute<m2> PL_m2										:= BO/Bouwdelen/PL [org_rel];
+		attribute<m2> VL_m2										:= BO/Bouwdelen/VL [org_rel];
+		attribute<m2> MG_m2										:= BO/Bouwdelen/MG [org_rel];
+		attribute<m2> MS_m2										:= BO/Bouwdelen/MS [org_rel];
+		attribute<m2> DP_m2										:= BO/Bouwdelen/DP [org_rel];
+		attribute<m2> DS_m2										:= BO/Bouwdelen/DS [org_rel];
+		attribute<m2> Schil_m2									:= RB_m2 + RO_m2 + DR_m2 + PL_m2 + VL_m2 + MG_m2 + MS_m2 + DP_m2 + DS_m2;
+		attribute<Classifications/IsolatieNiveau> RB_na			:= BO/Bouwdelen/Isolatie/RB [org_rel];
+		attribute<Classifications/IsolatieNiveau> RB_voor		:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/RB[org_rel];
+		attribute<Classifications/IsolatieNiveau> RO_na			:= BO/Bouwdelen/Isolatie/RO[org_rel];
+		attribute<Classifications/IsolatieNiveau> RO_voor		:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/RO[org_rel];
+		attribute<Classifications/IsolatieNiveau> DR_na			:= BO/Bouwdelen/Isolatie/DR[org_rel];
+		attribute<Classifications/IsolatieNiveau> DR_voor		:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/DR[org_rel];
+		attribute<Classifications/IsolatieNiveau> PL_na			:= BO/Bouwdelen/Isolatie/PL[org_rel];
+		attribute<Classifications/IsolatieNiveau> PL_voor		:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/PL[org_rel];
+		attribute<Classifications/IsolatieNiveau> VL_na			:= BO/Bouwdelen/Isolatie/VL[org_rel];
+		attribute<Classifications/IsolatieNiveau> VL_voor		:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/VL[org_rel];
+		attribute<Classifications/IsolatieNiveau> MG_na			:= BO/Bouwdelen/Isolatie/MG[org_rel];
+		attribute<Classifications/IsolatieNiveau> MG_voor		:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/MG[org_rel];
+		attribute<Classifications/IsolatieNiveau> MS_na			:= BO/Bouwdelen/Isolatie/MS[org_rel];
+		attribute<Classifications/IsolatieNiveau> MS_voor		:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/MS[org_rel];
+		attribute<Classifications/IsolatieNiveau> DP_na			:= BO/Bouwdelen/Isolatie/DP[org_rel];
+		attribute<Classifications/IsolatieNiveau> DP_voor		:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/DP[org_rel];
+		attribute<Classifications/IsolatieNiveau> DS_na			:= BO/Bouwdelen/Isolatie/DS[org_rel];
+		attribute<Classifications/IsolatieNiveau> DS_voor		:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/DS[org_rel];
+		attribute<Classifications/IsolatieNiveau> KR_na    		:= BO/Bouwdelen/Isolatie/KR[org_rel];
+        attribute<Classifications/IsolatieNiveau> KR_voor    	:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/KR[org_rel];
+		attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> VT_na    := BO/InstallatiePerProduct/VT[org_rel];
+        attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> VT_voor    := Bebouwingscomponenten/Woning/BO/InstallatiePerProduct/VT[org_rel];
+		attribute<UInt16> LastVervanging_RB    := BO/Bouwdelen/LastVervanging/RB[org_rel];
+		attribute<UInt16> LastVervanging_RO    := BO/Bouwdelen/LastVervanging/RO[org_rel];
+		attribute<UInt16> LastVervanging_DS    := BO/Bouwdelen/LastVervanging/DS[org_rel];
+		attribute<UInt16> LastVervanging_DP    := BO/Bouwdelen/LastVervanging/DP[org_rel];
+		attribute<UInt16> LastVervanging_MS    := BO/Bouwdelen/LastVervanging/MS[org_rel];
+		attribute<UInt16> LastVervanging_MG    := BO/Bouwdelen/LastVervanging/MG[org_rel];
+		attribute<UInt16> LastVervanging_PL    := BO/Bouwdelen/LastVervanging/PL[org_rel];
+		attribute<UInt16> LastVervanging_VL    := BO/Bouwdelen/LastVervanging/VL[org_rel];
+		attribute<UInt16> LastVervanging_DR    := BO/Bouwdelen/LastVervanging/DR[org_rel];
+		attribute<UInt16> LastVervanging_KR    := BO/Bouwdelen/LastVervanging/KR[org_rel];
+		attribute<UInt16> LastVervanging_VT    := BO/InstallatiePerProduct/LastVervanging/VT[org_rel];
+		}
+		parameter<string> OutputFolder := '%localDataProjDir%/Results/IsolatieStandaard/';
+        unit<uint32> variable := SubItem_PropValues(table,'name');
+        container export_csv := Model/CalculationSchemes/Rapportage/WriteTable32ToCSV(table, AsList(variable/name, ';'), OutputFolder+rekenstapname+'IsolatieStandaard_export.csv');
+        }
+		
+		container Metervraag := BO_Base/Metervraag
+		{
+			attribute<GJ_yr> EA        (BO) := Functioneel/EA / /Invoer/Kengetallen/Constanten/Efficiency_EA;
+			attribute<GJ_yr> Totaal_LO (BO) := e + gas + pellets + biomassa + olie;
+		}
+		container Omgeving
+		{
+			attribute<GJ_yr> Winst   (BO) := max_elem(0.0[GJ_yr], Functioneel/Totaal_LO - Metervraag/Totaal_LO);
+			attribute<GJ_yr> Verlies (BO) := max_elem(0.0[GJ_yr], Metervraag/Totaal_LO  - Functioneel/Totaal_LO);
+		}
+		container Opbrengsten
+		{
+			attribute<float64>    AansluitTarief     (BO) := BO_base/Opbrengsten/AansluitTarief;
+
+			parameter<Eur_yr_asl> VastRechtMT             := BO_base/Opbrengsten/VastRechtMT;
+			parameter<Eur_yr_asl> VastRechtLT             := BO_base/Opbrengsten/VastRechtLT;
+			parameter<Eur_yr_asl> VastRechtK              := BO_base/Opbrengsten/VastRechtK;
+
+			attribute<Eur>        AansluitBijdrageG  (BO) := BO_base/Opbrengsten/AansluitBijdrageG;
+			attribute<Eur>        AansluitBijdrageE  (BO) := BO_base/Opbrengsten/AansluitBijdrageE;
+			attribute<Eur>        AansluitBijdrageT  (BO) := BO_base/Opbrengsten/AansluitBijdrageT , Descr = "Aansluitbijdrage voor nieuwe aansluiting op warmtenetten, niet gecorrigeerd voor deelname";
+
+			attribute<Eur_yr>     VastRechtBijdrageG (BO) := BO_base/Opbrengsten/VastRechtBijdrageG, Descr = "VastRechtBijdrage voor aansluiting op het gasnet";
+			attribute<Eur_yr>     VastRechtBijdrageE (BO) := BO_base/Opbrengsten/VastRechtBijdrageE, Descr = "VastRechtBijdrage voor aansluiting op het elektriciteitsnetnet";
+
+			attribute<Eur_yr>     VastRechtMT_T      (BO) := BO_base/Opbrengsten/VastRechtMT_T     , Descr = "VastRechtBijdrage voor aansluiting op warmtenetten, niet gecorrigeerd voor deelname";
+			attribute<Eur_yr>     VastRechtLT_T      (BO) := BO_base/Opbrengsten/VastRechtLT_T     , Descr = "VastRechtBijdrage voor aansluiting op warmtenetten, niet gecorrigeerd voor deelname";
+			attribute<Eur_yr>     VastRechtK_T       (BO) := BO_base/Opbrengsten/VastRechtK_T      , Descr = "VastRechtBijdrage voor aansluiting op warmtenetten, niet gecorrigeerd voor deelname";
+
+			attribute<Eur_yr>     HeffingskortingE   (BO) := BO_base/Opbrengsten/HeffingskortingE;
+		}
+
+		container eenmalig := for_each_nedv(
+			Classifications/GebouwOptie_eenmalig/name,
+			'BO_base/eenmalig/'+Classifications/GebouwOptie_eenmalig/name,
+			BO,
+			Eur)
+		{
+			//Aansluitbijdrages
+			attribute<Eur> Ki_Asl_Enet       (BO) := BC_kentallen/Ki_Aansl_e_asl * nraansluitingen + BC_kentallen/Ki_Aansl_e_opp * oppervlakte;
+			attribute<Eur> Ki_Asl_Gnet       (BO) := Metervraag/gas <= 0[GJ_yr] ? 0[Eur] : BC_kentallen/Ki_Aansl_g_asl * nraansluitingen + BC_kentallen/Ki_Aansl_g_opp * oppervlakte;
+			
+			attribute<Eur> Ki_Asl_W70        (BO) := float64(Aansluitingen/Warmte > 0.0[nrAsl]) * Opbrengsten/AansluitBijdrageT;
+			attribute<Eur> Ki_Asl_W50        (BO) := const(0.0[eur],BO);
+			attribute<Eur> Ki_Asl_W30        (BO) := const(0.0[eur],BO);
+			attribute<Eur> Ki_Asl_WK70       (BO) := const(0.0[eur],BO);
+			attribute<Eur> Ki_Asl_WK50       (BO) := const(0.0[eur],BO);
+			attribute<Eur> Ki_Asl_WK30       (BO) := const(0.0[eur],BO);
+		}
+		container Kapitaallasten := for_each_nedv(Classifications/Gebouw_kapitaallasten/name, replace('BO_Base/Kapitaallasten/@KL@', '@KL@', Classifications/Gebouw_kapitaallasten/name), BO, Eur_yr );
+
+		container jaarlijks := BO_Base/Jaarlijks
+		{
+			//Vastrecht en korting
+			attribute<Eur_yr> Kj_vastrecht_E (BO) := Opbrengsten/VastRechtBijdrageE;
+			attribute<Eur_yr> Kj_vastrecht_G (BO) := Metervraag/gas <= 0.0[GJ_yr] ? 0.0[Eur_yr] : Opbrengsten/VastRechtBijdrageG;
+			attribute<Eur_yr> Oj_Hkorting_E  (BO) := Opbrengsten/HeffingskortingE;
+
+			//Elektriciteit
+			attribute<classifications/gebruiksgrootteklasse> e_gebruiksgrootteklasse_rel (BO) := classify(Metervraag/e, Prijzen/Elektriciteit/Staffel/ClassBreak);
+			attribute<Eur_yr> Kj_e           (BO) := Metervraag/e * Prijzen/Elektriciteit/Staffel/KGJ_eindgebruik_excl[e_gebruiksgrootteklasse_rel];
+			attribute<Eur_yr> Km_e           (BO) := Metervraag/e * Prijzen/Elektriciteit/Staffel/KGJ_Maatschappelijk [e_gebruiksgrootteklasse_rel];
+			attribute<Eur_yr> Kj_e_EH        (BO) := Metervraag/e * Prijzen/Elektriciteit/Staffel/KGJ_EnergieHeffing[e_gebruiksgrootteklasse_rel];
+
+			//Gas
+			attribute<classifications/gebruiksgrootteklasse> g_gebruiksgrootteklasse_rel (BO) := classify(Metervraag/gas, Prijzen/Aardgas/Staffel/ClassBreak);
+			attribute<Eur_yr> Kj_gas         (BO) := Metervraag/gas * Prijzen/Aardgas/Staffel/KGJ_eindgebruik_excl[g_gebruiksgrootteklasse_rel];
+			attribute<Eur_yr> Km_gas         (BO) := Metervraag/gas * Prijzen/Aardgas/Staffel/KGJ_Maatschappelijk [g_gebruiksgrootteklasse_rel];
+			attribute<Eur_yr> Kj_gas_EH      (BO) := Metervraag/gas * Prijzen/Aardgas/Staffel/KGJ_EnergieHeffing[g_gebruiksgrootteklasse_rel];
+
+			//Waterstof
+			attribute<Eur_yr> Kj_H2          (BO) := Metervraag/H2 * prijzen/overig/Pj_H2;
+			attribute<Eur_yr> Km_H2          (BO) := Metervraag/H2 * prijzen/overig/Pm_H2;
+			attribute<Eur_yr> Kj_H2_EH       (BO) := const(0.0[eur_yr],BO);
+		}
+	}
+
+	attribute<kw> CapaciteitsvraagE (PlanRegio) :=  sum(BO/AansluitCapaciteit/GTF_Enet *
+		( BO/AansluitCapaciteit/ASW_Eapp * float64(BO/Aansluitingen/Enet_app > 0.0[nrAsl])
+		+ BO/AansluitCapaciteit/ASW_Ehwp * float64(BO/Aansluitingen/Enet_hwp > 0.0[nrAsl])
+		+ BO/AansluitCapaciteit/ASW_Eewp * float64(BO/Aansluitingen/Enet_ewp > 0.0[nrAsl]) ), BO/Planregio_rel);
+
+	container Aansluitingen
+	{
+		attribute<nrAsl> gas      (PlanRegio) := sum(BO/Aansluitingen/Gnet,     BO/Planregio_rel);
+		attribute<nrAsl> Enet_ewp (PlanRegio) := sum(BO/Aansluitingen/Enet_ewp * float64(not(BO/Aansluitingen/Warmte > 0[nrAsl])), BO/Planregio_rel);
+		attribute<nrAsl> Enet_hwp (PlanRegio) := sum(BO/Aansluitingen/Enet_hwp, BO/Planregio_rel);
+		attribute<nrAsl> LT_wp    (PlanRegio) := sum(BO/Aansluitingen/Enet_ewp * float64(BO/Aansluitingen/Warmte > 0[nrAsl])     , BO/Planregio_rel);
+	}
+
+	container Aandelen := for_each_nedv(Classifications/GebiedsOptie/name
+		, 'WarmteAllocatie == Classifications/WarmteOptie/V/'+Classifications/GebiedsOptie/name+''
+		, BO
+		, bool), IsHidden = "True";
+
+	container MeterVraag := BO/Metervraag, IsHidden = "True";
+	
+	container AardGas
+	{
+		attribute<nrAsl>  nrAansl_gas      (BO) := float64(BO/Aansluitingen/gnet > 0[nrAsl]) * BO/nrAansluitingen;
+		attribute<Eur>    AansluitBijdrage (BO) := float64(BO/Aansluitingen/gnet > 0[nrAsl]) * BO/Opbrengsten/AansluitBijdrageG;
+		attribute<Eur_yr> VastRecht        (BO) := float64(BO/Aansluitingen/gnet > 0[nrAsl]) * BO/Opbrengsten/VastRechtBijdrageG;
+
+		unit<uint8> ggk := Prijzen/Aardgas/Staffel, IsHidden = "True"; // gebruiksgrootte klasse
+
+		attribute<ggk>    ggk_rel          (BO) := classify(MeterVraag/Gas, ggk/ClassBreak);
+		attribute<Eur_yr> eindgebruik_excl (BO) := MeterVraag/Gas * ggk/KGJ_eindgebruik_excl[ggk_rel];
+		attribute<Eur_yr> Maatschappelijk  (BO) := MeterVraag/Gas * ggk/KGJ_Maatschappelijk [ggk_rel];
+		attribute<Eur_yr> netwerk          (BO) := MeterVraag/Gas * ggk/KGJ_netwerk         [ggk_rel];
+		attribute<Eur_yr> EnergieHeffing   (BO) := MeterVraag/Gas * ggk/KGJ_EnergieHeffing  [ggk_rel];
+	}
+
+	container Vastrecht
+	{
+		attribute<Eur_yr> Kj_Vastrecht_W   (BO) := float64(BO/Aansluitingen/Warmte > 0.0[nrAsl]) * BO/Opbrengsten/VastRechtMT_T;
+		attribute<Eur_yr> Kj_Vastrecht_K   (BO) := float64(BO/Aansluitingen/Koude  > 0.0[nrAsl]) * BO/Opbrengsten/VastRechtK_T;
+
+		attribute<Eur_yr> Kj_Vastrecht     (BO) := Kj_Vastrecht_W + Kj_Vastrecht_K;
+	}
+
+	attribute<nrAsl> aant_g_aansl_per_planregio       (PlanRegio) := sum((BO/Aansluitingen/Gnet)                            , BO/PlanRegio_rel), IsHidden = "True";
+	attribute<nrAsl> aant_g_aansl_hoogb_per_planregio (PlanRegio) := sum((BO/Aansluitingen/Gnet) * float64( BO/IsMeergezins), BO/PlanRegio_rel), IsHidden = "True";
+	attribute<nrAsl> aant_g_aansl_laagb_per_planregio (PlanRegio) := sum((BO/Aansluitingen/Gnet) * float64(!BO/IsMeergezins), BO/PlanRegio_rel), IsHidden = "True";
+
+	container Elektriciteit
+	{
+		attribute<Eur>    AansluitBijdrage (BO) := BO/Opbrengsten/AansluitBijdrageE;
+		attribute<Eur_yr> VastRecht        (BO) := BO/Opbrengsten/VastRechtBijdrageE;
+		attribute<Eur_yr> Heffingskorting  (BO) := BO/Opbrengsten/HeffingskortingE;
+
+		unit<uint8> ggk := Prijzen/Elektriciteit/Staffel, IsHidden = "True"; // gebruiksgrootte klasse
+
+		attribute<ggk>    ggk_rel          (BO) := classify(MeterVraag/e, ggk/ClassBreak);
+		attribute<Eur_yr> eindgebruik_excl (BO) := MeterVraag/e * ggk/KGJ_eindgebruik_excl[ggk_rel];
+		attribute<Eur_yr> Maatschappelijk  (BO) := MeterVraag/e * ggk/KGJ_Maatschappelijk [ggk_rel];
+		attribute<Eur_yr> netwerk          (BO) := MeterVraag/e * ggk/KGJ_netwerk         [ggk_rel];
+		attribute<Eur_yr> EnergieHeffing   (BO) := MeterVraag/e * ggk/KGJ_EnergieHeffing  [ggk_rel] - Heffingskorting;
+		attribute<Eur_yr> Om_Comfort       (BO) := BO/Functioneel/V_KD * ggk/KGJ_Maatschappelijk[ggk_rel];
+	}
+	container CO2
+	{
+		attribute<KG_yr> AardGas           (BO) := MeterVraag/gas      * prijzen/AardGas/CO2_GJ;
+		attribute<KG_yr> Elektriciteit     (BO) := MeterVraag/e        * prijzen/Elektriciteit/CO2_GJ;
+		attribute<KG_yr> Elek_e            (BO) := BO/Metervraag/e     * prijzen/Elektriciteit/CO2_GJ;
+		attribute<KG_yr> Elek_app          (BO) := BO/Metervraag/EA    * prijzen/Elektriciteit/CO2_GJ;
+		attribute<KG_yr> Pellets           (BO) := MeterVraag/Pellets  * prijzen/overig/CO2_pellets;
+		attribute<KG_yr> Biomassa          (BO) := Metervraag/Biomassa * prijzen/overig/CO2_biomassa;
+		attribute<KG_yr> Olie              (BO) := Metervraag/Olie     * prijzen/overig/CO2_olie;
+	}
+}
+

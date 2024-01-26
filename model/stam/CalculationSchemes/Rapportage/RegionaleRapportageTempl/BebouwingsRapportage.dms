@@ -1,0 +1,76 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container BebouwingsRapportage: Using = "impl/RegioSelectie"
+{
+	
+	container Gebouw
+	{
+		container SchilLabel
+		{
+			unit<uint8> table := RapGroep
+			{
+				attribute<string>       label       := RapGroep/label;
+				attribute<QuantityUnit> nrUnits (BO):= =(Exportlabel == 'WoningType' || Exportlabel == 'woningtype_bouwjaarklasse') ? 'BO/nrAansluitingen' : 'BO/oppervlakte';
+
+				attribute<QuantityUnit> Aantal := = AsList('EL/' + Classifications/RVOEnergieLabel/name, ' + ');
+				container EL := for_each_nedv(
+					Classifications/SchilLabel/name,
+					'sum(float64(BO/Schillabel_rel[org_rel]==' + string(id(Classifications/SchilLabel))+'[Classifications/SchilLabel])* NrUnits[org_rel], BCGroep_rel)',
+					RapGroep,
+					QuantityUnit);
+			}
+			container csv := 
+				WriteTable8ToCSV(
+					 table
+					,Exportlabel+':label;Aantal;' + AsList('EL/' + Classifications/Schillabel/name, ';')
+					,ReportFolder+'/'+ BebouwingscomponentNaam +'_Gebouw_Schillabel.csv'
+				);
+		}
+		container GebouwOptie
+		{
+			unit<uint8> table := RapGroep
+			{
+				attribute<string>       label       := RapGroep/label;
+				attribute<QuantityUnit> nrUnits (BO):= =(Exportlabel == 'WoningType' || Exportlabel == 'woningtype_bouwjaarklasse') ? 'BO/nrAansluitingen' : 'BO/oppervlakte';
+
+				attribute<QuantityUnit> Aantal := = AsList('LO/' + BO/BcGebouwOptie/name, ' + ');
+				container LO := for_each_nedv(
+					BO/BcGebouwOptie/name,
+					'sum(float64(BO/GebouwOptie_rel[org_rel]==' + string(id(BO/BcGebouwOptie))+'[BO/BcGebouwOptie])* NrUnits[org_rel], BCGroep_rel)',
+					RapGroep,
+					QuantityUnit);
+			}
+			container csv :=
+				WriteTable8ToCSV(
+					 Table
+					,Exportlabel+':label;Aantal;' + AsList('LO/' + BO/BcGebouwOptie/name, ';')
+					,ReportFolder+'/'+ BebouwingscomponentNaam +'_Gebouw_Gebouwoptie.csv'
+				);
+		}
+		container WarmteOptie
+		{
+			unit<uint8> table := RapGroep
+			{
+				attribute<string>       label       := RapGroep/label;
+				attribute<QuantityUnit> nrUnits (BO):= =(Exportlabel == 'WoningType' || Exportlabel == 'woningtype_bouwjaarklasse') ? 'BO/nrAansluitingen' : 'BO/oppervlakte';
+				
+				attribute<QuantityUnit> Aantal := = AsList('GO/' + Classifications/WarmteOptie/name, ' + ');
+				container GO := for_each_nedv(
+						Classifications/WarmteOptie/name,
+						'sum(float64(BO/WarmteOptie_rel[org_rel]==' + string(id(Classifications/WarmteOptie))+'[Classifications/WarmteOptie])* NrUnits[org_rel], BCGroep_rel)',
+						RapGroep,
+						QuantityUnit);
+			}
+			container csv := 
+				WriteTable8ToCSV(
+					 table
+					,Exportlabel+':label;Aantal;' + AsList('GO/' + Classifications/WarmteOptie/name, ';')
+					,ReportFolder+'/'+ BebouwingscomponentNaam +'_Gebouw_Warmteoptie.csv'
+				);
+		}
+	}
+}

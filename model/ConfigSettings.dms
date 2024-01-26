@@ -1,0 +1,14 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container ConfigSettings: isHidden = "True"
+{
+	container Overridable 
+	{
+		parameter<string> HestiaDataDir: [ '%sourceDataDir%' ]; // Vervangt SourceDataProjDir tbv voorkomen collissie met ander 
+	}
+	parameter<string> EnergieDataProjDir: [ '%projdir%/data' ];
+}

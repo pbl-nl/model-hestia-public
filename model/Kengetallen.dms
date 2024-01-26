@@ -1,0 +1,418 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Kengetallen: Using = "Units;Geography", FreeData = "True"
+{
+	#include<Bebouwing.dms>
+	#include<WarmteBronnen.dms>
+	#include<Leercurves.dms>
+	#include<Infra.dms>
+	#include<BCkentallen.dms>
+	#include<H2kentallen.dms>
+	#include<WarmteVraag.dms>
+
+	container BTW
+	{
+		attribute<percent> BTW_energie (Classifications/Zichtjaar) :=
+			  Classifications/Zichtjaar/Jaar < 2001[yr_uint16] ? 18[percent]  
+			: Classifications/Zichtjaar/Jaar < 2012[yr_uint16] ? 19[percent]  
+			: Classifications/Zichtjaar/Jaar < 2022[yr_uint16] ? 21[percent]  
+			: Classifications/Zichtjaar/Jaar < 2023[yr_uint16] ? 15[percent]  
+			: 21[percent] 
+			, Descr = "BTW percentage energie";
+
+		attribute<percent> BTW         (Classifications/Zichtjaar) :=
+			  Classifications/Zichtjaar/Jaar < 2001[yr_uint16] ? 18[percent]  
+			: Classifications/Zichtjaar/Jaar < 2012[yr_uint16] ? 19[percent]  
+			: 21[percent] 
+			, Descr = "BTW percentage hoog";
+
+		attribute<percent> BTW_laag    (Classifications/Zichtjaar) := 
+			  Classifications/Zichtjaar/Jaar < 2001[yr_uint16] ? 18[percent]  
+			: Classifications/Zichtjaar/Jaar < 2009[yr_uint16] ? 19[percent]  
+			: Classifications/Zichtjaar/Jaar < 2019[yr_uint16] ?  6[percent]  
+			:  9[percent] 
+			, Descr = "BTW percentage laag";
+
+		parameter<ratio> R_laag_GV := 0.5[ratio];
+		parameter<ratio> R_hoog_GV := 1.0[ratio] - R_laag_GV;
+
+
+		attribute<percent> BTW_gv   (Classifications/Zichtjaar) := R_hoog_GV * BTW + R_laag_GV * BTW_laag;
+	}
+
+	container Constanten
+	{
+		parameter<GJ_m3>     GasEnergie             :=    31.65[MJ / m3] / 1000[MJ / GJ] , Descr = "energieinhoud laagcalorisch gas";
+		parameter<GJ_m3>     GasEnergie_max         :=    35.17[MJ / m3] / 1000[MJ / GJ] , Descr = "bovengrens hoogcalorisch, rekening houdend met eficientere verbranding (o.a. condensatiewarmte van waterdamp)";
+
+		parameter<m>         L_max_TEObron          :=  5000   [m]                       , Descr = "maximale afstand tot geschikt oppervlaktewater voor TEO bron";
+		parameter<m>         L_max_bron_connectie   :=  8000   [m]                       , Descr = "Afzonderlijke aantakkingen aan een bron-cluster LTnetten mogen niet langer dan dit zijn. Bij een T aansluiting op al gekozen telt alleen de lengte van de nieuwe poot.";
+		parameter<kw>        P_target_LTbron        := 16000   [kw]                      , Descr = "doel voor gezamenlijke capaciteit bij bronclustering in LT puntbronnen";
+		parameter<ratio>     afschrijving_resterend :=     1.0 / 3.0                     , Descr = "resterende afschijving op te verwijderen gasketels", IsHidden = "True";
+		parameter<m_asl>     L_di_gem               :=    15   [m_asl]                   , Descr = "Gemiddelde aantal meter aansluiting leiding/kabel/buis voor inschattingen van ontbrekende data", Source = "FO, nummer voetnoot 31 onder F80";
+		parameter<ratio>     Omwegfactor            :=     1.25                          , Descr = "";
+		parameter<kW_OS>     Vermogen_OS            :=   825   [kW_OS]                   , Descr = "", IsHidden = "True";
+		parameter<ratio>     Efficiency_EA          :=     1.0 [ratio]                   , Descr = "Efficiency van elektriciteitsverbruik in elektrische apparatuur als verhouding metervraag tot functionele vraag";
+		
+		parameter<ratio> BinnenTemp_A := 7.200[ratio], Descr = "correctiefactor energieverbruik voor stijging binnentemperatuur. Volgt A * B ^ x, waar x = vraag RV in kWh/m2 (GJ_yr / area / 3.6 * 1000)";
+		parameter<ratio> BinnenTemp_B := 0.960[ratio], Descr = "correctiefactor energieverbruik voor stijging binnentemperatuur. Volgt A * B ^ x, waar x = vraag RV in kWh/m2 (GJ_yr / area / 3.6 * 1000)";
+	}
+	template Kosten_MT: Source = "Validatiesessies startanalyse 2019", IsHidden = "True"
+	{
+		//parameters
+		parameter<ratio> CurveMTnet;
+		parameter<ratio> CurveOenM;
+		parameter<ratio> CurveInpand;
+
+		// ============= Factoren voor inpandige distributieleidingen woningen en utiliteit
+		parameter<Eur_asl> Ki_id_geenBlok  := CurveInpand *  1500   [Eur_asl] , Descr = "inpandig leidingwerk meergezins zonder blokverwarming";
+		parameter<Eur_asl> Ki_id_metBlok   := CurveInpand *   722   [Eur_asl] , Descr = "inpandig leidingwerk meergezins met blokverwarming";
+		parameter<Eur_asl> Ki_id_grondgeb  := CurveInpand *  2500   [Eur_asl];
+		parameter<Eur_asl> Ki_id_meergezin := Schuiven/VerketelingMin * Ki_id_metBlok + Schuiven/VerketelingMax * Ki_id_geenBlok;
+		parameter<Eur_asl> Ki_afleverset   := CurveInpand *  1300   [Eur_asl] ;
+		parameter<Eur_kw>  Ki_blokverw     := CurveInpand *   164.05[Eur_Kw] , Descr = "te vergoeden afschrijving voor gasketels blokverwarming", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_kw>  KetelVergoeding := Ki_blokverw * Constanten/afschrijving_resterend;
+
+		parameter<Eur_asl> K_Ov            := CurveOenM   *   140.42[Eur_asl] , Descr = "tarief ongeriefsvergoeding", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_asl> K_Pm_min        := CurveOenM   *    56.17[Eur_asl] , Descr = "tarief projectmanagement minimaal", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_asl> K_Pm_max        := CurveOenM   *   280.84[Eur_asl] , Descr = "tarief projectmanagement maximaal", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_kW>  K_Wmtr_min_var  := CurveInpand *     1.24[Eur_kW]  , Descr = "variabele kosten warmtemeters utiliteit minimum", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_kW>  K_Wmtr_max_var  := CurveInpand *     1.46[Eur_kW]  , Descr = "variabele kosten warmtemeters utiliteit maximum", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_asl> K_Wmtr_min_vast := CurveInpand *   898.69[Eur_asl] , Descr = "vaste kosten warmtemeters utiliteit minimum", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_asl> K_Wmtr_max_vast := CurveInpand *   926.78[Eur_asl] , Descr = "vaste kosten warmtemeters utiliteit maximum", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_asl> K_Wmtr_vast     := Schuiven/KostenMin * K_Wmtr_min_vast + Schuiven/KostenMax * K_Wmtr_max_vast;
+		parameter<Eur_kW>  K_Wmtr_var      := Schuiven/KostenMin * K_Wmtr_min_var  + Schuiven/KostenMax * K_Wmtr_max_var;
+
+		// ============= Factoren voor wijkdistributie
+		parameter<Eur_kW> K_os_min  := CurveMTnet * 120.00[Eur_kW]   , Descr = "minimumkosten van een onderstation per kW", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_kW> K_os_Max  := CurveMTnet * 150.00[Eur_kW]   , Descr = "maximumkosten van een onderstation per kW", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_kW> K_WOS_min := CurveMTnet * 125.00[Eur / kW] , Descr = "Minimale investeringskosten warmteoverdrachtstation", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_kW> K_WOS_max := CurveMTnet * 140.00[Eur / kW] , Descr = "Maximale investeringskosten warmteoverdrachtstation", Source = "Functioneel Ontwerp 4.0 Tabel A.3";
+		parameter<Eur_kW> K_WOS     := Schuiven/KostenMin * K_WOS_min + Schuiven/KostenMax * K_WOS_max;
+		parameter<Eur_kW> K_OS      := Schuiven/KostenMin * K_os_min  + Schuiven/KostenMax * K_os_max;
+	}
+
+	template Kosten_LT: Source = "Functioneel Ontwerp 4.0 Tabel A.4", IsHidden = "True"
+	{
+		//begin case parameters
+		parameter<ratio> CurveInpandig;
+		parameter<ratio> CurveEWPww;
+		parameter<ratio> CurveLTnet;
+		parameter<ratio> CurveMTnet;
+		//end case parameters
+
+		parameter<Eur_asl>  Ki_afleverset           := CurveInpandig *   1300 [Eur_asl]   , Descr = "Investeringskosten afleverset (warmtewisselaar + meter)";
+		parameter<Eur_asl>  Ki_inpand_laag          := CurveInpandig *   2500 [Eur_asl]   , Descr = "Investeringskosten extra inpandige buizen";
+		parameter<Eur_asl>  Ki_inpand_hoog_metblok  := CurveInpandig *    722 [Eur_asl]   , Descr = "Investeringskosten extra inpandige buizen";
+		parameter<Eur_asl>  Ki_inpand_hoog_geenblok := CurveInpandig *   1500 [Eur_asl]   , Descr = "Investeringskosten extra inpandige buizen";
+		parameter<Eur_m2>   Ki_id_ugroot            := CurveInpandig *      0 [Eur_m2]    , Descr = "Investeringskosten extra inpandige buizen bij utiliteit groter dan 7500 m2";
+		parameter<Eur_m2>   Ki_id_uklein            := CurveInpandig *     20 [Eur_m2]    , Descr = "Investeringskosten extra inpandige buizen bij utiliteit kleiner dan 100 m2";
+
+		parameter<Eur_kW>   Ki_uitkoppel            := CurveLTnet    *      0 [Eur / kW]  , Descr = "Extra uitkoppelkosten op gebouwniveau, kosten bij de bron afgeleid van bronnenbestand";
+		parameter<Eur>      Ki_Buffer               := CurveLTnet    *   1000 [Eur]       , Descr = "Voorlopige investeringskosten per gebouw voor aanleg buffervat voor seizoensopslag en dagopslag";
+		parameter<Eur>      Ki_Buffer_min           := CurveLTnet    * 100000 [Eur]       , Descr = "Minimale investering voor warmtebuffer bij de bron";
+
+		parameter<Eur_kW>   Ki_WOS_min              := CurveLTnet    * 113.85 [Eur / kW]  , Descr = "minimale Investeringskosten warmteoverdrachtstation";
+		parameter<Eur_kW>   Ki_WOS_max              := CurveLTnet    * 139.45 [Eur / kW]  , Descr = "maximale Investeringskosten warmteoverdrachtstation";
+		parameter<Eur_kW>   Ki_eWP_coll_min         := CurveLTnet    *  547.5 [Eur / kW]  , Descr = "minimale Investeringskosten warmtepomp collectief als hulpvoorziening";
+		parameter<Eur_kW>   Ki_eWP_coll_max         := CurveLTnet    *  547.5 [Eur / kW]  , Descr = "maximale Investeringskosten warmtepomp collectief als hulpvoorziening";
+		parameter<Eur_kW>   Ki_eWP_coll             := Schuiven/KostenMin * Ki_eWP_coll_min + Schuiven/KostenMax * Ki_eWP_coll_max;
+		parameter<Eur_kW>   Ki_WOS                  := Schuiven/KostenMin * Ki_WOS_min      + Schuiven/KostenMax * Ki_WOS_max;
+
+		parameter<Eur>      Ki_WKO_vast_min         := CurveLTnet    * 135000 [Eur]       , Descr = "minimale investeringskosten bron zonder distributiekosten";
+		parameter<Eur>      Ki_WKO_vast_max         := CurveLTnet    * 165000 [Eur]       , Descr = "maximale investeringskosten bron zonder distributiekosten";
+		parameter<Eur_kW>   Ki_WKO_var_min          := CurveLTnet    *  103.5 [Eur_kW]    , Descr = "minimale investeringskosten bron zonder distributiekosten";
+		parameter<Eur_kW>   Ki_WKO_var_max          := CurveLTnet    *  126.5 [Eur_kW]    , Descr = "maximale investeringskosten bron zonder distributiekosten";
+		parameter<Eur>      Ki_TEO_vast_min         := CurveLTnet    *  90000 [Eur]       , Descr = "minimale investeringskosten bron oppervlaktewater warmtewisselaar";
+		parameter<Eur>      Ki_TEO_vast_max         := CurveLTnet    * 110000 [Eur]       , Descr = "maximale investeringskosten bron oppervlaktewater warmtewisselaar";
+		parameter<Eur_kW>   Ki_TEO_var_min          := CurveLTnet    *    198 [Eur_kW]    , Descr = "minimale investeringskosten bron oppervlaktewater warmtewisselaar";
+		parameter<Eur_kW>   Ki_TEO_var_max          := CurveLTnet    *    242 [Eur_kW]    , Descr = "maximale investeringskosten bron oppervlaktewater warmtewisselaar";
+
+		parameter<ratio>    R_Regeneratie           := 1.1[ratio]                         , Descr = "extra investeringskosten voor regeneratiemechanisme bij WKO zonder TEO";
+
+		parameter<Eur>      Ki_WKO_vast             := Schuiven/KostenMin * Ki_WKO_vast_min + Schuiven/KostenMax * Ki_WKO_vast_max;
+		parameter<Eur_kW>   Ki_WKO_var              := Schuiven/KostenMin * Ki_WKO_var_min  + Schuiven/KostenMax * Ki_WKO_var_max;
+		parameter<Eur>      Ki_TEO_vast             := Schuiven/KostenMin * Ki_TEO_vast_min + Schuiven/KostenMax * Ki_TEO_vast_max;
+		parameter<Eur_kW>   Ki_TEO_var              := Schuiven/KostenMin * Ki_TEO_var_min  + Schuiven/KostenMax * Ki_TEO_var_max;
+
+		parameter<Eur_pand> Ki_dist_OS              :=      CurveLTnet    *   3337.78 [Eur_pand];
+
+		parameter<Eur>      Ki_booster_min          := CurveEWPww    *   2225.98 [Eur]    , Descr = "minimale Investeringskosten booster-warmtepomp voor warm tapwater, inclusief buffervat en verzwaarde elektriciteitsaansluiting en installatie en montagekosten";
+		parameter<Eur>      Ki_booster_max          := CurveEWPww    *   2560.84 [Eur]    , Descr = "maximale Investeringskosten booster-warmtepomp voor warm tapwater, inclusief buffervat en verzwaarde elektriciteitsaansluiting en installatie en montagekosten";
+		parameter<Eur>      Ki_booster              := Schuiven/KostenMin * Ki_booster_min + Schuiven/KostenMax * Ki_booster_max;
+
+		parameter<Eur>      Ki_eWP_B                := CurveEWPww    *   4500 [Eur]       , Descr = "Investeringskosten elektrische warmtepomp bij woningen schillabel B, inclusief buffervat en verzwaarde elektriciteitsaansluiting en installatie en montagekosten";
+		parameter<Eur>      Ki_eWP_CDE              := CurveEWPww    *   7000 [Eur]       , Descr = "Investeringskosten elektrische warmtepomp bij woningen schillabel C, D of E, inclusief buffervat en verzwaarde elektriciteitsaansluiting en installatie en montagekosten";
+		parameter<Eur_kW>   Ki_eWP_util             := CurveEWPww    *    700 [Eur_kW]    , Descr = "Investeringskosten elektrische warmtepomp bij utiliteit";
+
+		//investeringskosten wijkdistributie
+		parameter<Eur_kW>   K_os_p_min              := CurveMTnet    *    120 [Eur_kW]    , Descr = "minimale Investeringskosten onderstations in wijkdistributie";
+		parameter<Eur_kW>   K_os_p_max              := CurveMTnet    *    150 [Eur_kW]    , Descr = "maximale Investeringskosten onderstations in wijkdistributie";
+		parameter<Eur_kW>   Ki_onderstation         := K_os_p_min * Schuiven/KostenMin + K_os_p_max * Schuiven/KostenMax;
+	}
+	
+	container Efficiency : IsHidden = "True"
+	{
+		parameter<GJe_GJth> V_elek_WKO_min           := 0.0250      , Descr = "elektriciteitsgebruik in WKO installatie";
+		parameter<GJe_GJth> V_elek_WKO_max           := 0.0250      , Descr = "elektriciteitsgebruik in WKO installatie";
+		parameter<GJe_GJth> V_elek_TEO_min           := 0.0170      , Descr = "elektriciteitsgebruik in TEO installatie";
+		parameter<GJe_GJth> V_elek_TEO_max           := 0.0170      , Descr = "elektriciteitsgebruik in TEO installatie";
+		parameter<ratio>    W_zonder_bijstook_min    := 0.7000      , Descr = "Percentage grootschalige warmte dat niet wordt bijgestookt", Source = "N1: FO v7a F 35";
+		parameter<ratio>    W_zonder_bijstook_max    := 0.9000      , Descr = "Percentage grootschalige warmte dat niet wordt bijgestookt", Source = "N1: FO v7a F 35";
+		parameter<ratio>    Vermogenverlies_LT_min   := 0.1000      , Descr = "aandeel op capaciteit dat verloren gaat tussen bron en afnemer";
+		parameter<ratio>    Vermogenverlies_LT_max   := 0.0000      , Descr = "aandeel op capaciteit dat verloren gaat tussen bron en afnemer";
+		parameter<ratio>    Vermogenverlies_MT_min   := 0.1000      , Descr = "aandeel op capaciteit dat verloren gaat tussen bron en afnemer";
+		parameter<ratio>    Vermogenverlies_MT_max   := 0.0000      , Descr = "aandeel op capaciteit dat verloren gaat tussen bron en afnemer";
+		parameter<ratio>    Leidingverlies_min       := 0.2000      , Descr = "aandeel op volume dat verloren gaat tussen bron en afnemer";
+		parameter<ratio>    Leidingverlies_max       := 0.3600      , Descr = "aandeel op volume dat verloren gaat tussen bron en afnemer";
+		parameter<ratio>    Pompenergie_Wnet_min     := 0.0072      , Descr = "elektriciteitsverbruik distributiepompen warmtenetten";
+		parameter<ratio>    Pompenergie_Wnet_max     := 0.0072      , Descr = "elektriciteitsverbruik distributiepompen warmtenetten";
+		parameter<ratio>    Efficiency_piekketel_min := 0.7800      , Descr = "kengetal voor de efficientie van energieomzetting in gasgestookte hulpketels", Source = "nketel: FO, Tabel bij F 35";
+		parameter<ratio>    Efficiency_piekketel_max := 1.0700      , Descr = "kengetal voor de efficientie van energieomzetting in gasgestookte hulpketels", Source = "nketel: FO, Tabel bij F 35";
+		parameter<float64>  HulpketelVermogens_min   := 0.7000      , Descr = "capaciteit hulpketels per eenheid piekvraag";
+		parameter<float64>  HulpketelVermogens_max   := 1.0000      , Descr = "capaciteit hulpketels per eenheid piekvraag";
+		parameter<float64>  HoofdbronVermogens_min   := 0.3000      , Descr = "capaciteit hoofdbron per eenheid piekvraag";
+		parameter<float64>  HoofdbronVermogens_max   := 0.3000      , Descr = "capaciteit hoofdbron per eenheid piekvraag";
+		parameter<ratio>    Eff_ketel_min            := 1.07[ratio] , Descr = "efficiency van HR ketels onder minimale toekomstige omstandigheden";
+		parameter<ratio>    Eff_ketel_max            := 1.04[ratio] , Descr = "efficiency van HR ketels onder maximale toekomstige omstandigheden";
+
+		template EfficiencyKentallen : IsHidden = "True"
+		{
+			//begin case parameters
+			parameter<ratio> EfficiencySchuif;
+			//end case parameters
+
+			parameter<ratio> Eff_min := 1d - EfficiencySchuif;
+			parameter<ratio> Eff_max := EfficiencySchuif;
+	
+			parameter<GJe_GJth> V_elek_WKO                := Eff_min * Efficiency/V_elek_WKO_min           + Eff_max * Efficiency/V_elek_WKO_max;
+			parameter<GJe_GJth> V_elek_TEO                := Eff_min * Efficiency/V_elek_TEO_min           + Eff_max * Efficiency/V_elek_TEO_max;
+			parameter<ratio>    W_zonder_bijstook         := Eff_min * Efficiency/W_zonder_bijstook_min    + Eff_max * Efficiency/W_zonder_bijstook_max;
+			parameter<ratio>    Vermogenverlies_LT        := Eff_min * Efficiency/Vermogenverlies_LT_min   + Eff_max * Efficiency/Vermogenverlies_LT_max;
+			parameter<ratio>    Leidingverlies            := Eff_min * Efficiency/Leidingverlies_min       + Eff_max * Efficiency/Leidingverlies_max;
+			parameter<ratio>    Pompenergie_Wnet          := Eff_min * Efficiency/Pompenergie_Wnet_min     + Eff_max * Efficiency/Pompenergie_Wnet_max;
+			parameter<ratio>    Efficiency_piekketel      := Eff_min * Efficiency/Efficiency_piekketel_min + Eff_max * Efficiency/Efficiency_piekketel_max;
+			parameter<float64>  HulpketelVermogensaandeel := Eff_min * Efficiency/HulpketelVermogens_min   + Eff_max * Efficiency/HulpketelVermogens_max;
+			parameter<float64>  HoofdbronVermogensaandeel := Eff_min * Efficiency/HoofdbronVermogens_min   + Eff_max * Efficiency/HoofdbronVermogens_max;
+			parameter<ratio>    Efficiency_ketel_optimaal := Eff_min * Efficiency/Eff_ketel_min            + Eff_max * Efficiency/Eff_ketel_max;
+			parameter<ratio>    Vermogenverlies_MT        := Eff_min * Efficiency/Vermogenverlies_MT_min   + Eff_max * Efficiency/Vermogenverlies_MT_max;
+		}
+
+		template Efficiency_LT : IsHidden = "True"
+		{
+			//begin case parameters
+			parameter<Celsius> T_ow;
+			parameter<Celsius> T_sec;
+			//end case parameters	
+			
+			parameter<float64>  AandeelPrimairVermogen :=                 0.30       , Descr = "Aandeel van het gevraagde vermogen dat door de primaire bron wordt geleverd";
+			parameter<float64>  AandeelHulpVermogen    := T_ow == T_sec ? 0.70 : 1.00, Descr = "Aandeel van het gevraagde vermogen dat door de hulpvoorziening wordt geleverd";
+			parameter<float64>  AandeelPrimairVolume   :=                 1.00       , Descr = "Aandeel van het gevraagde volume dat door de primaire bron wordt geleverd";
+			parameter<float64>  AandeelHulpVolume      := T_ow == T_sec ? 0.30 : 1.00, Descr = "Aandeel van het gevraagde volume dat door de hulpvoorziening wordt geleverd";
+
+			parameter<kW_GJ_yr> AandeelTEOVermogen     := 0.139[kW_GJ_yr]            , Descr = "Capaciteit waarop TEO wordt geschaald, bepaald op 2000 vollasturen";
+
+			//Seasonal Performance Factors
+			parameter<ratio> SPF_coll_W :=
+				T_ow <= 20[Celsius] && T_sec <= 35[Celsius] ? 7.9 :                     // van 15 naar 30
+					T_ow <= 20[Celsius] && T_sec <= 55[Celsius] ? 3.2 :                 // van 15 naar 50
+						T_ow <= 20[Celsius] && T_sec <= 75[Celsius] ? 3.0 :             // van 15 naar 70
+							T_ow <= 35[Celsius] && T_sec <= 35[Celsius] ? 7.9 :         // van 30 naar 30
+								T_ow <= 35[Celsius] && T_sec <= 55[Celsius] ? 4.2 :     // van 30 naar 50
+									T_ow <= 35[Celsius] && T_sec <= 75[Celsius] ? 3.2 : // van 30 naar 70
+				1.0
+				, Descr = "efficientie van de collectieve warmtepomp bij warmtelevering", Source = "Functioneel ontwerp 4.0 Bijlage A.6 Tabel 26";
+
+			parameter<ratio>   SPF_coll_K     : [30]                                                             , Descr = "efficientie van de collectieve warmtepomp bij koudelevering";
+			parameter<float64> SPF_ind_A_rv   := 8.0                                                             , Descr = "efficientie van de individuele warmtepomp voor ruimteverwarming, label A+";
+			parameter<float64> SPF_ind_B_rv   := T_sec <= 35[Celsius] ? 4.20 : 8.0                               , Descr = "efficientie van de individuele warmtepomp voor ruimteverwarming, label B";
+			parameter<float64> SPF_ind_CE_rv  := T_sec <= 35[Celsius] ? 3.20 :  T_sec <= 55[Celsius] ? 4.2 : 1.0 , Descr = "efficientie van de individuele warmtepomp voor ruimteverwarming, label C, D of E";
+			parameter<float64> SPF_ind_tw     := T_sec <= 55[Celsius] ? 2.75 : 1.0                               , Descr = "efficientie van de individuele warmtepomp voor tapwaterverwarming";
+			parameter<float64> SPF_booster_tw := T_sec <= 55[Celsius] ? 4.40 : 1.0                               , Descr = "efficientie van de individuele warmtepomp voor tapwaterverwarming";
+			parameter<ratio>   SPF_ind_K      : [1]                                                              , Descr = "efficientie van een individuele warmtepomp bij koudelevering";
+
+			// Aandeel eigen opwekking
+			parameter<float64> AEO_ind_A_rv  := T_sec <= 35[Celsius] ? 0.6 : T_sec <= 55[Celsius] ? 0.3 : 0.0 , Descr = "Aandeel eigen opwekking, ruimteverwarming, label A+";
+			parameter<float64> AEO_ind_B_rv  := T_sec <= 35[Celsius] ? 0.9 : T_sec <= 55[Celsius] ? 0.6 : 0.0 , Descr = "Aandeel eigen opwekking, ruimteverwarming, label B";
+			parameter<float64> AEO_ind_CE_rv := T_sec <= 35[Celsius] ? 1.0 : T_sec <= 55[Celsius] ? 0.9 : 0.0 , Descr = "Aandeel eigen opwekking, ruimteverwarming, label C, D of E";
+			parameter<float64> AEO_ind_tw    := T_sec <= 35[Celsius] ? 0.6 : T_sec <= 55[Celsius] ? 0.3 : 0.0 , Descr = "Aandeel eigen opwekking, warm tapwater";
+			parameter<float64> AEO_ind_K     : [0.0]                                                          , Descr = "Aandeel eigen opwekking koude, relevant indien koude geleverd kan worden, 100% individuele opwekking indien niet geleverd en wel gevraagd zoals bij utiliteiten";		
+		}
+	}
+	#include <Vermogens.dms>
+	
+	container netbeheer
+	{
+			parameter<Eur_m>   Ki_verv_LD_min      :=      0 [Eur_m]   , Descr = "minimaal kostenkengetal vervangen LD-gasnet"                      , Source = "doc/notitie aanpassingen E en G infra (243) naar nul aangepast op 2020-01-07 nav overleg netbeheerders";
+			parameter<Eur_m>   Ki_verv_LD_max      :=      0 [Eur_m]   , Descr = "maximaal kostenkengetal vervangen LD-gasnet"                      , Source = "doc/notitie aanpassingen E en G infra (297) naar nul aangepast op 2020-01-07 nav overleg netbeheerders";
+			parameter<Eur_asl> Ki_verw_g_laagb_min :=    495 [Eur_asl] , Descr = "minimaal kostenkengetal verwijderen gasaansluiting bij laagbouw"  , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_asl> Ki_verw_g_laagb_max :=    605 [Eur_asl] , Descr = "maximaal kostenkengetal verwijderen gasaansluiting bij laagbouw"  , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_asl> Ki_verw_g_hoogb_min :=  163.8 [Eur_asl] , Descr = "minimaal kostenkengetal verwijderen gasaansluiting bij hoogbouw"  , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_asl> Ki_verw_g_hoogb_max :=  200.2 [Eur_asl] , Descr = "maximaal kostenkengetal verwijderen gasaansluiting bij hoogbouw"  , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_asl> Ki_verw_g_util_min  :=  1738.8[Eur_asl] , Descr = "minimaal kostenkengetal verwijderen gasaansluiting bij utiliteit" , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_asl> Ki_verw_g_util_max  :=  2125.2[Eur_asl] , Descr = "maximaal kostenkengetal verwijderen gasaansluiting bij utiliteit" , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_m>   Ki_verw_LD_min      :=     90 [Eur_m]   , Descr = "minimaal kostenkengetal verwijderen LD-gasnet"                    , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_m>   Ki_verw_LD_max      :=    110 [Eur_m]   , Descr = "maximaal kostenkengetal verwijderen LD-gasnet"                    , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_asl> Ki_verzw_e_min      :=  204.3 [Eur_asl] , Descr = "minimaal kostenkengetal verzwaren aansluiting naar 3x25"          , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_asl> Ki_verzw_e_max      :=  249.7 [Eur_asl] , Descr = "maximaal kostenkengetal verzwaren aansluiting naar 3x25"          , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_MSR> Ki_MSR_min          :=  63000 [Eur_MSR] , Descr = "minimaal kostenkengetal plaatsen nieuwe MS-ruimte"                , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_MSR> Ki_MSR_max          :=  77000 [Eur_MSR] , Descr = "maximaal kostenkengetal plaatsen nieuwe MS-ruimte"                , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_m>   Ki_verzw_LS_min     :=     99 [Eur_m]   , Descr = "minimaal kostenkengetal verzwaren LS-net"                         , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<Eur_m>   Ki_verzw_LS_max     :=    121 [Eur_m]   , Descr = "maximaal kostenkengetal verzwaren LS-net"                         , Source = "doc/notitie aanpassingen E en G infra";
+			parameter<kW_MSR>  P_MSR_kw            :=    630 [kW_MSR]  , Descr = "individuele capaciteit van nieuw te plaatsen MS-ruimtes"          , Source = "doc/notitie aanpassingen E en G infra";
+
+		template infrakosten : Source = "doc/Notitie wijzigingen Vesta MAIS model E en G infrastructuur", IsHidden = "True"
+		{
+			//begin case parameters
+			parameter<ratio> InfraCurve;
+			parameter<ratio> KostenMin;
+			parameter<ratio> KostenMax;
+			//end case parameters
+
+			//kentallen investeringen ingrepen e en g infra
+			parameter<Eur_m>   Ki_verv_LD_len      := Infracurve * (KostenMin * Ki_verv_LD_min      + KostenMax * Ki_verv_LD_max);
+			parameter<Eur_asl> Ki_verw_g_laagb_asl := Infracurve * (KostenMin * Ki_verw_g_laagb_min + KostenMax * Ki_verw_g_laagb_max);
+			parameter<Eur_asl> Ki_verw_g_hoogb_asl := Infracurve * (KostenMin * Ki_verw_g_hoogb_min + KostenMax * Ki_verw_g_hoogb_max);
+			parameter<Eur_asl> Ki_verw_g_util_asl  := Infracurve * (KostenMin * Ki_verw_g_util_min  + KostenMax * Ki_verw_g_util_max);
+			parameter<Eur_m>   Ki_verw_LD_len      := Infracurve * (KostenMin * Ki_verw_LD_min      + KostenMax * Ki_verw_LD_max);
+			parameter<Eur_asl> Ki_verzw_e_asl      := Infracurve * (KostenMin * Ki_verzw_e_min      + KostenMax * Ki_verzw_e_max);
+			parameter<Eur_MSR> Ki_MSR              := Infracurve * (KostenMin * Ki_MSR_min          + KostenMax * Ki_MSR_max);
+			parameter<Eur_m>   Ki_verzw_LS_len     := Infracurve * (KostenMin * Ki_verzw_LS_min     + KostenMax * Ki_verzw_LS_max);
+			parameter<kW_MSR>  P_MSR               := P_MSR_kw;
+		}
+	}
+	container Onderhoud : ishidden = "true"
+	{
+		parameter<_yr> R_WOS_onderhoud    := 0.030[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "jaarlijkse onderhoudskosten warmteoverdrachtstations in warmtenetten";
+		parameter<_yr> R_OS_onderhoud     := 0.030[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "jaarlijkse onderhoudskosten onderstations in warmtenetten";
+		parameter<_yr> R_OS_admin         := 0.000[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 34 " , Descr = "jaarlijkse administratiekosten onderstations in warmtenetten";
+		parameter<_yr> R_pt_onderhoud     := 0.018[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "jaarlijkse onderhoudskosten primaire transportleidingen in warmtenetten";
+		parameter<_yr> R_pt_admin         := 0.000[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 34 " , Descr = "jaarlijkse administratiekosten primaire transportleidingen in warmtenetten";
+		parameter<_yr> R_Inst_onderhoud   := 0.030[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "jaarlijkse onderhoudskosten installaties in warmtenetten";
+		parameter<_yr> R_Inst_admin       := 0.030[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 34 " , Descr = "jaarlijkse administratiekosten installaties in warmtenetten";
+		parameter<_yr> R_lv_Admin         := 0.010[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "Fractie van vastrecht dat de leveancier aan administratiekosten besteedt";
+		parameter<_yr> R_id_onderhoud     := 0.025[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "jaarlijkse onderhoudskosten inpandige distributie als percentage van de initiele investering";
+		parameter<_yr> R_id_admin         := 0.000[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 34 " , Descr = "jaarlijkse administratiekosten inpandige distributie als percentage van de initiele investering";
+		parameter<_yr> R_ow_onderhoud     := 0.050[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "jaarlijkse onderhoudskosten opwekking aan de bron als percentage van de initiele investering";
+		parameter<_yr> R_ow_admin         := 0.025[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 34 " , Descr = "jaarlijkse administratiekosten opwekking aan de bron als percentage van de initiele investering";
+		parameter<_yr> R_wd_onderhoud     := 0.018[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "jaarlijkse onderhoudskosten wijkdistributie als percentage van de initiele investering";
+		parameter<_yr> R_wd_admin         := 0.000[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 34 " , Descr = "jaarlijkse administratiekosten wijkdistributie als percentage van de initiele investering";
+		parameter<_yr> R_wpColl_onderhoud := 0.035[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "jaarlijkse onderhoudskostencollectieve warmtepomp als percentage van de initiele investering";
+		parameter<_yr> R_wpColl_admin     := 0.025[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 34 " , Descr = "jaarlijkse administratiekosten collectieve warmtepomp als percentage van de initiele investering";
+		parameter<_yr> R_buffer_onderhoud := 0.025[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 33 " , Descr = "jaarlijkse onderhoudskosten seizoensbuffer als percentage van de initiele investering";
+		parameter<_yr> R_buffer_admin     := 0.025[_yr], Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.57 Tabel 34 " , Descr = "jaarlijkse administratiekosten seizoensbuffer als percentage van de initiele investering";
+	}
+	container OverigeInstallaties
+	{
+		container KK //Koken
+		{
+			unit<uint32> Installatietypes : nrofrows = 2
+			{
+				attribute<string>    name       : ['Gas', 'Elek'], IsHidden = "True";
+				attribute<string>    label      : ['Gaskookstel', 'Inductieplaat'];
+				attribute<eur_asl>   Ki_asl_min : [ 000, 1000], Source = "PBL (2019), Achtergronddocument Effecten Ontwerp Klimaatakkoord: Gebouwde Omgeving. Den Haag: Planbureau voor de Leefomgeving";
+				attribute<eur_asl>   Ki_asl_max : [ 000, 1000], Source = "PBL (2019), Achtergronddocument Effecten Ontwerp Klimaatakkoord: Gebouwde Omgeving. Den Haag: Planbureau voor de Leefomgeving";
+				attribute<ratio>     SPF        : [0.40, 0.65], Source = "TNO (2023)"; 
+				attribute<yr_uint16> Levensduur : [  15,   15], Source = "Consumentenbond";
+				attribute<Classifications/BemeterdeGebouwInput> BemeterdeGebouwInput_rel : [1,0], IsHidden = "True";
+				
+				attribute<.>     GasVervanger     := union_data(., V/Elek, V/Elek), IsHidden = "True";
+				attribute<bool>  GeenGasvervanger := Gasvervanger == ID(.), IsHidden = "True";	
+
+				//nrPers
+				parameter<GJ_yr_pers> Vkk_prs                := 0.40[ratio] * 0.88[ratio] * 9.57[m3_yr_pers] * Invoer/Kengetallen/constanten/GasEnergie, Descr = "gigajoule per persoon per jaar"; //0.4 = SPF gas
+
+				//Uoven
+				parameter<GJ_yr_asl>  Vkk_asl_Oven_1pers     := 1.5[ratio] * 0.40[ratio] * 0.88[ratio] * 3.55[m3_yr_asl] * Invoer/Kengetallen/constanten/GasEnergie; //0.4 = SPF gas, 1.5 = aantal keer oven gebruik per week, 0.88 = 12% geelektrificeerd
+				parameter<GJ_yr_asl>  Vkk_asl_Oven_23pers    := 1.4[ratio] * 0.40[ratio] * 0.88[ratio] * 3.55[m3_yr_asl] * Invoer/Kengetallen/constanten/GasEnergie; //0.4 = SPF gas, 1.4 = aantal keer oven gebruik per week, 0.88 = 12% geelektrificeerd
+				parameter<GJ_yr_asl>  Vkk_asl_Oven_45pers    := 2.8[ratio] * 0.40[ratio] * 0.88[ratio] * 3.55[m3_yr_asl] * Invoer/Kengetallen/constanten/GasEnergie; //0.4 = SPF gas, 2.8 = aantal keer oven gebruik per week, 0.88 = 12% geelektrificeerd
+
+				//Ufornuis
+				parameter<GJ_yr_asl>  Vkk_asl_Fornuis_1pers  := 4.9[ratio] * 0.40[ratio] * 0.88[ratio] * 2.90[m3_yr_asl] * Invoer/Kengetallen/constanten/GasEnergie; //0.4 = SPF gas, 4.9 = aantal keer fornuis gebruik per week, 0.88 = 12% geelektrificeerd
+				parameter<GJ_yr_asl>  Vkk_asl_Fornuis_23pers := 6.5[ratio] * 0.40[ratio] * 0.88[ratio] * 2.90[m3_yr_asl] * Invoer/Kengetallen/constanten/GasEnergie; //0.4 = SPF gas, 6.5 = aantal keer fornuis gebruik per week, 0.88 = 12% geelektrificeerd
+				parameter<GJ_yr_asl>  Vkk_asl_Fornuis_45pers := 6.5[ratio] * 0.40[ratio] * 0.88[ratio] * 2.90[m3_yr_asl] * Invoer/Kengetallen/constanten/GasEnergie; //0.4 = SPF gas, 6.5 = aantal keer fornuis gebruik per week, 0.88 = 12% geelektrificeerd
+
+				//samenvoeging
+				parameter<GJ_yr_asl>  Vkk_asl_1p             := Vkk_asl_Oven_1pers  + Vkk_asl_Fornuis_1pers;
+				parameter<GJ_yr_asl>  Vkk_asl_23p            := Vkk_asl_Oven_23pers + Vkk_asl_Fornuis_23pers;
+				parameter<GJ_yr_asl>  Vkk_asl_45p            := Vkk_asl_Oven_45pers + Vkk_asl_Fornuis_45pers;
+
+				//jaarfactor
+				parameter<GJ_yr_asl>  Vkk_zjr                := 0.40[ratio] * 0.88[ratio] * 0.375[m3_yr_asl] * Invoer/Kengetallen/constanten/GasEnergie; //0.4 = SPF gas, 0.88 = 12% geelektrificeerd
+						
+				container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .), IsHidden = "True";
+			}
+		}
+		container VT //Ventilatie
+		{
+			unit<uint32> Installatie_imp: StorageName = "%projDir%/installaties/Ventilatie.csv", StorageType = "gdal2.vect", StorageReadOnly = "True", IsHidden = "True"
+			{
+				attribute<string> name; // PrimaryKey
+			}
+			unit<uint32> Installatietypes := Installatie_imp
+			{
+				attribute<string>    name       := Installatie_imp/name, IsHidden = "True";
+				attribute<string>    label      := Installatie_imp/label;
+				attribute<yr_uint16> Startjaar  := Installatie_imp/startjaar[yr_uint16];
+				attribute<yr_uint16> Eindjaar   := Installatie_imp/eindjaar[yr_uint16];
+				attribute<GJ_yr_asl> V_RV_asl   := Installatie_imp/Vrv_asl[GJ_yr_asl];
+				attribute<GJ_yr_asl> V_E_asl    := Installatie_imp/Ve_asl[GJ_yr_asl];
+				attribute<yr_uint16> Levensduur := Installatie_imp/AT[yr_uint16];
+				attribute<float64>   P50P       := Installatie_imp/P50P[float64];
+				attribute<float64>   BETA       := Installatie_imp/BETA[float64];
+
+				unit<uint32> InstallatieMaatregel : StorageName = "%projDir%/installaties/VentilatieMaatregel.csv", StorageType = "gdal2.vect", StorageReadOnly = "True"
+				{
+					attribute<string> name := Inst_voor + '_x_' + Inst_na;
+					attribute<Installatietypes> Installatie_voor := rlookup(Inst_voor, Installatietypes/name);
+					attribute<Installatietypes> Installatie_na   := rlookup(Inst_na  , Installatietypes/name);
+
+					container ki_asl := for_each_nedv(Classifications/Uitvoering/Name, 'InstallatieMaatregel/'+Classifications/Uitvoering/Name+'[Eur_asl]', InstallatieMaatregel, EUR_asl);
+				}
+				
+				attribute<.>    GasVervanger     := ID(.), IsHidden = "True";
+				attribute<bool> GeenGasvervanger := Gasvervanger == ID(.), IsHidden = "True";
+				
+				container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .), IsHidden = "True";
+			}
+		}
+		container DK //Dak
+		{
+			unit<uint32> Installatietypes : nrofrows = 6
+			{
+				attribute<string>    name             : ['geen', 'Maximaal'   , 'Optimaal'  , 'Minimaal'  , 'Optimaal_ZonB'           , 'ZonB'], IsHidden = "True";
+				attribute<string>    label            : ['geen', 'Zon-PV 100%', 'Zon-PV 50%', 'Zon-PV 10%', 'Zon-PV 40% + Zonneboiler', 'Zonneboiler'];
+				attribute<eur_m2>    Ki_PV_opp_min    : [0,       178,           178,          178,          178,                        0        ], Source = "CE Delft, 2022";
+				attribute<eur_m2>    Ki_PV_opp_max    : [0,       200,           200,          200,          200,                        0        ], Source = "CE Delft, 2022";
+				attribute<eur_m2>    Ki_ZonB_opp      : [0,       0,             0,            0,            896.78,                     896.78   ], Source = "CE Delft, 2022";
+				attribute<eur_asl>   Ki_PV_asl_min    : [0,       903.57,        903.57,       903.57,       903.57,                     0        ], Source = "CE Delft, 2022";
+				attribute<eur_asl>   Ki_PV_asl_max    : [0,       903.57,        903.57,       903.57,       903.57,                     0        ], Source = "CE Delft, 2022";
+				attribute<eur_asl>   Ki_ZonB_asl      : [0,       0,             0,            0,            842.50,                     842.50   ], Source = "CE Delft, 2022";
+				attribute<eur_yr>    Kj_OH            : [0,       0,             0,            0,            10,                         10       ], Source = "CE Delft, 2022";
+				attribute<yr_uint16> Levensduur       : [99999,   15,            15,           15,           15,                         20       ], Source = "FO Hestia 1.0"; // is ook afschrijftermijn
+				attribute<ratio>     DakaandeelZonPV  : [0.0,     1.0,           0.5,          0.1,          0.4,                        0.0      ], Source = "FO Hestia 1.0";
+				attribute<kw_m2>     Pdak_opp         : [0.0,     0.18,          0.18,         0.18,         0.18,                       0.0      ], Source = "CE Delft, 2022";
+				attribute<GJ_yr_kw>  Opbr_cap_e_DP    : [0.0,     2.9232,        3.1500,       3.1500,       3.1500,                     0.0      ], Source = "CE Delft, 2022";
+				attribute<GJ_yr_kw>  Opbr_cap_e_DS    : [0.0,     2.9268,        3.0348,       3.0348,       3.0348,                     0.0      ], Source = "CE Delft, 2022";
+				attribute<GJ_yr_m2>  Opbr_opp_tw      : [0.0,     0.0,           0.0,          0.0,          1.89,                       1.89     ], Source = "CE Delft, 2022";
+				attribute<GJ_yr>     Hulpenergie      : [0.0,     0.0,           0.0,          0.0,          0.144,                      0.144    ], Source = "CE Delft, 2022";
+				attribute<ratio>     beta             : [15.0,    1.0,           1.5,          2.0,          1.0,                        1.0      ], Source = "Werkwaarde";
+				attribute<ratio>     P50P             : [0.001,   0.001,         0.001,        0.001,        0.001,                      0.001    ], Source = "Werkwaarde";
+				
+				attribute<.>    GasVervanger     := ID(.), IsHidden = "True";
+				attribute<bool> GeenGasvervanger := Gasvervanger == ID(.), IsHidden = "True";	
+
+				parameter<ratio> NuttigDak := 0.67, Source = "CE Delft, 2022";
+				parameter<ratio> AandeelTW := 0.50;
+				
+				container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .), IsHidden = "True";
+			}
+		}
+	}
+
+	#include <Eindgebruikerskosten.dms>
+}

@@ -1,0 +1,272 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container CalculationSchemes: Using = "Units;Geography"
+{
+	#include <ModelObjectKentallenImport.dms>
+	#include <LegeBebouwingsComponent.dms>
+	#include <StartingStateComponent.dms>
+	#include <TussenResultaten.dms>	
+	#include <Payments.dms>
+	#include <Transformations.dms>
+	#include <ResultatenT.dms>
+	#include <StateNaAllocatieComponent.dms>
+	#include <AllocatieResultatenComponent.dms>
+	#include <BerekenFunctioneel.dms>
+	#include <FunctioneelToMetervraag.dms>
+	#include <EnergiePrijzen.dms>
+	#include <KostenBatenSchema.dms>
+	#include <KostenWoningen.dms>
+	#include <KostenUtiliteit.dms>
+	#include <NcwSchema.dms>
+	#include <AanbodOpties.dms>
+	#include <Rapportage.dms>
+	#include <NTA8800.dms>
+	#include <AansluitCapaciteit.dms>
+
+	// template om vraag naar warmte en koude te berekenenen voor gebiedsopties
+	template WarmteVraagT
+	{
+		// begin case parameters
+		unit<uint32> BO;
+		parameter<Celsius> T_sec;
+		parameter<bool>    Koudebeschikbaar;
+		attribute<float64> BeschikbaarheidsFactor(BO);
+		// end case parameters
+
+		//Aansluitwaardes
+		attribute<kW>     ASW_RV             (BO) := =T_sec <= 55[Celsius] ? 'BO/AansluitCapaciteit/ASW_RVlt' : 'BO/AansluitCapaciteit/ASW_RVmt';
+		attribute<kW>     ASW_TW             (BO) := =T_sec <= 55[Celsius] ? 'BO/AansluitCapaciteit/ASW_TWlt' : 'BO/AansluitCapaciteit/ASW_TWmt';
+		attribute<kW>     ASW_K              (BO) := =KoudeBeschikbaar     ? 'BO/AansluitCapaciteit/ASW_K'    : 'const(0[kw], BO)';
+
+		//Gelijktijdigheidsfactoren
+		parameter<ratio>  GTF_RV             := =T_sec <= 55[Celsius]    ? 'BO/AansluitCapaciteit/GTF_RVlt'    : 'BO/AansluitCapaciteit/GTF_RVmt';
+		parameter<ratio>  GTF_TW             := BO/AansluitCapaciteit/GTF_TW;
+		parameter<ratio>  GTF_K              := BO/AansluitCapaciteit/GTf_K;
+
+		//Vermogensvraag aan het secundaire net
+		attribute<kW>     P_RV_sec           (BO) := ASW_RV * GTF_RV;
+		attribute<kW>     P_TW_sec           (BO) := ASW_TW * GTF_TW;
+		attribute<kW>     P_K_sec            (BO) := =KoudeBeschikbaar ? 'ASW_K * GTF_K': 'const(0.0[kw],BO)';
+
+		attribute<kW>     AansluitCapaciteit (BO) := =KoudeBeschikbaar ? 'max_elem(ASW_TW   + ASW_RV  , ASW_K  )' : 'ASW_TW   + ASW_RV  ';
+		attribute<kW>     P_sec              (BO) := =KoudeBeschikbaar ? 'max_elem(P_TW_sec + P_RV_sec, P_K_sec)' : 'P_TW_sec + P_RV_sec';
+
+		attribute<nrAsl>  nrAansluitingen    (BO) := BeschikbaarheidsFactor * BO/nrAansluitingen;
+		attribute<m2>     Oppervlakte        (BO) := BeschikbaarheidsFactor * BO/Oppervlakte;
+
+		//Vraag
+		attribute<GJ_yr>  V_RV               (BO) := BeschikbaarheidsFactor * BO/Functioneel/RV;
+		attribute<GJ_yr>  V_TW               (BO) := BeschikbaarheidsFactor * BO/Functioneel/TW;
+		attribute<GJ_yr>  V_K                (BO) := BeschikbaarheidsFactor * BO/Functioneel/KD;
+		attribute<GJ_yr>  V_Warmte           (BO) := V_RV + V_TW;
+		
+		//Opbrengsten
+		attribute<Eur_yr> Oj_Warmte          (BO) := V_Warmte * WarmteWet/WarmtePrijs, Source = "FO v7a F 8-10";
+		attribute<Eur_yr> Oj_VastRechtMT     (BO) := BeschikbaarheidsFactor * BO/Opbrengsten/VastRechtMT_T;
+		attribute<Eur_yr> Oj_VastRechtLT     (BO) := BeschikbaarheidsFactor * BO/Opbrengsten/VastRechtLT_T;
+		attribute<Eur_yr> Oj_VastRechtK      (BO) := BeschikbaarheidsFactor * BO/Opbrengsten/VastRechtK_T;
+		attribute<Eur>    Oi_AansluitBijdrage(BO) := BeschikbaarheidsFactor * BO/Opbrengsten/AansluitBijdrageT;
+
+		container Warmtewet
+		{			
+			unit<uint32> GasVerbruikers := select(Bebouwingscomponenten/Woning/BO/Metervraag/Gas > 0.0[gj_yr])
+			{
+				attribute<GJ_yr> V_gas    := select_data(GasVerbruikers, Bebouwingscomponenten/Woning/BO/Metervraag/Gas);
+				attribute<GJ_yr> V_warmte := select_data(GasVerbruikers, Bebouwingscomponenten/Woning/BO/Functioneel/RV + Bebouwingscomponenten/Woning/BO/Functioneel/TW);
+			}
+			parameter<float64> PrijsFactor_impl :=  sum(GasVerbruikers/V_gas) / sum(GasVerbruikers/V_warmte) * Voorkeuren/MinderDanAndersFactor;
+			parameter<float64> PrijsFactor      :=  MakeDefined(PrijsFactor_impl, 1.25);
+			parameter<Eur_GJ>  WarmtePrijs      := = Voorkeuren/IsVasteWarmtePrijs 
+				? 'Voorkeuren/VasteWarmtePrijs'
+				: 'PrijsFactor * Prijzen/AardGas/Staffel/KGJ_eindgebruik_excl[classify(0[GJ_yr], Prijzen/Aardgas/Staffel/ClassBreak)]';
+		}
+	}
+
+	// template om de kosten van leidingen te berekenenen in euro per meter, afhankelijke van capaciteit
+	template BuisKosten
+	{
+		// begin case parameters
+		unit<uint32>  LeidingDomein;
+		attribute<MW> Capaciteit (LeidingDomein);
+		// begin case parameters
+
+		attribute<Eur_m> K_min (LeidingDomein) := Capaciteit > 0[MW] ? 400[Eur_m] + 210[Eur / m] * (Capaciteit * 1.0[1 / MW])^ 0.5 : 0[Eur_m], Source = "Functioneel Ontwerp 4.0 bijlage A.11";
+		attribute<Eur_m> K_max (LeidingDomein) := Capaciteit > 0[MW] ? 800[Eur_m] + 200[Eur / m] * (Capaciteit * 1.0[1 / MW])^ 0.6 : 0[Eur_m], Source = "Functioneel Ontwerp 4.0 bijlage A.11";
+		attribute<Eur_m> K_m   (LeidingDomein) := (K_min * Schuiven/KostenMin + K_max * Schuiven/KostenMax) * Leercurves/Warmtenet/curve, descr = "kosten per meter, exclusief omwegfactor";
+		attribute<Eur_m> aK_m  (LeidingDomein) := Invoer/Kengetallen/Constanten/Omwegfactor * K_m, descr = "kosten per meter, inclusief omwegfactor";
+	}
+	
+	// template om leercurve te bepalen zoals die geldig is in een specifiek zichtjaar
+	template MaakCurve
+	{
+		//parameters
+		attribute<percent> Datamin  (Classifications/Periode);
+		attribute<percent> DataMax  (Classifications/Periode);
+		//parameters
+		parameter<ratio>   CurveMin := interpolate_linear(Zichtjaar_jaar, Classifications/Periode/EindJaar, DataMin) / 100[percent], IsHidden = "True";
+		parameter<ratio>   CurveMax := interpolate_linear(Zichtjaar_jaar, Classifications/Periode/EindJaar, DataMax) / 100[percent], IsHidden = "True";
+		parameter<ratio>   Base     := CurveMin * Schuiven/CurveMin + CurveMax * Schuiven/CurveMax, IsHidden = "True";
+		parameter<ratio>   Curve    := Base * Schuiven/LerenAan + 1[ratio] * Schuiven/LerenUit;
+	}
+
+	template HuishoudensGrootteSchatting
+	{
+		//begin parameters
+		unit<uint32> Obs;
+		//end parameters
+
+		attribute<m2>    Oppervlakte     (Obs) := Obs/Oppervlakte_i, descr = "oppervlakte van verblijfsobject";
+		attribute<nrAsl> Aansluitingen   (Obs) := Obs/nrAansluitingen_i, descr = "aantal eenheden dat het verblijfsobject voor meetelt";
+		attribute<Classifications/Woningtype> BebouwingsType_rel (Obs) := Obs/WoningType_rel, descr = "type woning (vrijstaand, rij, appartement, etc.)";
+		attribute<nrPers> nrPersonen     (Obs) :=
+			  Oppervlakte   * Classifications/Woningtype/Huishoudgrootte/Personen_per_m2[BebouwingsType_rel]
+			+ Aansluitingen * Classifications/Woningtype/Huishoudgrootte/Personen_per_aansluiting[BebouwingsType_rel], descr = "toepassing regressiecoefficienten huishoudensgrootte o.b.v. statistieken CBS, verwerkt in VIVET referentieverbruiken";
+		attribute<nrPers> nrPersonen_rnd (Obs) := float64(round(nrPersonen)), descr = "aantal persongen in huishouden afgerond, voor toepassingen waar dat vereist is, anders onafgerond getal gebruken.";
+	}
+
+	template TWprofiel_selectie
+	{
+		//begin parameters
+		unit<uint32> Obs;
+		//end parameters
+
+		//============ schatting aantal personen per huishouden 		
+		container HuishoudensGrootte := model/calculationschemes/HuishoudensGrootteSchatting(Obs);
+
+		attribute<nrPers> Personen_asl    (Obs) := HuishoudensGrootte/nrPersonen_rnd / Obs/nrAansluitingen_i * 1[nrAsl], descr = "inschatting aantal personen in huishouden";
+		attribute<m2>     Oppervlakte_asl (Obs) := Obs/Oppervlakte_i / Obs/nrAansluitingen_i * 1[nrAsl], descr = "oppervlakte van verblijfsobject";
+
+		attribute<Invoer/Kengetallen/Bebouwing/Woning/TWprofiel> TWprofiel_rel (Obs) :=
+				rlookup( 
+						(Personen_asl <= 1[nrPers] ?'A': Personen_asl <= 2[nrPers] ?'B': Personen_asl <= 3[nrPers] ?'C': Personen_asl <= 4[nrPers] ?'D':'E')
+					+   (Oppervlakte_asl < 75[m2] ? 'A': Oppervlakte_asl < 100[m2] ?'B': Oppervlakte_asl < 125[m2] ?'C': Oppervlakte_asl < 150[m2]?'D':'E')
+				, Invoer/Kengetallen/Bebouwing/Woning/TWprofiel/code) ;
+	}
+
+	template BerekenWarmtewinst
+	{
+		//begin parameters
+		unit<uint32> Obs;
+		parameter<string> warmteverlies_path;
+		//end parameters
+
+		//============ warmtewinst door personen wordt bepaald als constante
+		container HuishoudensGrootte := model/calculationschemes/HuishoudensGrootteSchatting(Obs), ishidden = "True";
+
+		attribute<GJ_yr> warmtewinst_personen         (Obs) := HuishoudensGrootte/nrPersonen * Invoer/Kengetallen/WarmteVraag/warmtewinst_personen;
+
+		//============ warmtewinst door apparaten wordt gelijkgesteld aan de vraag naar elektriciteit voor elektrische apparatuur
+		attribute<GJ_yr> warmtewinst_apparaten        (Obs) := Obs/Functioneel/EA * Invoer/Kengetallen/Warmtevraag/EA_winst_nuttig;
+
+		//============ warmtewist door zoninstralen door ramen boven (RB) en onder (RO) als functie van oppervlak bouwdeel en waarde horende bij isolatiegraad
+		attribute<GJ_yr> warmtewinst_zoninstraling_RB (Obs) := ='Obs/bouwdelen/RB * merge(uint8(Obs/bouwdelen/isolatie/RB), GJ_yr_m2,'+ AsItemList('Invoer/Kengetallen/Warmtevraag/Zoninstraling[Classifications/IsolatieNiveau/V/'+Classifications/IsolatieNiveau/name+']')+')', descr = "warmtewinst ramen boven";
+		attribute<GJ_yr> warmtewinst_zoninstraling_RO (Obs) := ='Obs/bouwdelen/RO * merge(uint8(Obs/bouwdelen/isolatie/RO), GJ_yr_m2,'+ AsItemList('Invoer/Kengetallen/Warmtevraag/Zoninstraling[Classifications/IsolatieNiveau/V/'+Classifications/IsolatieNiveau/name+']')+')', descr = "warmtewinst ramen onder";
+		attribute<GJ_yr> warmtewinst_zoninstraling    (Obs) := warmtewinst_zoninstraling_RO + warmtewinst_zoninstraling_RB;	
+
+		//============ totaal warmtewinsten
+		attribute<GJ_yr> Totaal (Obs) := = 'min_elem(warmtewinst_personen + warmtewinst_apparaten + warmtewinst_zoninstraling, Invoer/Kengetallen/WarmteVraag/Max_warmtewinst * ' + warmteverlies_path + ')';
+	}
+
+	template KokenAllocatieInitieel
+	{
+		//begin parameters
+		unit<uint32> Obs;
+		//end parameters
+
+			unit<uint32> Kooktype := Invoer/Kengetallen/OverigeInstallaties/KK/Installatietypes;
+
+			parameter<uint32>  seed        := 144;
+  			attribute<float64> RndNr (Obs) := rnd_uniform(seed, Obs, range(float64, 0d, 1d));
+
+  			unit<uint32> BouwjaarKlasseKoken : nrofrows = 5
+  			{
+  				attribute<string>    name       := AsItemName(label);
+  				attribute<string>    label      : ['tot 1930','1931-1959','1960-1980','1980-1995','na 1995'];
+  				attribute<yr_uint16> Classbreak : [0,1931,1960,1980,1996];
+  			}
+
+  			unit<uint32> OppervlakteKlasseKoken : nrofrows = 5
+  			{
+  				attribute<string>    name       := AsItemName(label);
+  				attribute<string>    label      : ['<75 m2','75-100 m2','100-125 m2','125-150 m2','>150 m2'];
+  				attribute<m2>        Classbreak : [0,75,100,125,150];
+  			}
+
+  			unit<uint32> OppervlakBouwjaarKoken := combine(BouwjaarKlasseKoken,OppervlakteKlasseKoken)
+  			{
+  				attribute<string>  name   := AsItemName(label);
+  				attribute<string>  label  := BouwjaarKlasseKoken/label[nr_1] + ' & ' + OppervlakteKlasseKoken/label[nr_2];
+  			}
+
+
+  			unit<uint32> CombinedKlasse := combine(Classifications/eigendom,OppervlakBouwjaarKoken)
+  			{
+  				attribute<string>  name   := AsItemName(label);
+  				attribute<string>  label  := Classifications/eigendom/label[nr_1] + ' & ' + OppervlakBouwjaarKoken/label[nr_2];
+
+  				attribute<ratio> nrGas  : [
+						0.99,	0.84,	0.82,	0.83,	0.68,
+						0.92,	0.77,	0.84,	0.80,	0.63,
+						0.73,	0.78,	0.73,	0.66,	0.52,
+						0.83,	0.76,	0.59,	0.60,	0.50,
+						0.73,	0.35,	0.41,	0.64,	0.55,
+
+						0.90,	1.00,	0.67,	0.63,	0.84,
+						1.00,	0.84,	0.81,	1.00,	0.87,
+						0.86,	0.89,	0.50,	0.96,	0.06,
+						0.33,	0.83,	0.87,	0.56,	0.00,
+						0.31,	0.45,	0.63,	0.57,	0.40,
+
+						0.90,	0.79,	0.85,	1.00,	1.00,
+						0.95,	0.94,	0.86,	1.00,	0.00,
+						0.80,	0.81,	0.85,	0.76,	0.00,
+						0.84,	0.83,	0.79,	0.80,	1.00,
+						0.65,	0.54,	0.48,	0.95,	0.00];
+						
+  				
+  				attribute<ratio> nrElek      := 1.0[ratio] - nrGas;
+  				attribute<nrAsl> Count       := sum(Obs/nrAansluitingen_i, CombinedKlasse_rel);
+  				attribute<nrAsl> Count_elek  := sum(float64(Installatietype_rel_i == Kooktype/V/Elek) * Obs/nrAansluitingen_i, CombinedKlasse_rel );
+  				attribute<ratio> Ratio_elek  := Count_elek / Count;
+  				attribute<ratio> TeAlloceren := nrElek - Ratio_elek;
+  				
+  				container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+  			}
+
+  			attribute<BouwjaarKlasseKoken>    BouwjaarKlasseKoken_rel    (Obs) := classify(Obs/Bouwjaar     , BouwjaarKlasseKoken/Classbreak);
+  			attribute<OppervlakteKlasseKoken> OppervlakteKlasseKoken_rel (Obs) := classify(Obs/Oppervlakte_i, OppervlakteKlasseKoken/Classbreak);
+  			attribute<OppervlakBouwjaarKoken> OppervlakBouwjaarKoken_rel (Obs) := combine_data(OppervlakBouwjaarKoken, BouwjaarKlasseKoken_rel, OppervlakteKlasseKoken_rel);
+  			attribute<CombinedKlasse>         CombinedKlasse_rel         (Obs) := combine_data(CombinedKlasse, Obs/Eigendom_rel, OppervlakBouwjaarKoken_rel);
+
+			attribute<Kooktype> Installatietype_rel_i (Obs) := Gasloos || isdefined(BestaandAflevergebied_rel) ? Kooktype/V/Elek : Kooktype/V/Gas;
+
+			attribute<Kooktype> Installatietype_rel   (Obs) :=
+				= not(Invoer/StartgegevensAan) 
+						?	'Installatietype_rel_i' 
+						: 	'max_elem(Installatietype_rel_i, RndNr < CombinedKlasse/TeAlloceren[CombinedKlasse_rel] ? Kooktype/V/Elek : Kooktype/V/Gas)';
+	}
+}
+
+			/*	tabel invoer. Source = TNO
+	
+			Eigendom			Bouwjaarklasse	<75		75-100	100-125	125-150	>150
+			koopwoning			<1930			0.99	0.84	0.82	0.83	0.68
+								1931-1959		0.92	0.77	0.84	0.80	0.63
+								1960-1980		0.73	0.78	0.73	0.66	0.52
+								1980-1995		0.83	0.76	0.59	0.60	0.50
+								>1995			0.73	0.35	0.41	0.64	0.55
+			particuliere huur	<1930			0.90	1.00	0.67	0.63	0.84
+								1931-1959		1.00	0.84	0.81	1.00	0.87
+								1960-1980		0.86	0.89	0.50	0.96	0.06
+								1980-1995		0.33	0.83	0.87	0.56	0.00
+								>1995			0.31	0.45	0.63	0.57	0.40
+			sociale huur		<1930			0.90	0.79	0.85	1.00	1.00
+								1931-1959		0.95	0.94	0.86	1.00	0.00
+								1960-1980		0.80	0.81	0.85	0.76	0.00
+								1980-1995		0.84	0.83	0.79	0.80	1.00
+								>1995			0.65	0.54	0.48	0.95	0.00
+			*/

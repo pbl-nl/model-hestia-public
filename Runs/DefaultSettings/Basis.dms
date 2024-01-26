@@ -1,0 +1,309 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// Deze file bevat een basis voor de Vesta instellingen die vanuit iedere run           //
+// geincludeerd wordt en generiek of per zichtjaar kan worden overruled                 //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Basis : Using = "Units"
+{
+	unit<uint32>    PlanRegio         := Invoer/RuimtelijkeData/StudieGebied/buurt, Descr = "CBS-buurten worden als definitie van plangebied gehanteerd", IsHidden = "True";
+	attribute<bool> BS_isActive (Classifications/BebouwingsSectorBase) : [ true, false ], Descr = "Welke gebouwen worden meegenomen?  [ Woningen, Utiliteit ]", IsHidden = "True";
+
+	parameter<bool> RuimtelijkeOntwikkelingAan := true, Descr = "Wordt nieuwbouw meegenomen JA/NEE";
+
+	parameter<string> RuimtelijkeOntwikkelingScenario := 'BAU'; //Keuze uit:
+		//GR, NOS, OO, VW, BAU
+
+	parameter<string> KlimaatScenario := 'GL'; //Keuze uit WH, WL, GH, GL
+	
+	container StartGebouwOpties :  Descr = "Gebouwoptie die bebouwingscomponenten bij initialisatie toegewezen krijgen"
+	{
+		parameter<string> BestaandeWoning  := 'VR_zKD',      Descr = "VR-ketel, zonder koeling, schillabel uit invoerbestand (of onbekend)";
+		parameter<string> NieuwbouwWoning  := 'LweWP_wKD',   Descr = "Luchtwarmtepomp, met koeling, schillabel A";
+		parameter<string> BestaandeUtil    := 'VR_vKD',      Descr = "VR-ketel, met koeling, schillabel afhankelijk van bouwjaar", IsHidden = "True";
+		parameter<string> NieuwbouwUtil    := 'LweWP_wKD',   Descr = "HR-ketel, met koeling, schillabel A", IsHidden = "True";
+		
+		container GebiedoptieGebouwopties : Descr = "Gebouwopties die door gebiedsoptie kunnen worden geactiveerd", IsHidden = "True"
+		{
+			parameter<string> Optie_H2HR_w := 'H2R_zK',      Descr = "H2 woningen : H2-ketel, zonder koeling";
+			parameter<string> Optie_H2WP_w := 'H2WP_zK',     Descr = "H2 woningen : H2-hybrideWP, zonder koeling";
+			parameter<string> Optie_H2HR_u := 'H2R_mK',      Descr = "H2 utiliteit : H2-ketel, met koeling";
+			parameter<string> Optie_H2WP_u := 'H2WP_mK',     Descr = "H2 utiliteit : H2-hybrideWP, met koeling";
+			parameter<string> Optie_BWPg_u := 'BeWPgr_mK_B', Descr = "Alternatieven bij LT vs EWP : BodemWP groot, met koeling";
+			parameter<string> Optie_BWPk_u := 'BeWPkl_mK_B', Descr = "Alternatieven bij LT vs EWP : BodemWP klein, met koeling";
+			parameter<string> Optie_LWP_u  := 'LeWP_mK_B',   Descr = "Alternatieven bij LT vs EWP : LuchtWP, met koeling";
+			parameter<string> Optie_LWP_w  := 'LeWP_zK_B',   Descr = "Alternatieven bij LT vs EWP : LuchtWP, zonder koeling";
+			parameter<string> Optie_BWP_w  := 'BeWP_zK_B',   Descr = "Alternatieven bij LT vs EWP : BodemWP, zonder koeling";
+		}
+	}
+	
+	container Beleid
+	{
+		container EIA := InvesteringsSubsidies, IsHidden = "True";
+		container SplitIncentive
+		{
+			parameter<float64> SplitIncentiveVerbruik_PH  := 0.8 , Descr = "aandeel van vermeden verbruikskosten die de gebouweigenaar particuliere huur ontvangt in plaats van de gebruiker";
+			parameter<float64> SplitIncentiveVastrecht_PH := 0.8 , Descr = "aandeel van vermeden vastrechtkosten die de gebouweigenaar particuliere huur ontvangt in plaats van de gebruiker";
+			parameter<float64> SplitIncentiveVerbruik_WC  := 0.8 , Descr = "aandeel van vermeden verbruikskosten die de gebouweigenaar woningcorporaties ontvangt in plaats van de gebruiker";
+			parameter<float64> SplitIncentiveVastrecht_WC := 0.8 , Descr = "aandeel van vermeden vastrechtkosten die de gebouweigenaar woningcorporaties ontvangt in plaats van de gebruiker";
+		}
+		container InvesteringsSubsidies: Descr = "Investeringssubsidie: bepaald percentage van een investering wordt door de overheid betaald"
+		{
+			container EigenarenBasis : Descr = "Instellingen voor alle gebouwen, eventueel specifiek per bebouwingscomponent op te geven"
+			{
+				parameter<float64> Rs_LokaleOpwekking         := 0.0 , Descr = "subsidie op installaties in gebouwopties";
+				parameter<float64> Rs_GebouwVerbetering       := 0.0 , Descr = "subsidie op gebouwverbetering";
+				parameter<float64> Rs_OngeriefsVergoeding     := 0.0 , Descr = "subsidie op ongeriefsvergoeding tbv gebiedsoptie";
+				parameter<float64> Rs_ProjectManagement       := 0.0 , Descr = "subsidie op projectmanagement   tbv gebiedsoptie";
+			}
+
+			container E_w := EigenarenBasis, Descr = "Eigenaren woningen, niet specifiek opgegeven", IsHidden = "True";
+			container E_u := EigenarenBasis, Descr = "Eigenaren utiliteit, niet specifiek opgegeven", IsHidden = "True";
+
+			parameter<ratio> id := 0.0, Descr = "Investeringssubsidie inpandige distributie als fractie van de investering";
+			parameter<ratio> wd := 0.0, Descr = "Investeringssubsidie wijkdistributie als fractie van de investering";
+			parameter<ratio> pt := 0.0, Descr = "Investeringssubsidie primair transport als fractie van de investering";
+			parameter<ratio> ow := 0.0, Descr = "Investeringssubsidie opwekking met bronnen als fractie van de investering";
+		}
+
+		container SDE
+		{
+			parameter<Eur_GJ> SDE_H2  := 0[Eur_GJ], Descr = "productiesubsidie waterstof";
+			parameter<Eur_GJ> SDE_LT  := 0[Eur_GJ], Descr = "productiesubsidie lage temperatuur warmtenetten met puntbron";
+			parameter<Eur_GJ> SDE_WKO := 0[Eur_GJ], Descr = "productiesubsidie lage temperatuur warmtenetten met WKO en evt. TEO";
+		}
+	}
+
+	container AanbodKentallen := VraagKentallen, Descr = "Blok 3, zie FO $4.2"
+	{
+		container RestWarmte  := VraagKentallen, IsHidden = "True";
+		container GeoThermie  := VraagKentallen, IsHidden = "True";
+		container BioWKK      := VraagKentallen, IsHidden = "True";
+		container WijkWKK     := VraagKentallen, IsHidden = "True";
+		container WKO         := VraagKentallen
+		{
+			parameter<bool> BuitenContour: [false], Descr = "Mag WKO buiten de WKO-potentiecontour worden toegepast?";
+		}
+		container TEO         := VraagKentallen
+		{
+			parameter<bool> BuitenContour: [false], Descr = "Mag WKO met TEO buiten de maximale afstand van de TEO-potentiecontour worden toegepast?";
+		}
+		container AardGas     := VraagKentallen, IsHidden = "True";
+		container Lt15_30     := VraagKentallen, IsHidden = "True";
+		container Lt15_50     := VraagKentallen, IsHidden = "True";
+		container Lt15_70     := VraagKentallen, IsHidden = "True";
+		container Lt30_30     := VraagKentallen, IsHidden = "True";
+		container Lt30_50     := VraagKentallen, IsHidden = "True";
+		container Lt30_70     := VraagKentallen, IsHidden = "True";
+		container WaterstofHR := VraagKentallen, IsHidden = "True";
+		container WaterstofWP := VraagKentallen, IsHidden = "True";
+		container BuurtWKO    := VraagKentallen
+		{
+			parameter<bool> BuitenContour: [true], Descr = "Mag BuurtWKO buiten de WKO-potentiecontour worden toegepast?";
+		}
+	}
+
+	container BAG : IsHidden = "True"
+	{
+		parameter<uint8> IndustrieDoetMee := 1b, Descr = "In hoeverre moeten gebouwen met een industriefunctie (volgens de BAG) meegenomen worden?";
+		// 0b: in Utiliteit doet alle industrie niet mee (dus ook alle vbo die industrie in combinatie met een andere gebruikdoel hebben)
+		// 1b: in Utiliteit doen vbos niet mee die alleen een industriefunctie hebben, wel vbos met meerdere gebruiksdoelen waaronder industrie maar ook bijvoorbeeld wonen of winkel
+		// 2b: in Utiliteit doet alle industrie mee
+	}
+
+	container InstallatieSet
+	{
+		parameter<bool> NationaleKostenAfweging :  [false], Descr = "maak maatschappelijke rentabiliteitsafweging indien true, anders obv eindgebruikerskosten";
+
+		container InstallatieSetCriteria := for_each_nedv(Classifications/GebouwOptie/name
+				, id(Classifications/GebouwOptie) == Classifications/GebouwOptie/V/geen
+					?	Quote('criteria/always')
+					:	Quote('criteria/never')
+				, void
+				, string
+				)
+			{
+				parameter<string> Gebied_zK    : ['Criteria/Gebied'], Descr = "alternatieve state gebiedsoptie woningen, zonder koeling", IsHidden = "True";
+				parameter<string> Gebied_gK    : ['Criteria/Gebied'], Descr = "alternatieve state gebiedsoptie utiliteit, met eigen koeling", IsHidden = "True";
+				parameter<string> Gebied_H2_zK : ['Criteria/Gebied'], Descr = "alternatieve state gebiedsoptie voor waterstof", IsHidden = "True";
+				parameter<string> Gebied_H2_mK : ['Criteria/Gebied'], Descr = "alternatieve state gebiedsoptie voor waterstof", IsHidden = "True";
+
+				parameter<bool>   KiesMaatschappelijk := NationaleKostenAfweging, IsHidden = "True";
+				parameter<bool>   Afweging_VT         := true, IsHidden = "True";
+				parameter<bool>   Afweging_DK         := true, IsHidden = "True";
+				parameter<bool>   Afweging_KK         := true, IsHidden = "True";
+			}
+
+	}
+
+	container RuimtelijkeVraag
+	{
+		container Gedrag
+		{
+			parameter<float64> RV : [0.95], Descr = "Schuif om functionele vraag naar ruimteverwarming hoger of lager te schalen (1 = geen schalingsfactor)";
+			parameter<float64> KD : [1.00], Descr = "Schuif om functionele vraag naar koude hoger of lager te schalen (1 = geen schalingsfactor)";
+			parameter<float64> TW : [0.95], Descr = "Schuif om functionele vraag naar warm water hoger of lager te schalen (1 = geen schalingsfactor)";
+			parameter<float64> EA : [1.00], Descr = "Schuif om functionele vraag naar elektriciteit voor apparatuur waaronder ventilatie hoger of lager te schalen (1 = geen schalingsfactor)";
+			parameter<float64> VT : [1.00], Descr = "Schuif om functionele vraag naar ventilatie hoger of lager te schalen (1 = geen schalingsfactor)";
+			parameter<float64> KK : [1.00], Descr = "Schuif om functionele vraag naar koken hoger of lager te schalen (1 = geen schalingsfactor)";
+		}
+		container Lokaal : IsHidden = "True"
+		{
+			container Generiek
+			{
+				container GebouwOpties := InstallatieSet/InstallatieSetCriteria, IsHidden = "True";
+				container Kosten
+				{
+					parameter<ratio> EfficiencySchuif            : [0.5], Descr = "1.0 = maximale efficiency, 0.0 = minimale efficiency";
+					parameter<ratio> VerbeterMinMaxSchuif        : [0.5], Descr = "0.0 = minimale kosten; 1.0 = maximale kosten.";
+					parameter<ratio> LeercurveMinMaxSchuif       : [0.5], Descr = "0.0 = optimistische leercurve; 1.0= pessimistische leercurve";
+
+					parameter<ratio> LeercurveGebruikSchuif      : [1.0], Descr = "0.0 = kosten constant; 1.0 = Leercurve geheel in gebruik";
+					parameter<ratio> IndividueleVerwarmingSchuif : [0.846], Descr = "0.0 = alle meergezinswoningen hebben blokverwarming 1.0 = alle meergezinswonigen hebben individuele verwarming", IsHidden = "True";
+				}
+				container Opbrengsten
+				{
+					parameter<ratio> MinMaxSchuif                       := 1  [ratio], Descr = "opbrengsten voor de energieproducenten, dus Vastrecht en Aansluitbijdrage";
+					parameter<ratio> HuurVerlagingBijGebiedsOptieSchuif := 0.5[ratio], Descr = "0.0 is geen huurverlaging; 1.0 is volledige verlaging (E 160,-) per woning";
+				}
+			}
+
+			container Woning := Generiek, IsHidden = "True"
+			{
+				container GebouwOpties := Generiek/Gebouwopties
+				{
+					parameter<string> Gebied_K: ['Criteria/Gebied']; // alternatieve state gebiedsoptie met koudelevering
+					parameter<string> Gebied_w: ['Criteria/Gebied']; // alternatieve state gebiedsoptie woningen, zonder koeling
+					parameter<string> VR_zK_x : ['Criteria/always']; 
+					parameter<string> geen    : ['Criteria/never' ]; 
+				}
+			}
+			container Util   := Generiek, IsHidden = "True"
+			{
+				container GebouwOpties := Generiek/Gebouwopties
+				{
+					parameter<string> Gebied_K: ['Criteria/Gebied']; // alternatieve state gebiedsoptie met koudelevering
+					parameter<string> Gebied_u: ['Criteria/Gebied']; // alternatieve state gebiedsoptie utiliteit, met eigen koeling
+					parameter<string> VR_mK_x : ['Criteria/always']; 
+					parameter<string> geen    : ['Criteria/never' ]; 
+				}
+			}
+		}
+	}
+
+	container Voorkeuren
+	{
+		container GebiedsOpties
+		{
+			parameter<uint32> Aantal: [0], Descr = "aantal gebiedsopties wordt later per rekenstap aangegeven";
+		}
+
+		parameter<float64>    MinderDanAndersFactor :=  1.0               , Descr = "minder dan anders: zet op bijvoorbeeld 0.9 voor 10% korting op de volgens de WarmteWet berekende prijs";
+		parameter<bool>       IsVasteWarmtePrijs    := false              , Descr = "indien true: er geldt een vaste warmteprijs";
+		parameter<Eur_GJ>     VasteWarmtePrijs      := 25[Eur_GJ]         , Descr = "wordt alleen gebruikt indien IsVasteWarmtePrijs";
+		parameter<Eur_yr_asl> Kj_hv_w               := 160.0 [Eur_yr_asl] , Descr = "verlaging van de wettelijke maximale huur in geval van verlies van individuele gasaansluiting";
+		
+		container Afweging : IsHidden = "True";
+	}
+
+	container Investering : Descr = "Kosten Warmtenetten"
+	{
+		parameter<Yr> BeginOpbrengstJaar : [ 2];
+		parameter<Yr> EindOpbrengstJaar  : [30];
+	}
+
+	container Discontovoet
+	{
+		parameter<percent_yr>   mr := 3.0[percent_yr], Descr = "Maatschappelijke discontovoet";
+		parameter<percent_yr>   wb := 6.8[percent_yr], Descr = "Discontovoet voor warmtebedrijven";
+		parameter<percent_yr>  E_u := 8.0[percent_yr], Descr = "Discontovoet voor eigenaars van utiliteiten", IsHidden = "True";
+	}
+
+	container WarmtenetTarieven : Descr = "Invoer voor opbrengsten voor leveranciers warmtenetten"
+	{
+		container Aansluitbijdrage
+		{
+			parameter<Eur_asl> Aansluitbijdrage := 3594.87 [Eur_asl], Descr = "Euro2018, excl BTW. maximale aansluitbijdrage voor nieuwe warmtenetaansluitingen"  , Source ="ACM Warmtebesluit 2020";
+		}
+		container Vastrecht
+		{
+			parameter<Eur_yr_asl> VastrechtMT := 373.91[Eur_yr_asl] , Descr = "Euro2018, excl BTW. maximaal vastrecht voor MT warmtelevering en tapwaterlevering" , Source ="ACM Warmtebesluit 2020";
+			parameter<Eur_yr_asl> VastrechtLT := 208.03[Eur_yr_asl] , Descr = "Euro2018, excl BTW. maximaal vastrecht voor LT warmtelevering"                     , Source ="ACM Warmtebesluit 2020";
+			parameter<Eur_yr_asl> VastrechtK  := 188.72[Eur_yr_asl] , Descr = "Euro2018, excl BTW. maximaal vastrecht voor koudelevering"                         , Source ="ACM Warmtebesluit 2020";
+			parameter<Eur_yr_asl> Meettarief  :=  21.22[Eur_yr_asl] , Descr = "Euro2018, excl BTW. maximaal meettarief"                                           , Source ="ACM Warmtebesluit 2020";
+		}
+		container KoudePrijs : IsHidden = "True"
+		{
+			parameter<ratio> Woningen  := 1.00[ratio] , Descr = "Verhouding tussen elektriciteitsprijs en koudeprijs woningen. 1.00 = 100%. referentiesituatie = niet koelen of met elektrische ventilator";
+			parameter<ratio> Utiliteit := 1.56[ratio] , Descr = "Verhouding tussen elektriciteitsprijs en koudeprijs utiliteit. 1.56 = 64%. referentiesituatie = met LeWP koelen of elektrische ventilator";
+		}
+	}
+	container H2_Prijzen : Descr = "Invoer voor opbrengsten voor leveranciers waterstof", IsHidden = "True"
+	{
+		parameter<Eur_yr_asl> Tarief_vastr  :=  373.91 [Eur_yr_asl] , Source = "09-12-2019 Werkwaarde" , Descr = "jaarlijkse vastrecht per aansluiting";
+		parameter<Eur_asl>    Tarief_aansl  := 3594.87 [Eur_asl]    , Source = "09-12-2019 Werkwaarde" , Descr = "eenmalige aansluitbijdrage";
+		parameter<Eur_GJ>     Marktprijs_H2 :=   26.003[Eur_GJ]     , Source = "09-12-2019 Werkwaarde" , Descr = "consumentenprijs voor H2-levering";
+	}
+	
+	container VraagKentallen : Descr = "Opbrengstenkentallen warmtenetten specifiek per bebouwingscomponent in te stellen indien nodig, eventueel met bandbreedte", IsHidden = "True"
+	{
+		container Woning
+		{
+			container Opbrengsten
+			{
+				parameter<Eur_yr_asl> VastrechtMT_min := WarmtenetTarieven/Vastrecht/VastrechtMT + WarmtenetTarieven/Vastrecht/Meettarief;
+				parameter<Eur_yr_asl> VastrechtMT_max := VastrechtMT_min;
+				parameter<Eur_yr_asl> VastrechtLT_min := WarmtenetTarieven/Vastrecht/VastrechtLT + WarmtenetTarieven/Vastrecht/Meettarief;
+				parameter<Eur_yr_asl> VastrechtLT_max := VastrechtLT_min;
+				parameter<Eur_yr_asl> VastrechtK_min  := WarmtenetTarieven/Vastrecht/VastrechtK;
+				parameter<Eur_yr_asl> VastrechtK_max  := VastrechtK_min;
+				attribute<Eur_asl>    AansluitTarief_min (Classifications/WoningType) := const(WarmtenetTarieven/Aansluitbijdrage/Aansluitbijdrage, Classifications/Woningtype);
+				attribute<Eur_asl>    AansluitTarief_max (Classifications/WoningType) := AansluitTarief_min;
+			}
+		}
+		container Util
+		{
+			container Opbrengsten
+			{
+				parameter<Eur_yr_asl> VastrechtMT_min := WarmtenetTarieven/Vastrecht/VastrechtMT + WarmtenetTarieven/Vastrecht/Meettarief;
+				parameter<Eur_yr_asl> VastrechtMT_max := VastrechtMT_min;
+				parameter<Eur_yr_asl> VastrechtLT_min := WarmtenetTarieven/Vastrecht/VastrechtLT + WarmtenetTarieven/Vastrecht/Meettarief;
+				parameter<Eur_yr_asl> VastrechtLT_max := VastrechtLT_min;
+				parameter<Eur_yr_asl> VastrechtK_min  := WarmtenetTarieven/Vastrecht/VastrechtK;
+				parameter<Eur_yr_asl> VastrechtK_max  := VastrechtK_min;
+				attribute<Eur_asl>    AansluitTarief_min (Classifications/UtilTypeBestaand):= const(WarmtenetTarieven/Aansluitbijdrage/Aansluitbijdrage, Classifications/UtilTypeBestaand);
+				attribute<Eur_asl>    AansluitTarief_max (Classifications/UtilTypeBestaand):= AansluitTarief_min;
+			}
+		}
+	}
+	container Probabilisering
+	{	
+		parameter<ratio> StartKoudeBasis     := 0.01, Descr = "kans per jaar dat gebouw begint in actieve koeling (basisvraag) te voorzien";
+		parameter<ratio> StartOokKoudePiek   := 0.50, Descr = "kans per jaar dat gebouw begint in actieve koeling (piekvraag) te voorzien, indien basisvraag ook (al langer) ingevuld wordt";
+		
+		parameter<ratio> SpreidingsFactor    := 0.95, Descr = "spreiding rondom nominale levensduur eengezinswoningen: 0.8 = 20 procent later of eerder, 1.0 = geen spreiding";
+		parameter<ratio> StaartFactor        := 0.10, Descr = "uitloop van de rechterzijde van de kans op activatie: 0.5 = symmetrisch, hoger is een kortere staart en vice versa";
+		parameter<uint8> Renovatiegrens      := 2b;
+
+		parameter<ratio> KookElekNatuurlijk  := 0.05, Descr = "Kans dat een woning overstapt van gaskookstel naar inductie, bij enige andere activatiemoment, indien nominale levensduur gaskookstel is bereikt";
+		parameter<ratio> KookElekZelfstandig := 0.01, Descr = "Kans dat een woning overstapt van gaskookstel naar inductie, bij enige andere activatiemoment, indien nominale levensduur gaskookstel niet is bereikt";
+		parameter<ratio> NonspecificBeta     := 20.0, Descr = "algemene parameter voor kostengevoeligheid, schaal naar boven om kostengevoeligheid in maatregelen te vergroten (specifiek per type elders op te geven)";
+	}
+
+	container Rapportage
+	{
+		unit<uint32>    RapportageSchaal := Geography/RegioIndelingen/NL, Descr = "Gekozen schaalniveau voor rapportage: heel Nederland (of volledig Studiegebied)";
+		parameter<bool> GewogenResultaten := false, Descr = "moeten ook gewogen resultaten naar inkomen/eigendom worden uitgevoerd, of alleen ongewogen?";
+		parameter<bool> ReportCO2Biomassa := true;
+
+		parameter<Classifications/WoningBestaandRapGroep> WoningBestaandRapGroep_rel : [ 3 ], IsHidden = "True";
+		parameter<Classifications/UtilBestaandRapGroep>   UtilBestaandRapGroep_rel   : [ 3 ], IsHidden = "True";
+	}
+}

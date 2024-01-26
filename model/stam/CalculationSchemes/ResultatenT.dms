@@ -1,0 +1,504 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+template ResultatenT
+{
+	// begin case parameters
+	parameter<string> ZichtjaarName : IsHidden = "True";
+	// optional case parameter
+
+	parameter<Classifications/Zichtjaar> Zichtjaar_rel   := rlookup(ZichtjaarName, Classifications/Zichtjaar/name), IsHidden = "True";
+	parameter<yr_uint16>                 Zichtjaar_jaar  := Classifications/ZichtJaar/jaar[Zichtjaar_rel], IsHidden = "True";
+	parameter<Classifications/Periode>   Periode_rel     := Classifications/ZichtJaar/Periode_rel[Zichtjaar_rel], IsHidden = "True";
+
+	container TussenResultaten      := ='/TussenResultaten/' + ZichtjaarName   , isHidden = "true";
+	unit<uint32> PlanRegio          := Invoer/SpecifiekeInstellingen/PlanRegio , isHidden = "true";
+	container Prijzen               := TussenResultaten/Prijzen                , isHidden = "true";
+	container BebouwingsComponenten := TussenResultaten/BebouwingsComponenten  , isHidden = "true";
+	container NCW                   := TussenResultaten/NCW                    , isHidden = "true";
+	container GebiedsAllocatie      := TussenResultaten/GebiedsAllocatie       , isHidden = "true";
+	container PrevState             := TussenResultaten/PrevState              , isHidden = "true";
+	container StateNaAllocatie      := TussenResultaten/StateNaAllocatie       , isHidden = "true";
+	container bebouwing             := StateNaAllocatie/bebouwing              , isHidden = "true";
+	container Voorkeuren            := TussenResultaten/Voorkeuren             , isHidden = "true";
+	container Allocatie             := TussenResultaten/AllocatieResultaten    , isHidden = "true";
+	
+	container Generate: isHidden = "true"
+	{
+		container impl
+		{
+			parameter<string> onlyOngewogen        := SpecifiekeInstellingen/Rapportage/GewogenResultaten ? '' : '/Ongewogen';
+			parameter<string> ExplicitSupplierList :=
+				AsList('InputOutput/'+SpecifiekeInstellingen/Rapportage/RapportageSchaal/name + onlyOngewogen +'/GenerateAll',';');
+		}
+		parameter<string> All := 'Ready', ExplicitSuppliers = "= impl/ExplicitSupplierList";
+	}
+	
+	container InputOutput := for_each_ne(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name
+			,'Rapportage/Flow('
+				'SpecifiekeInstellingen/Rapportage/RapportageSchaal'
+				','+Quote(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name)+
+				', value('+ string(id(SpecifiekeInstellingen/Rapportage/RapportageSchaal)) + ',SpecifiekeInstellingen/Rapportage/RapportageSchaal)'
+			')'
+		), IsHidden = "true"
+	{
+		container Totaal := =(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name != 'NL')
+			? 'Rapportage/Flow(geography/RegioIndelingen/NL, ''NL'', value(0, geography/RegioIndelingen/NL) )'
+			: '.', IsHidden = "True";
+	}
+	
+	container WoningTellingen_PPR {
+		container BouwdeelAreaalPerIsolatieniveau := for_each_nedv(Classifications/BouwdeelIsolatie/name
+		,	replace('sum(Allocatie/Woning/BO/Bouwdelen/@BD * Float64(Allocatie/Woning/BO/Bouwdelen/Isolatie/@BD == Classifications/IsolatieNiveau/V/@IN), BebouwingsComponenten/Woning/results/PlanRegio_rel)'
+			,	'@BD', Classifications/BouwdeelIsolatie/bouwdeel_name
+			,	'@IN', Classifications/BouwdeelIsolatie/isolatieniveau_name)
+		,	PlanRegio, m2
+		);			
+		container RV_Installatie := for_each_nedv(Classifications/Installatie/name
+		,	replace('sum(UInt32(Allocatie/Woning/BO/InstallatiePerProduct/RVb == Classifications/Installatie/V/@IN), BebouwingsComponenten/Woning/results/PlanRegio_rel)'
+			,	'@IN', Classifications/Installatie/name)
+		,	PlanRegio, uint32
+		);			
+	}
+
+	unit<uint32> WarmtevraagComponenten := Allocatie/Woning/BO, isHidden = "true"
+	{
+		attribute<string>                         vbo_BAG_ID       := /Invoer/RuimtelijkeData/Bebouwing/Woning/code;
+		attribute<Classifications/Eigendom>       Eigendomstype    := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Eigendom_rel;
+		attribute<Classifications/Woningtype>     Woningtype       := /Invoer/RuimtelijkeData/Bebouwing/Woning/BebouwingsType;
+		attribute<yr_uint16>                      Bouwjaar         := /Invoer/RuimtelijkeData/Bebouwing/Woning/bouwjaar;
+		attribute<m2>                             Oppervlakte      := /Invoer/RuimtelijkeData/Bebouwing/Woning/Oppervlakte_i;
+		attribute<Classifications/Schillabel>     Energielabel_org := /BeginSituatie/StartingStateComponenten/Woning/results/schillabel_rel;
+		attribute<GJ_yr>                          Theoretisch_RV   := /BeginSituatie/StartingStateComponenten/Woning/results/warmteverlies_theoretisch_startjaar/Theoretisch_RV;
+		attribute<GJ_yr>                          Gemeten_RV       := /BeginSituatie/StartingStateComponenten/Woning/results/warmteverlies_theoretisch_startjaar/Gemeten_RV_i;
+		attribute<GJ_yr>                          Warmtewinst_org  := /BeginSituatie/StartingStateComponenten/Woning/results/warmteverlies_theoretisch_startjaar/warmtewinst/Totaal;
+		attribute<ratio>                          Fitfactor        := /BeginSituatie/StartingStateComponenten/Woning/results/warmteverlies_theoretisch_startjaar/Fitfactor;
+		attribute<bool>                           bouwdeelactief   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Activatie/BouwdeelActief;
+
+		attribute<m2>                             RO_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/RO;
+		attribute<Classifications/isolatieniveau> RO_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/RO;
+		attribute<Classifications/isolatieniveau> RO_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/RO;
+
+		attribute<m2>                             RB_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/RB;
+		attribute<Classifications/isolatieniveau> RB_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/RB;
+		attribute<Classifications/isolatieniveau> RB_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/RB;
+
+		attribute<m2>                             DR_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/DR;
+		attribute<Classifications/isolatieniveau> DR_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/DR;
+		attribute<Classifications/isolatieniveau> DR_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/DR;
+
+		attribute<m2>                             PL_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/PL;
+		attribute<Classifications/isolatieniveau> PL_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/PL;
+		attribute<Classifications/isolatieniveau> PL_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/PL;
+
+		attribute<m2>                             VL_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/VL;
+		attribute<Classifications/isolatieniveau> VL_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/VL;
+		attribute<Classifications/isolatieniveau> VL_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/VL;
+
+		attribute<m2>                             DS_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/DS;
+		attribute<Classifications/isolatieniveau> DS_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/DS;
+		attribute<Classifications/isolatieniveau> DS_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/DS;
+
+		attribute<m2>                             DP_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/DP;
+		attribute<Classifications/isolatieniveau> DP_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/DP;
+		attribute<Classifications/isolatieniveau> DP_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/DP;
+
+		attribute<m2>                             MG_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/MG;
+		attribute<Classifications/isolatieniveau> MG_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/MG;
+		attribute<Classifications/isolatieniveau> MG_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/MG;
+
+		attribute<m2>                             MS_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/MS;
+		attribute<Classifications/isolatieniveau> MS_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/MS;
+		attribute<Classifications/isolatieniveau> MS_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/MS;
+
+		attribute<m2>                             KR_m2            := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/KR;
+		attribute<Classifications/isolatieniveau> KR_niveau_voor   := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Bouwdelen/Isolatie/KR;
+		attribute<Classifications/isolatieniveau> KR_niveau_na     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Bouwdelen/Isolatie/KR;
+
+		attribute<GJ_yr>                          Verlies_voor     := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Functioneel/RV_per_Bouwdeel_now/Totaal + /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Functioneel/Vrv_VT;
+		attribute<GJ_yr>                          Verlies_na       := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Functioneel/verlies_RV;
+		attribute<ratio>                          Tempcorr_voor    := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Functioneel/Correction_RV;
+		attribute<ratio>                          Tempcorr_na      := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Functioneel/Correction_RV;
+		attribute<GJ_yr>                          Winst_voor       := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Functioneel/warmtewinst/Totaal;
+		attribute<GJ_yr>                          Winst_na         := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Functioneel/Winst_RV;
+		attribute<GJ_yr>                          Vf_RV_voor       := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/Functioneel/RV;
+		attribute<GJ_yr>                          Vf_RV_na         := /TussenResultaten/R1_2021/AllocatieResultaten/Woning/BO/Functioneel/V_RV;
+		attribute<GJ_yr>                          Vm_g_voor        := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/BO/MetervraagBerekening/result/Gas;
+		attribute<GJ_yr>                          Vm_g_na          := /TussenResultaten/R1_2021/BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Metervraag/Gas;
+	}
+
+	container PerWoningCategorie
+	{
+		unit<uint32>         BO                 := Allocatie/Woning/BO;
+		unit<uint32>         Categorie          := BebouwingsComponenten/Woning/ModelObject;
+		attribute<Categorie> Categorie_rel (BO) := BO/ModelObject_rel;
+
+		attribute<string>    label  (Categorie) := Categorie/label;
+		attribute<nrAsl>     Aantal (Categorie) := sum(BO/nrAansluitingen, Categorie_rel);
+		attribute<GJ_yr>     Vf_RV  (Categorie) := mean(BO/Functioneel/RV, Categorie_rel);
+		attribute<GJ_yr>     Vf_TW  (Categorie) := mean(BO/Functioneel/TW, Categorie_rel);
+		attribute<GJ_yr>     Vf_KD  (Categorie) := mean(BO/Functioneel/KD, Categorie_rel);
+		attribute<GJ_yr>     Vm_e   (Categorie) := mean(BO/metervraag/e,   Categorie_rel);
+		attribute<GJ_yr>     Vm_g   (Categorie) := mean(BO/metervraag/gas, Categorie_rel);
+		attribute<GJ_yr>     Vm_w   (Categorie) := mean(add(BO/metervraag/Warmte_30, BO/metervraag/Warmte_50, BO/metervraag/Warmte_70), Categorie_rel);
+	}
+
+	container WoningTellingen_NL {
+		unit<uint32> BO := Allocatie/Woning/BO;
+		// TODO: ook per woning en relatief (2x)
+		// TODO: 1 regel per jaar, let op niet vasthouden tussenresultaten, en obv begin- en eindjaar.
+		container BouwdeelAreaalPerIsolatieniveau := for_each_nedv(Classifications/BouwdeelIsolatie/name
+		,	replace('sum(BO/Bouwdelen/@BD * Float64(BO/Bouwdelen/Isolatie/@BD == Classifications/IsolatieNiveau/V/@IN))'
+			,	'@BD', Classifications/BouwdeelIsolatie/bouwdeel_name
+			,	'@IN', Classifications/BouwdeelIsolatie/isolatieniveau_name)
+		,	void, m2
+		);			
+		
+		container RV_Installatie := for_each_nedv(Classifications/Installatie/name
+		,	replace('sum(UInt32(BO/InstallatiePerProduct/RVb == Classifications/Installatie/V/@IN))'
+			,	'@IN', Classifications/Installatie/name)
+		,	void, uint32
+		);			
+	}
+	container Installaties {
+		// voor iedere unieke combinatie van InstallatiePerProduct
+		// (RVb RVp TWb TWp KDb KDp KK VT)  #woningen FV/RV FV/TW FV/KD FV/VT FV/EA FV/KK 
+		// VR VR VR VR geen geen fornuis geen   6000000   veel beetje geen beetje geen
+		container imp {
+			unit<uint32> BO := Allocatie/Woning/BO;
+			
+			unit<uint32> I := Classifications/Installatie;
+			unit<uint32> II := combine(I, I)
+			{
+				attribute<string> label := nr_1 == nr_2 ? I/label[nr_1] : 'basis: '+I/label[nr_1] + '; piek: '+I/label[nr_2], DialogType = "LabelText";
+			}
+			attribute<II> InstallatieGetalRV_rel(BO) := combine_data(II, BO/InstallatiePerProduct/RVb, BO/InstallatiePerProduct/RVp);
+			attribute<II> InstallatieGetalTW_rel(BO) := combine_data(II, BO/InstallatiePerProduct/TWb, BO/InstallatiePerProduct/TWp);
+			attribute<II> InstallatieGetalKD_rel(BO) := combine_data(II, BO/InstallatiePerProduct/KDb, BO/InstallatiePerProduct/KDp);
+
+			unit<uint32> AS := Classifications/AfgifteSysteem;
+			unit<uint32> VT := Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes;
+			unit<uint32> DK := Invoer/Kengetallen/OverigeInstallaties/DK/Installatietypes;
+			unit<uint32> KK := Invoer/Kengetallen/OverigeInstallaties/KK/Installatietypes;
+			
+			unit<uint32> InstallatieGetalOV := combine(AS, VT, DK, KK);
+			
+			attribute<uint32> InstallatieGetalOV_rel(BO) := 
+				combine_data(InstallatieGetalOV, 
+					BO/InstallatiePerProduct/AS, 
+					combine_data(combine_unit(VT, DK, KK)
+					,	BO/InstallatiePerProduct/VT
+					,	combine_data(combine_unit(DK, KK)
+						,	BO/InstallatiePerProduct/DK
+						,	BO/InstallatiePerProduct/KK
+						)
+					)
+				);
+
+			unit<uint32> Voorkomend_InstallatieGetalRV := unique(InstallatieGetalRV_rel) { attribute<.> per_BO(BO) := rlookup(InstallatieGetalRV_rel, values); attribute<string> Label := II/label[Values]; }
+			unit<uint32> Voorkomend_InstallatieGetalTW := unique(InstallatieGetalTW_rel) { attribute<.> per_BO(BO) := rlookup(InstallatieGetalTW_rel, values); attribute<string> Label := II/label[Values]; }
+			unit<uint32> Voorkomend_InstallatieGetalKD := unique(InstallatieGetalKD_rel) { attribute<.> per_BO(BO) := rlookup(InstallatieGetalKD_rel, values); attribute<string> Label := II/label[Values]; }
+			unit<uint32> Voorkomend_InstallatieGetalOV := unique(InstallatieGetalOV_rel) 
+			{ 
+				attribute<.> per_BO(BO) := rlookup(InstallatieGetalOV_rel, values); 
+				attribute<AS> AS_rel := InstallatieGetalOV/nr_1[values];
+				attribute<VT> VT_rel := InstallatieGetalOV/nr_2[values];
+				attribute<DK> DK_rel := InstallatieGetalOV/nr_3[values];
+				attribute<KK> KK_rel := InstallatieGetalOV/nr_4[values];
+				
+				attribute<string> Label := AS/name[AS_rel]+';'+VT/name[VT_rel]+';'+DK/name[DK_rel]+';'+KK/name[KK_rel];
+			}
+			
+			unit<uint32> InstallatieGetal := combine_unit(Voorkomend_InstallatieGetalRV, Voorkomend_InstallatieGetalTW, Voorkomend_InstallatieGetalKD, Voorkomend_InstallatieGetalOV);
+			
+			attribute<uint32> InstallatieGetal_rel(BO) := 
+				combine_data(InstallatieGetal, 
+					Voorkomend_InstallatieGetalRV/per_BO, 
+					combine_data(combine(Voorkomend_InstallatieGetalTW , Voorkomend_InstallatieGetalKD, Voorkomend_InstallatieGetalOV)
+					,	Voorkomend_InstallatieGetalTW/per_BO
+					,	combine_data(combine(Voorkomend_InstallatieGetalKD, Voorkomend_InstallatieGetalOV)
+						,	Voorkomend_InstallatieGetalKD/per_BO
+						,	Voorkomend_InstallatieGetalOV/per_BO
+						)
+					)
+				);
+			attribute<results> results_rel(BO) := rlookup(InstallatieGetal_rel, results/values);
+		}
+		// results per InstallatiePakket
+		unit<uint32> results := unique(imp/InstallatieGetal_rel) 
+		{ 
+			attribute<imp/Voorkomend_InstallatieGetalRV> Voorkomend_InstallatieGetalRV_rel := (values / (#imp/Voorkomend_InstallatieGetalTW * #imp/Voorkomend_InstallatieGetalKD * #imp/Voorkomend_InstallatieGetalOV))[imp/Voorkomend_InstallatieGetalRV];
+			attribute<imp/Voorkomend_InstallatieGetalTW> Voorkomend_InstallatieGetalTW_rel := (values / (#imp/Voorkomend_InstallatieGetalKD * #imp/Voorkomend_InstallatieGetalOV) % #imp/Voorkomend_InstallatieGetalTW)[imp/Voorkomend_InstallatieGetalTW];
+			attribute<imp/Voorkomend_InstallatieGetalKD> Voorkomend_InstallatieGetalKD_rel := ((values / #imp/Voorkomend_InstallatieGetalOV) % #imp/Voorkomend_InstallatieGetalKD)[imp/Voorkomend_InstallatieGetalKD];
+			attribute<imp/Voorkomend_InstallatieGetalOV> Voorkomend_InstallatieGetalOV_rel := (values % #imp/Voorkomend_InstallatieGetalOV)[imp/Voorkomend_InstallatieGetalOV];
+			
+			attribute<string> Label := 
+				imp/Voorkomend_InstallatieGetalRV/Label[Voorkomend_InstallatieGetalRV_rel]+';'+
+				imp/Voorkomend_InstallatieGetalTW/Label[Voorkomend_InstallatieGetalTW_rel]+';'+
+				imp/Voorkomend_InstallatieGetalKD/Label[Voorkomend_InstallatieGetalKD_rel]+';'+
+				imp/Voorkomend_InstallatieGetalOV/Label[Voorkomend_InstallatieGetalOV_rel];
+				
+			attribute<uint32> nrWoningen                := pcount(imp/results_rel);
+			attribute<nrAsl>  nrAansluitingen           := sum(imp/BO/nrAansluitingen, imp/results_rel);
+			attribute<nrAsl>  nrAansluitingen_nieuwbouw := sum(imp/BO/nrAansluitingen * float64(imp/BO/Bouwjaar > 2022[yr_uint16]), imp/results_rel);
+			container Functioneel := for_each_nedv(Classifications/FunctioneleVraag/name
+			,	'sum(imp/BO/Functioneel/'+Classifications/FunctioneleVraag/name+', imp/results_rel)'
+			,	., GJ_yr );
+			
+			container metervraag := for_each_nedv(Classifications/BemeterdeGebouwInput/name
+			,	'sum(imp/BO/metervraag/'+Classifications/BemeterdeGebouwInput/name+', imp/results_rel)'
+			,	., GJ_yr );
+
+			parameter<nrAsl> Asl             := sum(imp/BO/nrAansluitingen);
+			parameter<nrAsl> A               := sum(imp/BO/nrAansluitingen * float64(imp/BO/Energielabel_rel          == Classifications/Schillabel/V/A));
+			parameter<nrAsl> B               := sum(imp/BO/nrAansluitingen * float64(imp/BO/Energielabel_rel          == Classifications/Schillabel/V/B));
+			parameter<nrAsl> C               := sum(imp/BO/nrAansluitingen * float64(imp/BO/Energielabel_rel          == Classifications/Schillabel/V/C));
+			parameter<nrAsl> D               := sum(imp/BO/nrAansluitingen * float64(imp/BO/Energielabel_rel          == Classifications/Schillabel/V/D));
+			parameter<nrAsl> E               := sum(imp/BO/nrAansluitingen * float64(imp/BO/Energielabel_rel          == Classifications/Schillabel/V/E));
+			parameter<nrAsl> F               := sum(imp/BO/nrAansluitingen * float64(imp/BO/Energielabel_rel          == Classifications/Schillabel/V/F));
+			parameter<nrAsl> G               := sum(imp/BO/nrAansluitingen * float64(imp/BO/Energielabel_rel          == Classifications/Schillabel/V/G));
+			parameter<nrAsl> RV_gas          := sum(imp/BO/nrAansluitingen * float64(imp/BO/InstallatiePerProduct/RVb == Classifications/Installatie/V/vr || imp/BO/InstallatiePerProduct/RVb == Classifications/Installatie/V/hr));
+			parameter<nrAsl> RV_gebiedsoptie := sum(imp/BO/nrAansluitingen * float64(imp/BO/InstallatiePerProduct/RVb == Classifications/Installatie/V/gebiedsoptie));
+			parameter<nrAsl> TW_gas          := sum(imp/BO/nrAansluitingen * float64(imp/BO/InstallatiePerProduct/TWb == Classifications/Installatie/V/vr || imp/BO/InstallatiePerProduct/RVb == Classifications/Installatie/V/hr));
+			parameter<nrAsl> VT_nat          := sum(imp/BO/nrAansluitingen * float64(imp/BO/InstallatiePerProduct/VT  == Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Nat));
+
+			unit<uint32> aantal_installaties := results
+			{
+				attribute<string> label           := results/label;
+				attribute<nrAsl>  nrAansluitingen := results/nrAansluitingen;
+			}
+			unit<uint32> aantal_installaties_nieuwbouw := results
+			{
+				attribute<string> label           := results/label;
+				attribute<nrAsl>  nrAansluitingen := results/nrAansluitingen_nieuwbouw ;
+			}
+		}
+	}
+	
+	container Bouwdelen {
+		/* iedere voorkomende combinatie van Bouwdelen: 8^10 = 2^30
+		Bouwdeel	first-bit	last-bit	factor	modulo
+		0			2			0			1		8
+		1			5			3			8		64
+		2			8			6			64		512
+		3			11			9			512		4096
+		4			14			12			4096	32768
+		5			17			15			32768	262144
+		6			20			18			262144	2097152
+		7			23			21			2097152	16777216
+		8			26			24			16777216	134217728
+		9			29			27			134217728	1073741824
+		*/
+		
+		container imp {
+			unit<uint32> BO := Allocatie/Woning/BO;
+			parameter<uint32> nrIsolatieNiveaus := #Classifications/IsolatieNiveau;
+			parameter<bool> CheckBouwdeelInvariants := #Classifications/Bouwdeel == 10 && nrIsolatieNiveaus <= 8; //8^5 <= nrbits(UInt16) en 8^10 <= nrbits(UInt32)
+			
+			attribute<uint16> BouwdeelG1(BO) := =replace('UInt16(BO/Bouwdelen/Isolatie/@B0) * 4096w + UInt16(BO/Bouwdelen/Isolatie/@B1) * 512w +UInt16(BO/Bouwdelen/Isolatie/@B2) * 64w + UInt16(BO/Bouwdelen/Isolatie/@B3) * 8w +UInt16(BO/Bouwdelen/Isolatie/@B4)'
+				,	'@B0', Classifications/Bouwdeel/name[0[Classifications/Bouwdeel]]
+				,	'@B1', Classifications/Bouwdeel/name[1[Classifications/Bouwdeel]]
+				,	'@B2', Classifications/Bouwdeel/name[2[Classifications/Bouwdeel]]
+				,	'@B3', Classifications/Bouwdeel/name[3[Classifications/Bouwdeel]]
+				,	'@B4', Classifications/Bouwdeel/name[4[Classifications/Bouwdeel]]
+			);
+			attribute<uint16> BouwdeelG2(BO) := =replace('UInt16(BO/Bouwdelen/Isolatie/@B0) * 4096w + UInt16(BO/Bouwdelen/Isolatie/@B1) * 512w +UInt16(BO/Bouwdelen/Isolatie/@B2) * 64w + UInt16(BO/Bouwdelen/Isolatie/@B3) * 8w +UInt16(BO/Bouwdelen/Isolatie/@B4)'
+				,	'@B0', Classifications/Bouwdeel/name[5[Classifications/Bouwdeel]]
+				,	'@B1', Classifications/Bouwdeel/name[6[Classifications/Bouwdeel]]
+				,	'@B2', Classifications/Bouwdeel/name[7[Classifications/Bouwdeel]]
+				,	'@B3', Classifications/Bouwdeel/name[8[Classifications/Bouwdeel]]
+				,	'@B4', Classifications/Bouwdeel/name[9[Classifications/Bouwdeel]]
+			);
+			attribute<uint32> BouwdeelGetal(BO) := UInt32(BouwdeelG1) * 32768 + UInt32(BouwdeelG2), IntegrityCheck = "CheckBouwdeelInvariants";
+			attribute<uint32> combine_factor(Classifications/Bouwdeel) : [ 134217728, 16777216, 2097152, 262144, 32768, 4096, 512, 64, 8, 1];
+			
+			attribute<results> results_rel(BO) := rlookup(BouwdeelGetal, results/values); 
+		}
+		unit<uint32> results := unique( imp/BouwdeelGetal )  
+		{ 
+			container Isolatie := for_each_nedv(Classifications/Bouwdeel/name
+			,	'value(values / imp/combine_factor[Classifications/Bouwdeel/V/'+Classifications/Bouwdeel/name+'] % 8, Classifications/IsolatieNiveau)'
+			,	., Classifications/IsolatieNiveau	
+			);
+			attribute<string> Label := ='add('+AsItemList(''''+Classifications/Bouwdeel/name+'=''+Classifications/IsolatieNiveau/name[Isolatie/'+Classifications/Bouwdeel/name+']+'' ''')+')';
+			
+			attribute<uint32> nrWoningen := pcount(imp/results_rel);
+			attribute<nrAsl> nrAansluitingen := sum(imp/BO/nrAansluitingen, imp/results_rel);
+			container Functioneel := for_each_nedv(Classifications/FunctioneleVraag/name
+			,	'sum(imp/BO/Functioneel/'+Classifications/FunctioneleVraag/name+', imp/results_rel)'
+			,	., GJ_yr );
+			
+			container metervraag := for_each_nedv(Classifications/BemeterdeGebouwInput/name
+			,	'sum(imp/BO/metervraag/'+Classifications/BemeterdeGebouwInput/name+', imp/results_rel)'
+			,	., GJ_yr );
+			
+			container Arealen := for_each_nedv(Classifications/Bouwdeel/name
+			,	'sum(imp/BO/Bouwdelen/'+Classifications/Bouwdeel/name+', imp/results_rel)'
+			,	., m2 )
+			{
+				attribute<string> categorie (results) := label;
+			}
+
+			container NieuwbouwArealen := for_each_nedv(Classifications/Bouwdeel/name
+			,	'sum(imp/BO/Bouwdelen/'+Classifications/Bouwdeel/name+' * float64(imp/BO/Bouwjaar > 2022[yr_uint16]), imp/results_rel)'
+			,	., m2 )
+			{
+				attribute<string> categorie (results) := label;
+			}
+		}
+	}
+
+	container Processen
+	{
+		unit<uint32> BO := Allocatie/Woning/BO;
+
+		unit<uint32> Installatie_x_Product := combine(Classifications/Installatie, Classifications/Product)
+		{
+			attribute<string> name   := Classifications/Installatie/name[nr_1] + '_' + Classifications/Product/name[nr_2];
+			attribute<string> label  := Classifications/Installatie/label[nr_1] + ' : ' + Classifications/Product/label[nr_2];
+
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+
+			attribute<GJ_yr> Product_tot  := ='merge( uint8(id(.)), GJ_yr,'+ AsItemList('ProductPerInstallatie/'+name)+')';
+			attribute<GJ_yr> Input_tot    := ='merge( uint8(id(.)), GJ_yr,'+ AsItemList('InputPerInstallatie/'+Installatie_x_Product_x_Input/name)+')';
+			attribute<GJ_yr> Omgeving_tot := ='merge( uint8(id(.)), GJ_yr,'+ AsItemList('OmgevingPerInstallatie/'+name)+')';
+
+			attribute<Classifications/Installatie> Installatie_rel := nr_1;
+			attribute<Classifications/Product>     Product_rel     := nr_2;
+			attribute<Classifications/ProductType> ProductType_rel := Classifications/Product/ProductType_rel[Product_rel];
+
+			attribute<Installatie_x_ProductType> Installatie_x_ProductType_rel := rlookup(Classifications/Installatie/name[nr_1] + '_' + Classifications/ProductType/name[ProductType_rel] , Installatie_x_ProductType/name);
+		
+		}
+		unit<uint32> Installatie_x_ProductType := combine(Classifications/Installatie, Classifications/ProductType)
+		{
+			attribute<string> name   := Classifications/Installatie/name[nr_1] + '_' + Classifications/ProductType/name[nr_2];
+			attribute<string> label  := Classifications/Installatie/label[nr_1] + ' : ' + Classifications/ProductType/label[nr_2];
+
+			attribute<Classifications/Installatie> Installatie_rel := nr_1;
+			attribute<Classifications/ProductType> ProductType_rel := nr_2;
+
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+
+			attribute<GJ_yr> Product_tot  := sum(Installatie_x_Product/Product_tot, Installatie_x_Product/Installatie_x_ProductType_rel);
+			attribute<GJ_yr> Input_tot    := sum(Installatie_x_Product/Input_tot, Installatie_x_Product/Installatie_x_ProductType_rel);
+			attribute<GJ_yr> Omgeving_tot := sum(Installatie_x_Product/Omgeving_tot, Installatie_x_Product/Installatie_x_ProductType_rel);
+			
+			unit<uint32> Sparse := select_with_org_rel(
+					//Installatie_x_ProductType/ProductType_rel != Classifications/ProductType/V/KD && 
+					Installatie_x_ProductType/Installatie_rel != Classifications/Installatie/V/geen && 
+					Classifications/Installatie/ActieveGebouwOptie[Installatie_x_ProductType/Installatie_rel]
+					)
+			{
+				attribute<string> name         := Installatie_x_ProductType/name[org_rel];
+				attribute<string> name_input   := name + '_' + Classifications/Input/name[Classifications/Installatie/Input_rel[Installatie_x_ProductType/Installatie_rel[org_rel]]];
+				attribute<string> label        := Installatie_x_ProductType/label[org_rel];
+				attribute<GJ_yr>  Product_tot  := Installatie_x_ProductType/Product_tot[org_rel];
+				attribute<GJ_yr>  Input_tot    := Installatie_x_ProductType/Input_tot[org_rel];
+				attribute<GJ_yr>  Omgeving_tot := Installatie_x_ProductType/Omgeving_tot[org_rel];
+			}
+
+			unit<uint32> long_domain := union_unit(Sparse, Sparse, Sparse, OverigeProcessen/result);
+
+			unit<uint32> long_sparse := Resultaten/Startjaar/Processen/Installatie_x_ProductType/long_domain
+			{
+				attribute<string> name  := union_data(.,'Product_'+Sparse/name, 'Input_'+Sparse/name_input, 'Omgeving_'+Sparse/name, OverigeProcessen/result/name);
+				attribute<GJ_yr>  GJ    := union_data(.,Sparse/Product_tot, Sparse/Input_tot, Sparse/Omgeving_tot, OverigeProcessen/result/GJ);
+				attribute<PJ_yr>  PJ    := GJ / 1000000[units/GJ / units/PJ];
+			}
+		}
+		container OverigeProcessen
+		{
+			//opbrengst dakinstallatie
+			parameter<string> name_Product_ZonB_TW := 'Product_ZonB_TW';
+			parameter<GJ_yr>  GJ_Product_ZonB_TW   := sum(BO/Func2Meter/ZonB/Oj_TW);
+			parameter<PJ_yr>  PJ_Product_ZonB_TW   := GJ_Product_ZonB_TW / 1000000[units/GJ / units/PJ];
+			parameter<string> name_Product_ZonPV_E := 'name_Product_ZonPV_E';
+			parameter<GJ_yr>  GJ_Product_ZonPV_E   := sum(BO/Func2Meter/eEffect/ZonPV/Oj_elek);
+			parameter<PJ_yr>  PJ_Product_ZonPV_E   := GJ_Product_ZonPV_E / 1000000[units/GJ / units/PJ];
+
+			//energieverbruik koken
+			parameter<string> name_Input_KK_E      := 'Input_KK_E';
+			parameter<GJ_yr>  GJ_Input_KK_E        := sum(BO/Func2Meter/Koken/Vj_elek);
+			parameter<PJ_yr>  PJ_Input_KK_E        := GJ_Input_KK_E / 1000000[units/GJ / units/PJ];
+			parameter<string> name_Input_KK_G      := 'Input_KK_G';
+			parameter<GJ_yr>  GJ_Input_KK_G        := sum(BO/Func2Meter/Koken/Vj_gas);
+			parameter<PJ_yr>  PJ_Input_KK_G        := GJ_Input_KK_G / 1000000[units/GJ / units/PJ];
+
+			//elektriciteitsverbruik ventilatie
+			parameter<string> name_Input_VT_E      := 'Input_VT_E';
+			parameter<GJ_yr>  GJ_Input_VT_E        := sum(BO/Func2Meter/eEffect/Ventilatie/Vj_elek);
+			parameter<PJ_yr>  PJ_Input_VT_E        := GJ_Input_VT_E / 1000000[units/GJ / units/PJ];
+
+			// elektriciteitsverbruik hulpenergie
+			parameter<string> name_Input_hulp_E    := 'Input_hulp_E';
+			parameter<GJ_yr>  GJ_Input_hulp_E      := sum(BO/Func2Meter/eEffect/volume/Vj_elek + BO/Func2Meter/eEffect/capaciteit/Vj_elek);
+			parameter<PJ_yr>  PJ_Input_hulp_E      := GJ_Input_hulp_E / 1000000[units/GJ / units/PJ];
+
+			unit<uint32> result : nrofrows = 6
+			{
+				attribute<string> name : [ 'Product_ZonB_TW', 'Product_ZonPV_E', 'Input_KK_E', 'Input_KK_G', 'Input_VT_E', 'Input_hulp_E' ];
+				attribute<GJ_yr>  GJ   := 
+					name == 'Product_ZonB_TW' ? GJ_Product_ZonB_TW : 
+					name == 'Product_ZonPV_E' ? GJ_Product_ZonPV_E : 
+					name == 'Input_KK_E'      ? GJ_Input_KK_E : 
+					name == 'Input_KK_G'      ? GJ_Input_KK_G : 
+					name == 'Input_VT_E'      ? GJ_Input_VT_E : 
+					name == 'Input_hulp_E'    ? GJ_Input_hulp_E : (0/0)[GJ_yr];
+			}
+		}
+		unit<uint32> Installatie_x_Product_x_Input   := Installatie_x_Product
+		{
+			attribute<string> name               := Installatie_x_Product/name + '_' + makedefined(Classifications/Input/name[Input_rel],'x');
+			attribute<string> label              := Installatie_x_Product/label + ' : ' + makedefined(Classifications/Input/label[Input_rel],'x');
+
+			attribute<Classifications/Installatie> Installatie_rel := Installatie_x_Product/nr_1;
+			attribute<Classifications/Product>     Product_rel     := Installatie_x_Product/nr_2;
+			attribute<Classifications/Input>       Input_rel       := Classifications/Installatie/Input_rel[Installatie_rel];
+
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+		}
+
+		container ProductPerInstallatie := for_each_nedv(
+			Installatie_x_Product/Name, 
+			replace('sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@) * BO/Func2Meter/Functioneel_per_product/@PD@)',
+				'@PD@', Classifications/Product/name[Installatie_x_Product/nr_2],
+				'@IN@', Classifications/Installatie/Name[Installatie_x_Product/nr_1]),
+			void,
+			GJ_yr );
+
+		container InputPerInstallatie := for_each_nedv(
+			Installatie_x_Product_x_Input/Name, 
+			replace('sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@) * BO/Func2Meter/metervraag_per_product/@PD@)',
+				'@PD@', Classifications/Product/name[Installatie_x_Product_x_Input/Product_rel],
+				'@IN@', Classifications/Installatie/Name[Installatie_x_Product_x_Input/Installatie_rel]),
+			void,
+			GJ_yr );
+
+		container OmgevingPerInstallatie := for_each_nedv(
+			Installatie_x_Product/Name, 
+			replace('sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@) * BO/Func2Meter/metervraag_per_product/@PD@) <
+					 sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@) * BO/Func2Meter/Functioneel_per_product/@PD@) ?
+					 sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@) * BO/Func2Meter/Functioneel_per_product/@PD@) -
+					 sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@) * BO/Func2Meter/metervraag_per_product/@PD@)
+					 : 0.0[GJ_yr] ',
+				'@PD@', Classifications/Product/name[Installatie_x_Product/nr_2],
+				'@IN@', Classifications/Installatie/Name[Installatie_x_Product/nr_1]),
+			void,
+			GJ_yr );
+	}
+
+	#include <Maatschappelijk.dms>
+	#include <EnergyResults.dms>
+	#include <MaatregelenRapportage.dms>
+	#include <Netwerken.dms>
+	#include <EnergieProducent.dms>
+
+	container FolderInfo: isHidden = "True"
+	{
+		parameter<string> OutputFolder := '%localDataProjDir%/Results/' + Expand(., '%configName%') + '/'+ ZichtjaarName;
+	}
+}

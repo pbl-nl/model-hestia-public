@@ -1,0 +1,12 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container TussenResultaten
+{
+	#include <RekenstapT.dms>
+	#include <BebouwingsComponentT.dms>
+	#include <GebouwOptieT.dms>
+}

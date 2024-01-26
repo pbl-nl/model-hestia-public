@@ -1,0 +1,9 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container EnergiePrijzen := Model/CalculationSchemes/EnergiePrijzen/All(
+	  SpecifiekeInstellingen/Energieprijzenbron
+	);

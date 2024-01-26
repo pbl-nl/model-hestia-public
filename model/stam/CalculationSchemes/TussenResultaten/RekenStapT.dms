@@ -1,0 +1,214 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+template RekenstapT
+{
+	// begin case parameters
+	parameter<string> RekenstapName;
+	container PrevState;
+	// end case parameters
+
+	parameter<Classifications/Zichtjaar> Zichtjaar_rel  := rlookup(RekenstapName, Classifications/Zichtjaar/name), ishidden = "true";
+	parameter<yr_uint16>                 Zichtjaar_jaar := Classifications/Zichtjaar/jaar[Zichtjaar_rel], ishidden = "true";
+	parameter<string>                    ZichtjaarName  := Classifications/Zichtjaar/name[Zichtjaar_rel], ishidden = "true";
+	parameter<Classifications/periode>   Periode_rel    := Classifications/ZichtJaar/Periode_rel[Zichtjaar_rel], ishidden = "true";
+	parameter<uint32>                    JaarSeed       := Invoer/TechnischeInstellingen/RandomSeed + uint32(Zichtjaar_jaar), isHidden = "True";
+
+	unit<uint32> PlanRegio              := Invoer/SpecifiekeInstellingen/PlanRegio, ishidden = "true";
+	container    SpecifiekeInstellingen := ='Invoer/SpecifiekeInstellingen/RekenStappen/' + RekenstapName, ishidden = "true";
+	container    VraagKentallen         := SpecifiekeInstellingen/VraagKentallen, ishidden = "true";
+	container    AanbodKentallen        := SpecifiekeInstellingen/AanbodKentallen, ishidden = "true";
+
+	attribute<ratio> KlimaatFactorMap        (Geography/rdc_grids/m100) := MakeDefined(KlimaatFactorMapPartial, mean(KlimaatFactorMapPartial));
+	attribute<ratio> KlimaatFactorMapPartial (Geography/rdc_grids/m100) := ='Invoer/RuimtelijkeData/klimaat/Grid/Kaart/'+ RekenstapName +'[ratio]', ishidden = "true";	
+
+	container ZichtjaarBeleid := Invoer/Beleid/PerJaar(Zichtjaar_jaar);
+		
+	container Voorkeuren := SpecifiekeInstellingen/Voorkeuren, ishidden = "true"
+	{
+		container afweging := SpecifiekeInstellingen/Voorkeuren/afweging
+		{
+		}
+		unit<uint8> ActieveGebiedsOptie := range(uint8, 0b, uint8(GebiedsOpties/aantal)) // te kiezen keten van: { GeoTermie, RestWarmte, ... } LET OP: laatste cijfer moet gelijk zijn aan aantal regels onder 'union_data('
+		{
+			attribute<string> name := SchemaName;
+
+			attribute<Classifications/GebiedsOptie> GebiedsOptie_rel := = GebiedsOpties/Aantal > 0 
+				? 'union_data(.'+AsList(',GebiedsOpties/Optie'+string(id(.) + 1b), '')+')' 
+				: 'const((0b / 0b)[Classifications/GebiedsOptie], .)';
+			attribute<string> SchemaName := Classifications/GebiedsOptie/name[GebiedsOptie_rel];
+			attribute<string> code       := Classifications/GebiedsOptie/code[GebiedsOptie_rel];
+		}
+	}
+	container Schuiven
+	{
+		parameter<ratio> CurveMax       := SpecifiekeInstellingen/RuimtelijkeVraag/Lokaal/Generiek/Kosten/LeercurveMinMaxSchuif;
+		parameter<ratio> CurveMin       := 1.0 - CurveMax;
+
+		parameter<ratio> LerenAan       := SpecifiekeInstellingen/RuimtelijkeVraag/Lokaal/Generiek/Kosten/LeercurveGebruikSchuif;
+		parameter<ratio> LerenUit       := 1.0 - LerenAan;
+
+		parameter<ratio> KostenMax      : = SpecifiekeInstellingen/RuimtelijkeVraag/Lokaal/Generiek/Kosten/VerbeterMinMaxSchuif;
+		parameter<ratio> KostenMin      := 1.0 - KostenMax;
+
+		parameter<ratio> OpbrMax        := SpecifiekeInstellingen/RuimtelijkeVraag/Lokaal/Generiek/Opbrengsten/MinMaxSchuif;
+		parameter<ratio> OpbrMin        := 1.0 - OpbrMax;
+
+		parameter<ratio> VerketelingMax := SpecifiekeInstellingen/RuimtelijkeVraag/Lokaal/Generiek/Kosten/IndividueleVerwarmingSchuif;
+		parameter<ratio> VerketelingMin := 1.0 - VerketelingMax;
+
+		parameter<ratio> HuurVerlagingBijGebiedsOptie := SpecifiekeInstellingen/RuimtelijkeVraag/Lokaal/Generiek/Opbrengsten/HuurVerlagingBijGebiedsOptieSchuif;
+
+		parameter<ratio> EfficiencySchuif := SpecifiekeInstellingen/RuimtelijkeVraag/Lokaal/Generiek/Kosten/EfficiencySchuif; // 1.0 = maximale efficiency, 0.0 = minimale efficiency
+	}
+
+	container LeerCurves :=
+		for_each_ne(Classifications/leercurves/name,
+			'MaakCurve('
+				'Kengetallen/Leercurves/Optimistisch/'+Classifications/leercurves/name+', Kengetallen/Leercurves/Pessimistisch/' + Classifications/leercurves/name +
+			')'
+		);
+
+	container Efficiencies := Invoer/Kengetallen/Efficiency/EfficiencyKentallen(Schuiven/EfficiencySchuif), IsHidden = "True";
+	#include<Prijzen.dms>
+
+	// TODO_OV: onderzoek of het aantal parameters hier niet wat naar beneden kan; er is veel samengevoegd en geabstraheerd; maak daar gebruik van.
+/*  REMOVE	
+	container BebouwingsComponenten :=
+		for_each_ne(Classifications/BebouwingsSector/name,
+			'BebouwingsComponentT('
+				+ quote(Classifications/BebouwingsSector/name)+','
+				'Invoer/Kengetallen/Bebouwing/'+ Classifications/BebouwingsSector/name +'/results,'
+				'SpecifiekeInstellingen/RuimtelijkeVraag/Lokaal/'+ Classifications/BebouwingsSector/name +','
+				'VraagKentallen/'+ Classifications/BebouwingsSector/name
+			+')'
+		);
+*/		
+	container BebouwingsComponenten {
+		container Woning := BebouwingsComponentT ('Woning', Invoer/Kengetallen/Bebouwing/Woning/results , SpecifiekeInstellingen/RuimtelijkeVraag/Lokaal/Woning , VraagKentallen/Woning );
+	}
+
+
+	container NCW: isHidden = "True"
+	{
+		container DV := SpecifiekeInstellingen/DiscontoVoet;
+		container IN := SpecifiekeInstellingen/investering;
+		container RP := Invoer/Kengetallen/Eindgebruikerskosten/rentepercentages/PerJaar;
+
+		container wb15 := NettoContanteWaarde(DV/wb,  0[yr], 15[yr]);
+		container wb13 := NettoContanteWaarde(DV/wb, IN/BeginOpbrengstJaar, 15[yr]);
+		container wb20 := NettoContanteWaarde(DV/wb,  0[yr], 20[yr]);
+		container wb30 := NettoContanteWaarde(DV/wb,  0[yr], 30[yr]);
+		container wb28 := NettoContanteWaarde(DV/wb, IN/BeginOpbrengstJaar, IN/EindOpbrengstJaar);
+
+		container kw28 := NettoContanteWaarde(RP/R_k[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], IN/BeginOpbrengstJaar, IN/EindOpbrengstJaar); //koopwoningen
+		container hw28 := NettoContanteWaarde(RP/R_h[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], IN/BeginOpbrengstJaar, IN/EindOpbrengstJaar); //particuliere huurwoningen
+		container sw28 := NettoContanteWaarde(RP/R_s[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], IN/BeginOpbrengstJaar, IN/EindOpbrengstJaar); //sociale huurwoningen
+
+		container u28  := NettoContanteWaarde(DV/E_u, IN/BeginOpbrengstJaar, IN/EindOpbrengstJaar);
+		container mr28 := NettoContanteWaarde(DV/mr , IN/BeginOpbrengstJaar, IN/EindOpbrengstJaar);
+
+
+		container mr40 := NettoContanteWaarde(DV/mr,  0[yr], 40[yr]);
+		container mr50 := NettoContanteWaarde(DV/mr,  0[yr], 50[yr]);
+		container u50  := NettoContanteWaarde(DV/E_u, 0[yr], 50[yr]);
+
+		container kw50 := NettoContanteWaarde(RP/R_k[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 50[yr]);
+		container hw50 := NettoContanteWaarde(RP/R_h[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 50[yr]);
+		container sw50 := NettoContanteWaarde(RP/R_s[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 50[yr]);
+
+		container mr30 := NettoContanteWaarde(DV/mr,  0[yr], 30[yr]);
+		container u30  := NettoContanteWaarde(DV/E_u, 0[yr], 30[yr]);
+
+		container kw30 := NettoContanteWaarde(RP/R_k[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 30[yr]);
+		container hw30 := NettoContanteWaarde(RP/R_h[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 30[yr]);
+		container sw30 := NettoContanteWaarde(RP/R_s[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 30[yr]);
+
+		container mr20 := NettoContanteWaarde(DV/mr,  0[yr], 20[yr]);
+		container u20  := NettoContanteWaarde(DV/E_u, 0[yr], 20[yr]);
+
+		container kw20 := NettoContanteWaarde(RP/R_k[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 20[yr]);
+		container hw20 := NettoContanteWaarde(RP/R_h[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 20[yr]);
+		container sw20 := NettoContanteWaarde(RP/R_s[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 20[yr]);
+
+		container mr15 := NettoContanteWaarde(DV/mr,  0[yr], 15[yr]);
+		container u15  := NettoContanteWaarde(DV/E_u, 0[yr], 15[yr]);
+
+		container kw15 := NettoContanteWaarde(RP/R_k[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 15[yr]);
+		container hw15 := NettoContanteWaarde(RP/R_h[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 15[yr]);
+		container sw15 := NettoContanteWaarde(RP/R_s[Classifications/Zichtjaar/Rekenjaar_rel[Zichtjaar_rel]], 0[yr], 15[yr]);
+	}
+
+	container StateMetGebouwOpties := PrevState, IsHidden = "True"
+	{
+		container Bebouwing := for_each_nex(Classifications/BebouwingsSector/name, 'BebouwingsComponenten/'+Classifications/BebouwingsSector/name+'/results', uint32);
+	}
+
+	#include<BestaandWarmtenet.dms>
+
+	container GebiedsAllocatie :=
+		for_each_ne(
+			Voorkeuren/ActieveGebiedsOptie/name,
+			'CalculationSchemes/AanbodOpties/'+Voorkeuren/ActieveGebiedsOptie/SchemaName+'(
+				'+MakeDefined(Voorkeuren/ActieveGebiedsOptie/name[id(Voorkeuren/ActieveGebiedsOptie)-1b]+'/Results', 'BestaandWarmtenet/result')+')'
+		), IsHidden = "True"
+		{
+			parameter<string> ResultStateName := MakeDefined(last(Voorkeuren/ActieveGebiedsOptie/name)+'/Results', 'BestaandWarmtenet/result');
+			container ResultState := =ResultStateName;
+		}
+
+	#include<StateNaAllocatie.dms>
+
+	container AllocatieResultaten :=
+		for_each_ne(Classifications/BebouwingsSector/name,
+			replace(
+				'AllocatieResultatenComponent('
+					'StateNaAllocatie/bebouwing/@BC,'
+					'''@BC'''
+				')'
+			,'@BC', Classifications/BebouwingsSector/name)
+		)
+	{
+		unit<uint32> ObjectResults            := ='union_unit('+AsItemList(Classifications/BebouwingsSector/name+'/BO')+')', IsHidden = "True"
+		{
+			attribute<PlanRegio   >             PlanRegio_rel                := ='union_data(., '+AsItemList(Classifications/BebouwingsSector/name+'/BO/PlanRegio_rel'   )+')';
+		}
+		unit<uint32> Subsidiebudgetten := ZichtjaarBeleid/Subsidie/SubsidieBudget
+		{
+			unit<uint32>       ZBS                         := ZichtjaarBeleid/Subsidie, ishidden = "True";
+			attribute<Eur>     Aanvraag_per_subsidie (ZBS) := = count(ZBS/SubsidieBudget_rel) = 0u ? 'const(0.0[eur]    ,ZBS)' : 'merge(uint8(id(ZBS)), Eur    ,'+ AsItemList('sum(BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Subsidie/'         + ZBS/name+')'            ) +')';
+			attribute<float64> Aantal_aanvragen      (ZBS) := = count(ZBS/SubsidieBudget_rel) = 0u ? 'const(0.0[float64],ZBS)' : 'merge(uint8(id(ZBS)), float64,'+ AsItemList('sum(float64(BebouwingsComponenten/Woning/ActieveWoning/BebouwingsObjectMetGebouwOptie/Subsidie/' + ZBS/name+' > 0.0[eur]))') +')';
+			attribute<Eur>     Gemiddeld_bedrag      (ZBS) := Aanvraag_per_subsidie / Aantal_aanvragen;
+			attribute<Eur>     Maximaal_budget             := ZichtjaarBudget;
+			attribute<Eur>     Aanvraag_per_budget         := sum(Aanvraag_per_subsidie, ZBS/SubsidieBudget_rel);
+			attribute<float64> nrAanvragen_per_budget      := sum(Aantal_aanvragen     , ZBS/SubsidieBudget_rel);
+			attribute<Eur>     Gem_bedrag_per_budget       := Aanvraag_per_budget / nrAanvragen_per_budget;
+			attribute<Eur>     Resterend_budget            := Maximaal_budget - Aanvraag_per_budget;
+		}
+
+		attribute<bool>    heeft_gas                             (PlanRegio) :=
+			( aant_g_aansl_woning_per_planregio
+			+ aant_g_aansl_util_per_planregio) > 0[nrAsl], IsHidden = "True";
+
+		attribute<nrAsl> aant_g_aansl_per_planregio              (PlanRegio) :=
+			= 
+			'add('+AsItemList(replace('@C/Aansluitingen/gas','@C', Classifications/BebouwingsSector/name))+')', IsHidden = "True";
+		
+		attribute<nrAsl> aant_g_aansl_woning_per_planregio       (PlanRegio) := 
+			= 'add(const(0[nrAsl], PlanRegio)'+AsList(replace(', @C/Aansluitingen/gas','@C', Classifications/WoningComponent/name),'')+')', IsHidden = "True";
+
+		attribute<nrAsl> aant_g_aansl_util_per_planregio         (PlanRegio) :=
+			= 'add(const(0[nrAsl], PlanRegio)'+AsList(replace(', @C/Aansluitingen/gas','@C', Classifications/UtilComponent/name),'')+')', IsHidden = "True";
+
+		attribute<nrAsl> aant_g_aansl_woning_hoogb_per_planregio (PlanRegio) :=
+			= 'add(const(0[nrAsl], PlanRegio)'+AsList(replace(', @C/aant_g_aansl_hoogb_per_planregio','@C', Classifications/WoningComponent/name),'')+')', IsHidden = "True";
+
+		attribute<nrAsl> aant_g_aansl_woning_laagb_per_planregio (PlanRegio) :=
+			= 'add(const(0[nrAsl], PlanRegio)'+AsList(replace(', @C/aant_g_aansl_laagb_per_planregio','@C', Classifications/WoningComponent/name),'')+')', IsHidden = "True";
+
+		attribute<bool> GrondroeringInPlanRegio                  (PlanRegio) := ='or('+AsItemList(replace('@BC@/GrondroeringInPlanRegio','@BC@', Classifications/BebouwingsSector/name))+')', IsHidden = "True";
+	}
+}
