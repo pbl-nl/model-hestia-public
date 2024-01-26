@@ -5,6 +5,10 @@ PBL en TNO hebben de handen ineengeslagen voor de ontwikkeling van het innovatie
 
 Voor ieder jaar (van 2000 tot 2050) modelleert Hestia de energetische kwaliteit van de woningvoorraad, en simuleert tot op individueel woningniveau – en de aparte bouwdelen – het investeringsgedrag van woningeigenaren. Dat investeringsgedrag is gebaseerd op realistische business cases en trends in genomen maatregelen. De scenario’s worden opgebouwd vanuit feitelijke data onder andere afkomstig uit de (3D) BAG, CBS en KNMI. Deze data worden jaarlijks gekalibreerd en geüpdatet.
 
+## Let op:
+Het Hestia model is eigendom van het PBL en TNO Gebruik is voor eigen risico, PBL en TNO zijn niet aansprakelijk voor gebruik door derden, er wordt geen garantie gegeven noch op software noch op data, kentallen en gegevens. Voor gebruiksvoorwaarden, zie de <a href = "https://github.com/pbl-nl/model-hestia-public?tab=GPL-3.0-1-ov-file#readme">licentie.
+
+
 ## Installatie
 <details>
 <summary><b>GeoDMS software</b></summary>
