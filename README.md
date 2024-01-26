@@ -6,12 +6,13 @@ PBL en TNO hebben de handen ineengeslagen voor de ontwikkeling van het innovatie
 Voor ieder jaar (van 2000 tot 2050) modelleert Hestia de energetische kwaliteit van de woningvoorraad, en simuleert tot op individueel woningniveau – en de aparte bouwdelen – het investeringsgedrag van woningeigenaren. Dat investeringsgedrag is gebaseerd op realistische business cases en trends in genomen maatregelen. De scenario’s worden opgebouwd vanuit feitelijke data onder andere afkomstig uit de (3D) BAG, CBS en KNMI. Deze data worden jaarlijks gekalibreerd en geüpdatet.
 
 ## Let op:
-Het Hestia model is eigendom van het PBL en TNO. Gebruik is voor eigen risico, PBL en TNO zijn niet aansprakelijk voor gebruik door derden, er wordt geen garantie gegeven noch op software noch op data, kentallen en gegevens. Voor gebruiksvoorwaarden, zie de <a href = "https://github.com/pbl-nl/model-hestia-public?tab=GPL-3.0-1-ov-file#readme">licentie. Het Hestia model is bedoeld om gebruikt te worden met experts die zich van de beperkingen en risicos van het model bewust zijn. Denk in ieder geval aan:
+Het Hestia model is eigendom van het PBL en TNO. Gebruik is voor eigen risico, PBL en TNO zijn niet aansprakelijk voor gebruik door derden, er wordt geen garantie gegeven noch op software noch op data, kentallen en gegevens. Voor gebruiksvoorwaarden, zie de <a href = "https://github.com/pbl-nl/model-hestia-public?tab=GPL-3.0-1-ov-file#readme">licentie</a>.
+Het Hestia model is bedoeld om gebruikt te worden door experts die zich van de beperkingen en risicos van het model bewust zijn. Denk in ieder geval aan:
 - Resultaten van het Hestia model kunnen alleen op geaggregeerd niveau worden gebruikt
 - Invoerdata is niet altijd compleet beschikbaar, dit introduceert onzekerheden
 - Standaardinstellingen en -aannames zijn niet voor elke studie geschikt en moeten per toepassing worden heroverwogen
 - Hestia laat veel aspecten van de werkelijkheid buiten beschouwing en kan dus niet als een absulute waarheid of voorspelling worden gebruikt
-- Modelresulaten moeten altijd kritisch worden bekeken en geverivieerd door de modelgebruiker
+- Modelresulaten moeten altijd kritisch worden bekeken en geverifieerd door de modelgebruiker
 
 
 ## Installatie
