@@ -119,6 +119,6 @@ Dit is geheel vrijblijvend, maar wordt zeer gewaardeerd.
 Ook voor andere vragen, feedback en suggestie kunt u mailen naar info-hestia@pbl.
 
 # Links:
-- <a href= "https://www.pbl.nl/publicaties/functioneel-ontwerp-hestia-10"</a>
-- <a href= "https://energy.nl/simulatiemodel-hestia"</a>
-- <a href= "https://www.tno.nl/nl/newsroom/insights/2023/06/hestia-woningvoorraad-in-beeld/"</a>
+- https://www.pbl.nl/publicaties/functioneel-ontwerp-hestia-10
+- https://energy.nl/simulatiemodel-hestia
+- https://www.tno.nl/nl/newsroom/insights/2023/06/hestia-woningvoorraad-in-beeld/
