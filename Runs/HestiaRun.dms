@@ -1,0 +1,106 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container HestiaRun
+{
+	//====== Ophalen eenheden, gebiedsafbakeningen en typeringen.
+	#include <%projDir%/model/Units.dms>
+	#include <%projDir%/model/Geography.dms>
+	#include <%projDir%/model/Classifications.dms>
+
+	//====== Invoer: over welke periode moet er worden gerekend?
+	parameter<uint16> eerste_jaar             := 2020[uint16], Descr = "Eerste zichtjaar";
+	parameter<uint8>  aantal_jaar             := 11[uint8]   , Descr = "Aantal zichtjaren";
+	parameter<string> Studiegebied            := Invoer/StudieGebied;
+
+	//====== Opbouw lijst van zichtjaren en rekenstappen
+	unit<uint8> all_rekenstap: nrofrows = 51, IsHidden = "True";
+	unit<uint8> rekenstap:= select_with_org_rel(id(all_rekenstap) < aantal_jaar), IsHidden = "True"
+	{
+		attribute<units/yr_uint16> Jaar  := (eerste_jaar + uint16(id(.)))[units/yr_uint16];
+		attribute<string>          label := string(id(.))+'_'+string(Jaar);
+		attribute<string>          name  := id(.) == 0b ? 'StartJaar' : 'R' + label; 
+		unit<uint8> repeats  := select_with_org_rel(id(rekenstap) != 0b), IsHidden = "True"
+		{
+			attribute<string>name:=rekenstap/name[org_rel];
+		}
+		template Rx_xxxx := Overige, IsHidden = "True";
+	}	
+	
+	container Invoer : Using = "Units"
+	{
+		// Invoer: Geografische selectie welke gebied wordt onderzocht.
+
+		// Volledig Nederland zonder selectie. Comment in om te gebruiken.
+		 parameter<string>   StudieGebied : ['NL'], IsHidden = "True";
+
+		// Enkele gemeente als selectie. Comment in om te gebruiken.
+		// parameter<string>   StudieGebied : ['GM0050'], IsHidden = "True"; //GM0050 (Zeewolde) is handig om kleinschalig te testen OF GM0213 (meer oudere gebouwen)
+
+		// Meerdere gemeenten als studiegebied. Comment in om te gebruiken.
+		// parameter<string>   StudieGebied : ['GM0402,GM0344,GM1581,GM0439,GM0153,GM0599,GM0034,GM0050,GM0321'], IsHidden = "True";
+
+	    // RES-regio als selectie. Comment in om te gebruiken.
+		// parameter<string>   RES_Gebied   : ['RESTwente'], IsHidden = "True";
+		// parameter<string>   StudieGebied :=
+		// Geography/RegioIndelingen/Energieregio/GM_code_list[rlookup(RES_Gebied, Geography/RegioIndelingen/Energieregio/name)], IsHidden = "True";
+
+		// Provincie als selectie. Comment in om te gebruiken.
+		// parameter<string> Provincie := 'ZuidHolland';
+		// parameter<string>   StudieGebied := 
+		// Geography/RegioIndelingen/Provincie/GM_code_list[rlookup(Provincie, Geography/RegioIndelingen/Provincie/name)];
+
+		parameter<bool> StartgegevensAan        := eerste_jaar >= 2020[uint16], Descr = "Worden invoer voor isolatieniveaus en gebouwopties meegenomen?", IsHidden = "True";
+		parameter<bool> HerberekenStartsituatie := false, IsHidden = "True";
+		parameter<units/yr_uint16> StartNieuwbouwJaar := right(/Invoer/RuimtelijkeData/BAG/datum,4)[units/yr_uint16], IsHidden = "True";
+
+		container DefaultInstellingen : IsHidden = "True"
+		{
+			// Ophalen opties voor instellingen die per rekenstap gebruikt kunnen worden.
+			#include <%projDir%/Runs/DefaultSettings/Basis.dms>
+			#include <%projDir%/Runs/DefaultSettings/Rekenstap.dms>		
+		}
+
+		parameter<string> EnergieprijsScenario := '20220709_VV_Euro2020';
+		
+		container SpecifiekeInstellingen := DefaultInstellingen/Basis, IsHidden = "True"
+		{
+			// Invoer: welke energieprijzenbestanden worden gebruikt.
+			parameter<string> Energieprijzenbron := EnergieprijsScenario;
+			
+			// Invoer: Per rekenstap worden specifieke instellingen gebruikt.
+			// De lijst van rekenstappen wordt gedefinieerd bij rekenstap.
+			
+			container RekenStappen := for_each_nt(rekenstap/repeats/name, rekenstap/Rx_xxxx)
+			{
+				container StartJaar := DefaultInstellingen/Basis;
+				container Overige   := DefaultInstellingen/Rekenstap/Specifiek;
+			}
+		}
+		// Ophalen ruimtelijke invoerbestanden, kengetallen en energieprijzen.
+		#include <%projDir%/model/Beleid.dms>
+//		#include <%projDir%/model/TVW.dms>
+		#include <%projDir%/model/RuimtelijkeData.dms>
+		#include <%projDir%/model/Kengetallen.dms>
+		#include <%projDir%/model/EnergiePrijzen.dms>
+
+		
+		container TechnischeInstellingen: IsHidden = "True" {
+			parameter<uint32> RandomSeed := 1;
+			parameter<uint32> NrProcessors := 20;
+			parameter<uint32> ThisProcessor := 3;			
+		}
+	}
+
+	// Ophalen overige rekenschemas.
+	#include <%projDir%/model/stam.dms>
+	#include <%projDir%/model/BeginSituatie.dms>
+	#include <%projDir%/model/TussenResultaten.dms>
+	#include <%projDir%/model/Resultaten.dms>
+	#include <%projDir%/model/ConfigSettings.dms>
+	#include <%projDir%/model/ExportSettings.dms>
+	#include <%projDir%/model/Tellingen.dms>
+}

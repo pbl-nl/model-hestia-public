@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 //////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                      //
 //                   (C) Hestia 2021 - PBL & TNO                                        //
@@ -73,3 +74,80 @@ container BCkentallen : IsHidden = "True"
 		attribute<ratio>   R_ZonB_opp   (BebouwingsTypeDomein) := =replace('@BC@/ZonB_opp', '@BC@', BCname);
 	}
 }
+=======
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2021 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container BCkentallen : IsHidden = "True"
+{
+	//============== Invoerwaardes voor investeringskosten van Laagtemperatuur afgiftesystemen
+	parameter<Eur_asl> Ki_LTAS_wl_min   :=  957.2098    [Eur_asl] , Descr = "minimale investeringskosten laag-temperatuur afgiftesysteem woningen eengezins";
+	parameter<Eur_asl> Ki_LTAS_wh_min   :=  401.3392    [Eur_asl] , Descr = "minimale investeringskosten laag-temperatuur afgiftesysteem woningen meergezins";
+	parameter<Eur_asl> Ki_LTAS_wl_max   := 3221.919     [Eur_asl] , Descr = "maximale investeringskosten laag-temperatuur afgiftesysteem woningen eengezins";
+	parameter<Eur_asl> Ki_LTAS_wh_max   := 2014.845     [Eur_asl] , Descr = "maximale investeringskosten laag-temperatuur afgiftesysteem woningen meergezins";
+	parameter<Eur_m2>  Ki_LTAS_u_min    :=    9.057688979[Eur_m2] , Descr = "maximale investeringskosten laag-temperatuur afgiftesysteem utiliteit";
+	parameter<Eur_m2>  Ki_LTAS_u_max    :=    9.057688979[Eur_m2] , Descr = "maximale investeringskosten laag-temperatuur afgiftesysteem utiliteit";
+
+	//============== Parameters per modeltype voor bepalen van de omvang van bruikbaar dakoppervlak voor zonnepanelen en zonneboilers
+	//============== R_Dakopp : aandeel van het dakoppervlak dat gebruikt kan worden voor energieopwerk
+	//============== R_Stapel : het gemiddelde aantal bouwlagen voor een gebouwtype
+	//============== ZonB_opp : aandeel van het dakoppervlak dan belegd zou worden als een zonneboiler wordt geinstalleerd
+
+	container Woning
+	{
+		attribute<ratio> R_Dakopp (Classifications/WoningType)   : [0.3 , 0.3 , 0.3 , 0.3 , 0.3 , 0.3  , 0.3];
+		attribute<ratio> R_Stapel (Classifications/WoningType)   : [1.0 , 1.0 , 1.0 , 1.0 , 1.0 , 2.0  , 6.0];
+		attribute<ratio> ZonB_opp (Classifications/WoningType)   : [0.03, 0.03, 0.03, 0.03, 0.03, 0.015, 0.005];
+	}
+
+	container Util //Stapelfactor op basis van de berekening puntenwolk hoogtebestand en oppervlaktes BAG
+	{
+		attribute<ratio> R_Dakopp (Classifications/UtilTypeBestaand)     : [0.8        , 0.8        , 0.8        , 0.8        , 0.8        , 0.8        , 0.8        , 0.8        , 0.8        , 0.8];
+		attribute<ratio> R_Stapel (Classifications/UtilTypeBestaand)     : [4.13549775 , 2.48129865 , 4.13549775 , 3.3083982  , 2.48129865 , 1.0        , 3.3083982  , 3.3083982  , 3.3083982  , 3.3083982];
+		attribute<ratio> ZonB_opp (Classifications/UtilTypeBestaand)     : [0.001421186, 0.001421186, 0.014425039, 0.014093429, 0.001737005, 0.001421186, 0.012601184, 0.001421186, 0.001421186, 0.001421186];
+	}
+
+	template BC_kentallen
+	{
+		//begin case parameters
+		parameter<ratio> CurveLTAS;
+		parameter<ratio> KostenMin;
+		parameter<ratio> KostenMax;
+		unit<uint8>   BebouwingsTypeDomein;
+		unit<uint32>  BO;
+		//end case parameters
+		
+		//============== Parameters voor kosten van Laagtemperatuur afgiftesysteem woningen en utiliteit
+		parameter<Eur_asl> Ki_LTAS_l_asl := CurveLTAS * (
+			BcSector == Classifications/BebouwingsSectorBase/V/Woning
+				? KostenMin * Ki_LTAS_wl_min + KostenMax * Ki_LTAS_wl_max 
+				: 0.0[Eur_asl]
+			);
+		parameter<Eur_asl> Ki_LTAS_h_asl := CurveLTAS * (
+			BcSector == Classifications/BebouwingsSectorBase/V/Woning 
+				? KostenMin * Ki_LTAS_wh_min + KostenMax * Ki_LTAS_wh_max 
+				: 0.0[Eur_asl]
+			);
+
+		parameter<Eur_m2> Ki_LTAS_opp  := CurveLTAS * (
+			BcSector == Classifications/BebouwingsSectorBase/V/Woning
+				? 0.0[Eur_m2] 
+				: KostenMin * Ki_LTAS_u_min + KostenMax * Ki_LTAS_u_max
+			);
+
+		//============== Parameters voor kosten van nieuwe elektriciteits- en gasaansluitingen voor de nieuwbouw
+		attribute<Eur_asl> Ki_Aansl_g_asl (BO) := float64(BO/isNuNieuw) * /Invoer/Kengetallen/infra/AansluitTarief_nw_g;
+		attribute<Eur_asl> Ki_Aansl_e_asl (BO) := float64(BO/isNuNieuw) * /Invoer/Kengetallen/infra/AansluitTarief_nw_e;
+		attribute<Eur_m2>  Ki_Aansl_g_opp (BO) := float64(BO/isNuNieuw) * /Invoer/Kengetallen/infra/AansluitTarief_nu_g;
+		attribute<Eur_m2>  Ki_Aansl_e_opp (BO) := float64(BO/isNuNieuw) * /Invoer/Kengetallen/infra/AansluitTarief_nu_e;
+
+		attribute<ratio>   Dakoppervlak (BebouwingsTypeDomein) := =replace('@BC@/R_Dakopp', '@BC@', BCname);
+		attribute<ratio>   Stapelfactor (BebouwingsTypeDomein) := =replace('@BC@/R_stapel', '@BC@', BCname);
+		attribute<ratio>   m2dak_m2bvo  (BebouwingsTypedomein) := Dakoppervlak / Stapelfactor;
+		attribute<ratio>   R_ZonB_opp   (BebouwingsTypeDomein) := =replace('@BC@/ZonB_opp', '@BC@', BCname);
+	}
+}
+>>>>>>> c3b9bdd72733efadf1ba7bb52189239e82e0fb10
