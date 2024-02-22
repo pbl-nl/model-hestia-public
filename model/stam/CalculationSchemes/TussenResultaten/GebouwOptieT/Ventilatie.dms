@@ -114,7 +114,7 @@ container ventilatie
 			attribute<float64> Odds         (GeschiktObject) := IsDefined(Geschiktheid) ? exp(min_elem(Geschiktheid * Ventilatieopties/beta[Ventilatieoptie_rel], LOG_MAX_FLOAT64)) : 0.0;
 			attribute<float64> Probability  (GeschiktObject) := Odds / Choice/TotalOdds;
 			attribute<float64> Cumulprob    (GeschiktObject) := ='add('+AsItemList('float64(PerOptie/'+Ventilatieopties/Name+'/Ventilatieoptie_rel <= Ventilatieoptie_rel) * PerOptie/'+Ventilatieopties/Name+'/Probability')+')';
-			attribute<bool>    IsSelected   (GeschiktObject) := CumulProb - Probability <= Choice/rnd && Choice/rnd < CumulProb;
+			attribute<bool>    IsSelected   (GeschiktObject) := Normen/Installatietype_norm == Installatietype || CumulProb - Probability <= Choice/rnd && Choice/rnd < CumulProb, Descr = "Indien genormeerd, dan wordt deze optie automatisch gekozen. Zo niet, dan wordt er gekozen op basis van de probability relatief tot andere opties.";
 
 			attribute<Ventilatieopties> Ventilatieoptie_choice (GeschiktObject) := IsSelected ? Ventilatieoptie_rel : (0/0)[Ventilatieopties];
 			attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Type_choice (GeschiktObject) := IsSelected ? Installatietype : (0/0)[Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes];
