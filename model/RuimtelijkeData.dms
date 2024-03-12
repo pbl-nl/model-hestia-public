@@ -128,6 +128,7 @@ container RuimtelijkeData: Using = "Units;Geography;Model", FreeData = "True"
 
 			attribute<BAG/import/vbo>               vbo_rel        := rlookup(Pand_bagverblijfsobjectid, BAG/import/vbo/identificatie);
 			attribute<uint32>                       datum_numeriek := uint32(replace(Pand_opnamedatum,'''',''));
+			attribute<yr_uint16>                    afgiftejaar    := left(string(datum_numeriek), 4)[yr_uint16];
 			attribute<string>                       HLT_unquoted   := trim(replace(Pand_huisnummertoevoeging,'''',''));
 			attribute<string>                       adres_key      := 
 																//lowercase(
@@ -140,13 +141,21 @@ container RuimtelijkeData: Using = "Units;Geography;Model", FreeData = "True"
 																;
 		}
 
-		unit<uint32> data := unique(src/adres_key)
+		unit<uint32> src_prestartjaar := subset(src/afgiftejaar <= eerste_jaar), ishidden = 'True'
+		{
+			attribute<string>                       adres_key           := src/adres_key [nr_orgentity];
+			attribute<uint32>                       datum_numeriek      := src/datum_numeriek [nr_orgentity];
+			attribute<Classifications/SchilLabel>   schillabel_rel      := src/schillabel_rel [nr_orgentity];
+			attribute<Classifications/EnergieLabel> EnergieLabel_rel    := src/EnergieLabel_rel [nr_orgentity];
+		}
+
+		unit<uint32> data := unique(src_prestartjaar/adres_key)
 		{
 			attribute<string>                       nummeraanduiding_id := nummeraanduiding/identificatie[rlookup(values, nummeraanduiding/adres_key)];
 			attribute<string>                       vbo_id              := rjoin(nummeraanduiding_id, vbo/nummeraanduiding_id, vbo/identificatie), FreeData = "True";
-			attribute<uint32>                       datum_laatste       := max(src/datum_numeriek, rlookup(src/adres_key, values));
-			attribute<Classifications/SchilLabel>   SchilLabel_rel      := rjoin(values + '_' + string(datum_laatste), src/adres_key + '_' + string(src/datum_numeriek), src/schillabel_rel)  , FreeData = "True";
-			attribute<Classifications/EnergieLabel> EnergieLabel_rel    := rjoin(values + '_' + string(datum_laatste), src/adres_key + '_' + string(src/datum_numeriek), src/EnergieLabel_rel), FreeData = "True";
+			attribute<uint32>                       datum_laatste       := max(src_prestartjaar/datum_numeriek, rlookup(src_prestartjaar/adres_key, values));
+			attribute<Classifications/SchilLabel>   SchilLabel_rel      := rjoin(values + '_' + string(datum_laatste), src_prestartjaar/adres_key + '_' + string(src_prestartjaar/datum_numeriek), src_prestartjaar/schillabel_rel)  , FreeData = "True";
+			attribute<Classifications/EnergieLabel> EnergieLabel_rel    := rjoin(values + '_' + string(datum_laatste), src_prestartjaar/adres_key + '_' + string(src_prestartjaar/datum_numeriek), src_prestartjaar/EnergieLabel_rel), FreeData = "True";
 		}
 
 		unit<uint32> defaultlabels_2020 := BAG/import/VBO
