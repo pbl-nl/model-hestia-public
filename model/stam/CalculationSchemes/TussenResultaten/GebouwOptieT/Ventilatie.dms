@@ -96,11 +96,11 @@ container ventilatie
 			attribute<GJ_yr>   V_RV       (GeschiktObject) :=
 				  BO/nrAansluitingen[GeschiktObject/BO_rel]
 				* Ventilatieopties/V_RV_asl[Ventilatieoptie_rel]
-				* BO/Functioneel_base/Gedragfactor/VT
+				* BO/Functioneel_base/Gedragfactor/VT[RekenStap_rel]
 				* BO/Functioneel_base/Klimaateffect[GeschiktObject/BO_rel]
 				* BO/Functioneel_base/Fitfactor_VT[GeschiktObject/BO_rel];
 
-			attribute<GJ_yr>   V_E        (GeschiktObject) := BO/nrAansluitingen[GeschiktObject/BO_rel]     * Ventilatieopties/V_E_asl[Ventilatieoptie_rel]  * BO/Functioneel_base/Gedragfactor/VT * BO/Functioneel_base/Fitfactor_VT[GeschiktObject/BO_rel];
+			attribute<GJ_yr>   V_E        (GeschiktObject) := BO/nrAansluitingen[GeschiktObject/BO_rel]     * Ventilatieopties/V_E_asl[Ventilatieoptie_rel]  * BO/Functioneel_base/Gedragfactor/VT[RekenStap_rel] * BO/Functioneel_base/Fitfactor_VT[GeschiktObject/BO_rel];
 			attribute<Eur_yr>  Kj_energie (GeschiktObject) := first(Prijzen/Elektriciteit/Staffel/KGJ_eindgebruik_excl) * V_E + first(Prijzen/AardGas/Staffel/KGJ_eindgebruik_excl) * V_RV; //TODO: koppelen aan huidige installaties
 
 			attribute<Eur>     Ki_VT      (GeschiktObject) := ='BO/nrAansluitingen[GeschiktObject/BO_rel] * merge(uint8(BO/Activatie/Uitvoering[GeschiktObject/BO_rel]), eur_asl, '+AsItemList('VentilatieMaatregel/Ki_asl/'+Classifications/Uitvoering/Name+'[VentilatieMaatregel_rel]')+')';
