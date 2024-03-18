@@ -691,13 +691,13 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		parameter<.> AllemaalKoop     : [5];
 	}
 
-	unit<uint8> GebruiksgrootteKlasse : nrofrows = 5
+	unit<uint8> GebruiksgrootteKlasse : nrofrows = 4
 	{
-		attribute<string> code           : [ 'TL', 'KG', 'KMG', 'MMG', 'GG' ];
-		attribute<string> label          : [ 'Teruglevering', 'Klein Gebruik', 'Klein Middelgroot Gebruik', 'Midden Middelgroot Gebruik', 'Groot middelgroot en groot gebruik' ];
-		attribute<string> name           : [ 'Teruglevering', 'KleinGebruik', 'KleinMiddelGebruik', 'MiddelMiddelGebruik', 'GrootGebruik' ];
-		attribute<m3_yr>  gas_break_m3   : [-1e+10, 0,  5000, 170000,  1000000 ];
-		attribute<kwh_yr> elek_break_kwh : [-1e+10, 0, 10000,  50000, 10000000 ];
+		attribute<string> code           : [ 'TL', 'ZKG', 'KG', 'KMG'];
+		attribute<string> label          : [ 'Teruglevering', 'Zeer Klein Gebruik', 'Klein Gebruik', 'Klein Middelgroot Gebruik'];
+		attribute<string> name           : [ 'Teruglevering', 'ZeerKleinGebruik', 'KleinGebruik', 'KleinMiddelGebruik'];
+		attribute<m3_yr>  gas_break_m3   : [-1e+10, 0, 1000,  5000   ];
+		attribute<kwh_yr> elek_break_kwh : [-1e+10, 0, 2900,  10000  ];
 
 		attribute<GJ_yr>  gas_break      := gas_break_m3 * Invoer/Kengetallen/constanten/GasEnergie;
 		attribute<GJ_yr>  elek_break     := elek_break_kwh [GJ_yr];

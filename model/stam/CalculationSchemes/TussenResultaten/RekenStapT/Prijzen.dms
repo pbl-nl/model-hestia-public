@@ -6,8 +6,6 @@
 
 container Prijzen
 {
-	parameter<Eur_yr_asl> Heffingskorting := AardGas/bron/Heffingskorting[AardGas/JaarIndex] + Elektriciteit/bron/Heffingskorting[Elektriciteit/JaarIndex];
-
 	container AardGas
 	{
 		unit<uint32> Tabel := Invoer/EnergiePrijzen/AardGas/Table;
@@ -27,12 +25,13 @@ container Prijzen
 		
 		unit<uint8> Staffel := classifications/gebruiksgrootteklasse 
 		{
-			attribute<GJ_yr>  ClassBreak := gas_break;
-			attribute<Eur_GJ> KGJ_Commodity        := ='union_data(., ' + AsItemList('bron/' + name + '/CommodityPrice  [JaarIndex] ') + ')';
-			attribute<Eur_GJ> KGJ_netwerk          := ='union_data(., ' + AsItemList('bron/' + name + '/netwerk         [JaarIndex] ') + ')';
-			attribute<Eur_GJ> KGJ_eindgebruik_excl := ='union_data(., ' + AsItemList('bron/' + name + '/eindgebruik_excl[JaarIndex] ') + ')';
-			attribute<Eur_GJ> KGJ_Maatschappelijk  := ='union_data(., ' + AsItemList('bron/' + name + '/Maatschappelijk [JaarIndex] ') + ')';
-			attribute<Eur_GJ> KGJ_EnergieHeffing   := ='union_data(., ' + AsItemList('bron/' + name + '/EnergieHeffing  [JaarIndex] ') + ')';
+			attribute<GJ_yr>      ClassBreak           := gas_break;
+			attribute<Eur_GJ>     KGJ_Commodity        := ='union_data(., ' + AsItemList('bron/' + name + '/CommodityPrice  [JaarIndex] ') + ')';
+			attribute<Eur_GJ>     KGJ_netwerk          := ='union_data(., ' + AsItemList('bron/' + name + '/netwerk         [JaarIndex] ') + ')';
+			attribute<Eur_GJ>     KGJ_eindgebruik_excl := ='union_data(., ' + AsItemList('bron/' + name + '/eindgebruik_excl[JaarIndex] ') + ')';
+			attribute<Eur_GJ>     KGJ_Maatschappelijk  := ='union_data(., ' + AsItemList('bron/' + name + '/Maatschappelijk [JaarIndex] ') + ')';
+			attribute<Eur_GJ>     KGJ_EnergieHeffing   := ='union_data(., ' + AsItemList('bron/' + name + '/EnergieHeffing  [JaarIndex] ') + ')';
+			attribute<Eur_yr_asl> Heffingskorting      := ='union_data(., ' + AsItemList('bron/' + name + '/Heffingskorting [JaarIndex] ') + ')';
 		}
 
 		container Bijstook
@@ -63,13 +62,14 @@ container Prijzen
 		
 		unit<uint8> Staffel := classifications/gebruiksgrootteklasse
 		{
-			attribute<GJ_yr>  ClassBreak           := elek_break_kWh [GJ_yr];		
-			attribute<Eur_GJ> KGJ_Commodity        := ='union_data(., ' + AsItemList('bron/' + name + '/CommodityPrice  [JaarIndex]') + ')';
-			attribute<Eur_GJ> KGJ_Marge            := ='union_data(., ' + AsItemList('bron/' + name + '/Marge           [JaarIndex]') + ')';
-			attribute<Eur_GJ> KGJ_netwerk          := ='union_data(., ' + AsItemList('bron/' + name + '/netwerk         [JaarIndex]') + ')';
-			attribute<Eur_GJ> KGJ_eindgebruik_excl := ='union_data(., ' + AsItemList('bron/' + name + '/eindgebruik_excl[JaarIndex]') + ')';
-			attribute<Eur_GJ> KGJ_Maatschappelijk  := ='union_data(., ' + AsItemList('bron/' + name + '/Maatschappelijk [JaarIndex]') + ')';
-			attribute<Eur_GJ> KGJ_EnergieHeffing   := ='union_data(., ' + AsItemList('bron/' + name + '/EnergieHeffing  [JaarIndex]') + ')';
+			attribute<GJ_yr>      ClassBreak           := elek_break_kWh [GJ_yr];		
+			attribute<Eur_GJ>     KGJ_Commodity        := ='union_data(., ' + AsItemList('bron/' + name + '/CommodityPrice  [JaarIndex]') + ')';
+			attribute<Eur_GJ>     KGJ_Marge            := ='union_data(., ' + AsItemList('bron/' + name + '/Marge           [JaarIndex]') + ')';
+			attribute<Eur_GJ>     KGJ_netwerk          := ='union_data(., ' + AsItemList('bron/' + name + '/netwerk         [JaarIndex]') + ')';
+			attribute<Eur_GJ>     KGJ_eindgebruik_excl := ='union_data(., ' + AsItemList('bron/' + name + '/eindgebruik_excl[JaarIndex]') + ')';
+			attribute<Eur_GJ>     KGJ_Maatschappelijk  := ='union_data(., ' + AsItemList('bron/' + name + '/Maatschappelijk [JaarIndex]') + ')';
+			attribute<Eur_GJ>     KGJ_EnergieHeffing   := ='union_data(., ' + AsItemList('bron/' + name + '/EnergieHeffing  [JaarIndex]') + ')';
+			attribute<Eur_yr_asl> Heffingskorting      := ='union_data(., ' + AsItemList('bron/' + name + '/Heffingskorting [JaarIndex]') + ')';
 		}
 	}
 	
