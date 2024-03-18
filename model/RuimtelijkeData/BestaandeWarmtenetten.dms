@@ -14,7 +14,7 @@
 container BestaandeWarmtenetten
 {
 	unit<uint32> Aflevergebied_data
-	:   StorageName     = "%HestiaDataDir%/infra/BestaandeWarmtenetten/shapefiles/aflevergebied.shp"
+	:   StorageName     = "%HestiaDataDir%/infra/BestaandeWarmtenetten/shapefiles/aflevergebied_BKGlaag.shp"
 	,   StorageType     = "gdal.vect"
 	,	DialogData      = "geometry"
 	,	DialogType      = "Map"
