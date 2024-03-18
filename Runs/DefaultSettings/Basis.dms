@@ -145,7 +145,18 @@ container Basis : Using = "Units"
 
 	container RuimtelijkeVraag
 	{
+
 		container Gedrag
+		{
+			attribute<float64> RV (RekenStap) := const(0.95[float64],RekenStap), Descr = "Schuif om functionele vraag naar ruimteverwarming hoger of lager te schalen (1 = geen schalingsfactor)";
+			attribute<float64> KD (RekenStap) := const(1.00[float64],RekenStap), Descr = "Schuif om functionele vraag naar koude hoger of lager te schalen (1 = geen schalingsfactor)";
+			attribute<float64> TW (RekenStap) := const(0.95[float64],RekenStap), Descr = "Schuif om functionele vraag naar warm water hoger of lager te schalen (1 = geen schalingsfactor)";
+			attribute<float64> EA (RekenStap) := const(1.00[float64],RekenStap), Descr = "Schuif om functionele vraag naar elektriciteit voor apparatuur waaronder ventilatie hoger of lager te schalen (1 = geen schalingsfactor)";
+			attribute<float64> VT (RekenStap) := const(1.00[float64],RekenStap), Descr = "Schuif om functionele vraag naar ventilatie hoger of lager te schalen (1 = geen schalingsfactor)";
+			attribute<float64> KK (RekenStap) := const(1.00[float64],RekenStap), Descr = "Schuif om functionele vraag naar koken hoger of lager te schalen (1 = geen schalingsfactor)";
+		}
+
+	/*	container Gedrag
 		{
 			parameter<float64> RV : [0.95], Descr = "Schuif om functionele vraag naar ruimteverwarming hoger of lager te schalen (1 = geen schalingsfactor)";
 			parameter<float64> KD : [1.00], Descr = "Schuif om functionele vraag naar koude hoger of lager te schalen (1 = geen schalingsfactor)";
@@ -153,7 +164,7 @@ container Basis : Using = "Units"
 			parameter<float64> EA : [1.00], Descr = "Schuif om functionele vraag naar elektriciteit voor apparatuur waaronder ventilatie hoger of lager te schalen (1 = geen schalingsfactor)";
 			parameter<float64> VT : [1.00], Descr = "Schuif om functionele vraag naar ventilatie hoger of lager te schalen (1 = geen schalingsfactor)";
 			parameter<float64> KK : [1.00], Descr = "Schuif om functionele vraag naar koken hoger of lager te schalen (1 = geen schalingsfactor)";
-		}
+		}*/
 		container Lokaal : IsHidden = "True"
 		{
 			container Generiek

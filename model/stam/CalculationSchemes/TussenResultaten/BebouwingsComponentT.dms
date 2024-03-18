@@ -293,18 +293,18 @@ template BebouwingsComponentT
 			container Gedragfactor := SpecifiekeInstellingen/RuimtelijkeVraag/Gedrag, ishidden = "True";
 			attribute<ratio> Klimaateffect (..) := KlimaatFactorMap[gridm100_rel]; // ToDO: dubbelle punt nodig?
 
-			attribute<GJ_yr> VT (..) := BaseValues/VT * Gedragfactor/VT * nrAansluitingen[float64];
-			attribute<GJ_yr> KK (..) := BaseValues/KK * Gedragfactor/KK * nrAansluitingen[float64];
-			attribute<GJ_yr> EA (..) := BaseValues/EA * Gedragfactor/EA * nrAansluitingen[float64];
-			attribute<GJ_yr> TW (..) := BaseValues/TW * Gedragfactor/TW * nrAansluitingen[float64];
-			attribute<GJ_yr> KD (..) := BaseValues/KD * Gedragfactor/KD * nrAansluitingen[float64] * ( 1.0 + 3.66 *(1.0 - Klimaateffect));
+			attribute<GJ_yr> VT (..) := BaseValues/VT * Gedragfactor/VT[RekenStap_rel] * nrAansluitingen[float64];
+			attribute<GJ_yr> KK (..) := BaseValues/KK * Gedragfactor/KK[RekenStap_rel] * nrAansluitingen[float64];
+			attribute<GJ_yr> EA (..) := BaseValues/EA * Gedragfactor/EA[RekenStap_rel] * nrAansluitingen[float64];
+			attribute<GJ_yr> TW (..) := BaseValues/TW * Gedragfactor/TW[RekenStap_rel] * nrAansluitingen[float64];
+			attribute<GJ_yr> KD (..) := BaseValues/KD * Gedragfactor/KD[RekenStap_rel] * nrAansluitingen[float64] * ( 1.0 + 3.66 *(1.0 - Klimaateffect));
 			
 			attribute<ratio> Fitfactor_VT (..) := PrevObject/Functioneel/Fitfactor_VT;
 			container BaseValues := for_each_nedv(Classifications/FunctioneleVraag/name, 'PrevObject/Functioneel/BaseValues/' + Classifications/FunctioneleVraag/name, .., GJ_yr);
 			container RV_N0_per_bouwdeel := for_each_nedv(Classifications/bouwdeel/name, 'PrevObject/Functioneel/RV_N0_per_bouwdeel/' + Classifications/bouwdeel/name, .., GJ_yr);
 				
 			container RV_N0_per_bouwdeel_now := for_each_nedv(Classifications/bouwdeel/name,
-				'RV_N0_per_bouwdeel/'+ Classifications/bouwdeel/name+ ' * Gedragfactor/RV * nrAansluitingen[float64] * Klimaateffect',
+				'RV_N0_per_bouwdeel/'+ Classifications/bouwdeel/name+ ' * Gedragfactor/RV[RekenStap_rel] * nrAansluitingen[float64] * Klimaateffect',
 				..,
 				GJ_yr);
 		}
