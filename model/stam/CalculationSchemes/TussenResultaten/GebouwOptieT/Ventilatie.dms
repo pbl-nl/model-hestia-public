@@ -96,11 +96,11 @@ container ventilatie
 			attribute<GJ_yr>   V_RV       (GeschiktObject) :=
 				  BO/nrAansluitingen[GeschiktObject/BO_rel]
 				* Ventilatieopties/V_RV_asl[Ventilatieoptie_rel]
-				* BO/Functioneel_base/Gedragfactor/VT
+				* BO/Functioneel_base/Gedragfactor/VT[RekenStap_rel]
 				* BO/Functioneel_base/Klimaateffect[GeschiktObject/BO_rel]
 				* BO/Functioneel_base/Fitfactor_VT[GeschiktObject/BO_rel];
 
-			attribute<GJ_yr>   V_E        (GeschiktObject) := BO/nrAansluitingen[GeschiktObject/BO_rel]     * Ventilatieopties/V_E_asl[Ventilatieoptie_rel]  * BO/Functioneel_base/Gedragfactor/VT * BO/Functioneel_base/Fitfactor_VT[GeschiktObject/BO_rel];
+			attribute<GJ_yr>   V_E        (GeschiktObject) := BO/nrAansluitingen[GeschiktObject/BO_rel]     * Ventilatieopties/V_E_asl[Ventilatieoptie_rel]  * BO/Functioneel_base/Gedragfactor/VT[RekenStap_rel] * BO/Functioneel_base/Fitfactor_VT[GeschiktObject/BO_rel];
 			attribute<Eur_yr>  Kj_energie (GeschiktObject) := first(Prijzen/Elektriciteit/Staffel/KGJ_eindgebruik_excl) * V_E + first(Prijzen/AardGas/Staffel/KGJ_eindgebruik_excl) * V_RV; //TODO: koppelen aan huidige installaties
 
 			attribute<Eur>     Ki_VT      (GeschiktObject) := ='BO/nrAansluitingen[GeschiktObject/BO_rel] * merge(uint8(BO/Activatie/Uitvoering[GeschiktObject/BO_rel]), eur_asl, '+AsItemList('VentilatieMaatregel/Ki_asl/'+Classifications/Uitvoering/Name+'[VentilatieMaatregel_rel]')+')';
@@ -114,7 +114,7 @@ container ventilatie
 			attribute<float64> Odds         (GeschiktObject) := IsDefined(Geschiktheid) ? exp(min_elem(Geschiktheid * Ventilatieopties/beta[Ventilatieoptie_rel], LOG_MAX_FLOAT64)) : 0.0;
 			attribute<float64> Probability  (GeschiktObject) := Odds / Choice/TotalOdds;
 			attribute<float64> Cumulprob    (GeschiktObject) := ='add('+AsItemList('float64(PerOptie/'+Ventilatieopties/Name+'/Ventilatieoptie_rel <= Ventilatieoptie_rel) * PerOptie/'+Ventilatieopties/Name+'/Probability')+')';
-			attribute<bool>    IsSelected   (GeschiktObject) := CumulProb - Probability <= Choice/rnd && Choice/rnd < CumulProb;
+			attribute<bool>    IsSelected   (GeschiktObject) := Normen/Installatietype_norm == Installatietype || CumulProb - Probability <= Choice/rnd && Choice/rnd < CumulProb, Descr = "Indien genormeerd, dan wordt deze optie automatisch gekozen. Zo niet, dan wordt er gekozen op basis van de probability relatief tot andere opties.";
 
 			attribute<Ventilatieopties> Ventilatieoptie_choice (GeschiktObject) := IsSelected ? Ventilatieoptie_rel : (0/0)[Ventilatieopties];
 			attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Type_choice (GeschiktObject) := IsSelected ? Installatietype : (0/0)[Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes];
