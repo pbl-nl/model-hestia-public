@@ -12,7 +12,7 @@
 
 container VastgoedProjectie
 {
-	parameter<string> ScenarioDate    := '20231213';
+	parameter<string> ScenarioDate    := ScenarioVariant == 'BAU' ? '20231213' : '20231113';
 	parameter<string> ScenarioVariant := Invoer/DefaultInstellingen/Basis/RuimtelijkeOntwikkelingScenario;// (voor BAU niet metMaatregelen)
 	parameter<bool>   metMaatregelen  := false;
 	parameter<string> Bestandslocatie := ScenarioDate + '_RO_WLO_Hoog_' + ScenarioVariant + (metMaatregelen ? '_MetMaatregelen':'');
@@ -181,10 +181,10 @@ container VastgoedProjectie
 
 		unit<uint32> BebouwingsObject_buff := range(uint32, 0, sum(NB/nr_aansl))
 		{
-			attribute<uint32> 				first_nbo (NB) 				:= cumulate(NB/nr_aansl) - NB/nr_aansl;
-			attribute<NB> 					nbb_rel (BebouwingsObject_buff) 	:= classify(uint32(id(BebouwingsObject_buff)[Units/nrAsl]), first_nbo);
-			attribute<rdc_meter>            Geometry          			:= NB/geometry[nbb_rel];
-			attribute<StudieGebied/Buurt>	Buurt_rel         			:= Point_in_polygon(Geometry, StudieGebied/Buurt/Geometry);
+			attribute<uint32> 				first_nbo (NB)                    := cumulate(NB/nr_aansl) - NB/nr_aansl;
+			attribute<NB> 					nbb_rel   (BebouwingsObject_buff) := classify(uint32(id(BebouwingsObject_buff)[Units/nrAsl]), first_nbo);
+			attribute<rdc_meter>            Geometry            			  := NB/geometry[nbb_rel];
+			attribute<StudieGebied/Buurt>	Buurt_rel           			  := Point_in_polygon(Geometry, StudieGebied/Buurt/Geometry);
 
 		}
 
@@ -195,21 +195,18 @@ container VastgoedProjectie
 			attribute<string>                      Code              := TypeName +string( Periode/name[Periode_rel] )+string( Geometry ) ;
 			attribute<string>                      TypeName          := Classifications/WoningType/name[Woningtype_rel];
 			attribute<string>                      label             := Code, DialogType = "LabelText";
-			attribute<nrAsl>                       nrAansluitingen_i := float64(NB/nr_aansl[nbb_rel]);
+			attribute<nrAsl>                       nrAansluitingen_i := const(1[nrAsl],.);
 			attribute<Classifications/WoningType>  Woningtype_rel    := NB/Woningtype_rel[nbb_rel];
 			attribute<bool> 					   isMeergezins 	 := Classifications/Woningtype/IsMeergezins[WoningType_rel];
 			attribute<m2>                          Oppervlakte_i     := Classifications/WoningType/Default_oppervlak_Nieuwbouw[Woningtype_rel] * nrAansluitingen_i;
 			attribute<units/pand_asl>              Pand_aandeel      := Classifications/WoningType/Pand_aandeel[Woningtype_rel];
-			attribute<yr_uint16>                   Sloopjaar         := Const(2100[yr_uint16],.);
+			attribute<yr_uint16>                   Sloopjaar         := Const(9999[yr_uint16],.);
 
 			attribute<bool> ischeck := isdefined(Buurt_rel);
 
 			attribute<Geography/rdc_grids/m100>    gridm100_rel      := Geometry[Geography/rdc_grids/m100];
 			attribute<Classifications/Eigendom>    Eigendom_rel      := NB/Eigendom_rel[nbb_rel];
 			attribute<bool>                        Gasloos           := Func2Meter/result/Gas <= 0.0[GJ_yr];
-
-			//parameter<string> StartjaarNieuwbouw := string(uint32(Periode/RO_directory[periode_rel])-uint32(10));
-			//container Vermogens := = replace('Invoer/Kengetallen/Vermogens(Tussenresultaten/%NP%/Schuiven/EfficiencySchuif)', '%NP%',StartjaarNieuwbouw);
 
 			container Vermogens := Invoer/Kengetallen/Vermogens(/Tussenresultaten/Startjaar/Schuiven/EfficiencySchuif);
 
