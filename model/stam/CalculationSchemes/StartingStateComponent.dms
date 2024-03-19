@@ -210,7 +210,9 @@ template StartingStateComponent
 		
 			
 		container InstallatiePerProduct := for_each_nedv(Classifications/Product/name
-			, 'Classifications/GebouwOptie/PerProduct/'+Classifications/Product/name+'[GebouwOptie_rel]'
+			, 
+				  (Classifications/Product/name == 'KDb' || Classifications/Product/name == 'KDp') && eerste_jaar >= 2020[yr_uint16] ? 'AircoMobielAllocatie ? Classifications/Installatie/V/AircoMobiel : Classifications/Installatie/V/Geen'
+				: 'Classifications/GebouwOptie/PerProduct/'+Classifications/Product/name+'[GebouwOptie_rel]'
 			, .
 			, Classifications/Installatie)
 		{
@@ -224,6 +226,8 @@ template StartingStateComponent
 					attribute<yr_uint16> VT (...) := (uint16(Startjaar_jaar) - mod(uint16(sub_or_null(Startjaar_jaar, Bouwjaar)), Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/Levensduur[InstallatiePerProduct/VT]))[yr_uint16];
 					attribute<yr_uint16> DK (...) := (uint16(Startjaar_jaar) - mod(uint16(sub_or_null(Startjaar_jaar, Bouwjaar)), Invoer/Kengetallen/OverigeInstallaties/DK/Installatietypes/Levensduur[InstallatiePerProduct/DK]))[yr_uint16];
 				}
+
+			attribute<bool> AircoMobielAllocatie (..) := rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 437[uint32], .., range(float64, 0d, 1d)) <= 0.052[float64];
 				
 			//Allocatie van initiele kookopties
 			container KokenAllocatieInitieel := Model/CalculationSchemes/KokenAllocatieInitieel(..);
@@ -245,8 +249,8 @@ template StartingStateComponent
 				parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Mec_Vst_Wis := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Mec_Vst_Wis, descr = "ventilatieoptie mechanische ventilatie bestaande bouw";
 				//end parameters
 
-				attribute<float64> rndA (...) :=  rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * VTseed, results, range(float64, 0d, 1d));
-				attribute<float64> rndB (...) :=  rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * BMseed, results, range(float64, 0d, 1d));
+				attribute<float64> rndA (...) :=  rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * VTseed, ..., range(float64, 0d, 1d));
+				attribute<float64> rndB (...) :=  rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * BMseed, ..., range(float64, 0d, 1d));
 
 				attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> VT_simple (...) := Bouwjaar > Peiljaar_aandelen ? Bal_Vst_Wtw : Bouwjaar > Jaar_Normering_Mechanisch ? Mec_Vst_Wis : Nat;
 
