@@ -57,13 +57,13 @@ container Rekenstap
 				parameter<string> LleWP_zKD:      ['Criteria/Never'];
 				parameter<string> LleWP_wKD:      ['Criteria/Never'];
 
-				parameter<string> hEWV_TWg_zKD:   ['Criteria/NoAlloc'];
-				parameter<string> hEWV_TWg_vKD:   ['Criteria/NoAlloc'];
-				parameter<string> hEWV_TWg_mKD:   ['Criteria/NoAlloc'];
+				parameter<string> hEWV_TWg_zKD:   ['Criteria/Never'];
+				parameter<string> hEWV_TWg_vKD:   ['Criteria/Never'];
+				parameter<string> hEWV_TWg_mKD:   ['Criteria/Never'];
 
-				parameter<string> hEWV_TWeb_zKD:  ['Criteria/NoAlloc'];
-				parameter<string> hEWV_TWeb_vKD:  ['Criteria/NoAlloc'];
-				parameter<string> hEWV_TWeb_mKD:  ['Criteria/NoAlloc'];
+				parameter<string> hEWV_TWeb_zKD:  ['Criteria/Never'];
+				parameter<string> hEWV_TWeb_vKD:  ['Criteria/Never'];
+				parameter<string> hEWV_TWeb_mKD:  ['Criteria/Never'];
 
 				parameter<string> EWV_TWeb_zKD:   ['Criteria/Never'];
 				parameter<string> EWV_TWeb_vKD:   ['Criteria/Never'];
@@ -73,13 +73,13 @@ container Rekenstap
 				parameter<string> IR_TWeb_vKD:    ['Criteria/Never'];
 				parameter<string> IR_TWeb_mKD:    ['Criteria/Never'];
 
-				parameter<string> hEWV_hTWds_zKD: ['Criteria/NoAlloc'];
-				parameter<string> hEWV_hTWds_vKD: ['Criteria/NoAlloc'];
-				parameter<string> hEWV_hTWds_mKD: ['Criteria/NoAlloc'];
+				parameter<string> hEWV_hTWds_zKD: ['Criteria/Never'];
+				parameter<string> hEWV_hTWds_vKD: ['Criteria/Never'];
+				parameter<string> hEWV_hTWds_mKD: ['Criteria/Never'];
 
-				parameter<string> hEWV_TWds_zKD:  ['Criteria/NoAlloc'];
-				parameter<string> hEWV_TWds_vKD:  ['Criteria/NoAlloc'];
-				parameter<string> hEWV_TWds_mKD:  ['Criteria/NoAlloc'];
+				parameter<string> hEWV_TWds_zKD:  ['Criteria/Never'];
+				parameter<string> hEWV_TWds_vKD:  ['Criteria/Never'];
+				parameter<string> hEWV_TWds_mKD:  ['Criteria/Never'];
 
 				parameter<string> EWV_TWds_zKD:   ['Criteria/Never'];
 				parameter<string> EWV_TWds_vKD:   ['Criteria/Never'];
