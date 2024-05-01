@@ -243,7 +243,7 @@ template ResultatenT
 				
 			attribute<uint32> nrWoningen                := pcount(imp/results_rel);
 			attribute<nrAsl>  nrAansluitingen           := sum(imp/BO/nrAansluitingen, imp/results_rel);
-			attribute<nrAsl>  nrAansluitingen_nieuwbouw := sum(imp/BO/nrAansluitingen * float64(imp/BO/Bouwjaar > 2022[yr_uint16]), imp/results_rel);
+			attribute<nrAsl>  nrAansluitingen_nieuwbouw := sum(imp/BO/nrAansluitingen * float64(imp/BO/Bouwjaar >= Invoer/RuimtelijkeData/BAG/Jaar), imp/results_rel);
 			container Functioneel := for_each_nedv(Classifications/FunctioneleVraag/name
 			,	'sum(imp/BO/Functioneel/'+Classifications/FunctioneleVraag/name+', imp/results_rel)'
 			,	., GJ_yr );

@@ -18,7 +18,7 @@ container BAG: url="%HestiaDataDir%/BAG/20230223_actualisatie_BAG_WP.txt"
 {
 	parameter<string>          SourceDir := '%HestiaDataDir%/BAG/20230101', IsHidden = "True";
 	parameter<string>          Datum     := '01-01-2023';
-	parameter<units/yr_uint16> Jaar      := 2023[units/yr_uint16];
+	parameter<units/yr_uint16> Jaar      := 2023[units/yr_uint16]; //Let op: dit jaar wordt gezien als nieuwbouw; zit niet in de BAG
 
 	container typeringen : IsHidden = "True"
 	{
