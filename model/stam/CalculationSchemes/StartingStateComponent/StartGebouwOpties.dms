@@ -194,7 +194,7 @@ container StartGebouwOpties
 			  BouwjaarOf9999  < 2020[yr_uint16] ? false
 			: Bouwjaar == 2020[yr_uint16] ? rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 441[uint32], results, range(float64, 0d, 1d)) < 0.86[float64]
 			: Bouwjaar == 2021[yr_uint16] ? rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 442[uint32], results, range(float64, 0d, 1d)) < 0.91[float64]
-			: true;
+			: true, Descr = "wordt gebouw gasloos gebouwd? voor 2020 nooit, na 2022 altijd, in de tussenjaren grotendeels", Source = "https://energeia.nl/bijna-91-van-de-nieuwbouwwoningen-in-2021-zonder-gasaansluiting/";
 
 		attribute<bool> BWP_normering (results) := WPnormering_geldig && rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 443[uint32], results, range(float64, 0d, 1d)) < par/R_Bodem;
 		attribute<bool> LWP_normering (results) := WPnormering_geldig && not(BWP_normering);

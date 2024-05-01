@@ -195,6 +195,7 @@ container Gasnetten
 				container          connect := connect_info(Leidingen/Geometry, Point, maxDist);
 			}
 			//indicatie per pand of die geen gasaansluiting heeft
+
 			attribute<Bool> Gasloos := not(sum(uint32(isdefined(points/connect/arcid)), points/SequenceNr) > 0[uint32]);
 		}
 	}
@@ -224,7 +225,9 @@ container Gasnetten
 				container          connect := connect_info(Leidingen/Geometry, Point, maxDist);
 			}
 			//indicatie per pand of die geen gasaansluiting heeft
+
 			attribute<Bool> Gasloos := not(sum(uint32(isdefined(points/connect/arcid)), points/SequenceNr) > 0[uint32]);
+
 		}
 	}	
 

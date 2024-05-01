@@ -64,7 +64,7 @@ container HestiaRun
 			#include <%projDir%/Runs/DefaultSettings/Rekenstap.dms>		
 		}
 
-		parameter<string> EnergieprijsScenario := '20240314_VV_Euro2020';
+		parameter<string> EnergieprijsScenario := '20240501_KEV24_V_Euro2020';
 		
 		container SpecifiekeInstellingen := DefaultInstellingen/Basis, IsHidden = "True"
 		{
