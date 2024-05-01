@@ -54,7 +54,7 @@ container HestiaRun
 		// Geography/RegioIndelingen/Provincie/GM_code_list[rlookup(Provincie, Geography/RegioIndelingen/Provincie/name)];
 
 		parameter<bool> StartgegevensAan        := eerste_jaar >= 2020[uint16], Descr = "Worden invoer voor isolatieniveaus en gebouwopties meegenomen?", IsHidden = "True";
-		parameter<bool> HerberekenStartsituatie := true, IsHidden = "True";
+		parameter<bool> HerberekenStartsituatie := false, IsHidden = "True";
 		parameter<units/yr_uint16> StartNieuwbouwJaar := right(/Invoer/RuimtelijkeData/BAG/datum,4)[units/yr_uint16], IsHidden = "True";
 
 		container DefaultInstellingen : IsHidden = "True"
@@ -64,7 +64,7 @@ container HestiaRun
 			#include <%projDir%/Runs/DefaultSettings/Rekenstap.dms>		
 		}
 
-		parameter<string> EnergieprijsScenario := '20240314_VV_Euro2020';
+		parameter<string> EnergieprijsScenario := '20240501_KEV24_V_Euro2020';
 		
 		container SpecifiekeInstellingen := DefaultInstellingen/Basis, IsHidden = "True"
 		{
