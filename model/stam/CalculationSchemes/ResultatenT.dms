@@ -340,6 +340,7 @@ template ResultatenT
 			,	., m2 )
 			{
 				attribute<string> categorie (results) := label;
+				attribute<nrAsl>  nrAansl   (results) := nrAansluitingen;
 			}
 
 			container NieuwbouwArealen := for_each_nedv(Classifications/Bouwdeel/name
@@ -347,6 +348,7 @@ template ResultatenT
 			,	., m2 )
 			{
 				attribute<string> categorie (results) := label;
+				attribute<nrAsl>  nrAansl   (results) := sum( imp/BO/nrAansluitingen *float64( imp/BO/Bouwjaar > 2022[yr_uint16]), imp/results_rel);
 			}
 		}
 	}
