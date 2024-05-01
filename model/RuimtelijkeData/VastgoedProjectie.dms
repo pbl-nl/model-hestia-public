@@ -16,7 +16,7 @@ container VastgoedProjectie
 	parameter<string> ScenarioVariant := Invoer/DefaultInstellingen/Basis/RuimtelijkeOntwikkelingScenario;// (voor BAU niet metMaatregelen)
 	parameter<bool>   metMaatregelen  := false;
 	parameter<string> Bestandslocatie := ScenarioDate + '_RO_WLO_Hoog_' + ScenarioVariant + (metMaatregelen ? '_MetMaatregelen':'');
-	parameter<yr_uint16> StartNieuwbouwJaar := /Invoer/StartNieuwbouwJaar;
+	parameter<yr_uint16> StartNieuwbouwJaar := /Invoer/StartNieuwbouwJaar +1[yr_uint16];
 
 	unit<uint8> NieuwbouwWoningType: nrofrows = 4, IsHidden = "True"
 	{
