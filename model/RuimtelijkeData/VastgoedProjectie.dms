@@ -16,6 +16,7 @@ container VastgoedProjectie
 	parameter<string> ScenarioVariant := Invoer/DefaultInstellingen/Basis/RuimtelijkeOntwikkelingScenario;// (voor BAU niet metMaatregelen)
 	parameter<bool>   metMaatregelen  := false;
 	parameter<string> Bestandslocatie := ScenarioDate + '_RO_WLO_Hoog_' + ScenarioVariant + (metMaatregelen ? '_MetMaatregelen':'');
+	parameter<yr_uint16> StartNieuwbouwJaar := /Invoer/StartNieuwbouwJaar;
 
 	unit<uint8> NieuwbouwWoningType: nrofrows = 4, IsHidden = "True"
 	{
@@ -49,6 +50,9 @@ container VastgoedProjectie
 		//case parameters
 		parameter<Periode>          Periode_rel;
 		//end case parameters
+		
+		parameter<yr_uint16> NieuwbouwJarenTeGaan := min_elem(Periode/Eindjaar[Periode_rel][yr_uint16] - StartNieuwbouwJaar, 10[yr_uint16]);
+		parameter<ratio> 	 NieuwBouwFactor	  := float64(NieuwbouwJarenTeGaan) / 10d[yr];
 		
 		container Nieuwbouw25 :=
 			for_each_ndva(
@@ -123,11 +127,12 @@ container VastgoedProjectie
 
 			unit<uint32> BO_perjaar := union_unit(BO_perjaar_koop,BO_perjaar_wooncorp,BO_perjaar_parthuur)
 			{
-				attribute<rdc_meter>                  geometry       := union_data(.,BO_perjaar_koop/geometry      ,BO_perjaar_wooncorp/geometry      ,BO_perjaar_parthuur/geometry      );
-				attribute<Classifications/Eigendom>   Eigendom_rel   := union_data(.,BO_perjaar_koop/Eigendom_rel  ,BO_perjaar_wooncorp/Eigendom_rel  ,BO_perjaar_parthuur/Eigendom_rel  );
-				attribute<nrAsl>                      nr_aansl_frac  := union_data(.,BO_perjaar_koop/nr_aansl      ,BO_perjaar_wooncorp/nr_aansl      ,BO_perjaar_parthuur/nr_aansl      );
-				attribute<uint32>                     nr_aansl       := uint32(roundDown(nr_aansl_frac + rnd_uniform(0, BO_perjaar, range(float64,0d,1d))));
-				attribute<Classifications/WoningType> Woningtype_rel := union_data(.,BO_perjaar_koop/Woningtype_rel,BO_perjaar_wooncorp/Woningtype_rel,BO_perjaar_parthuur/Woningtype_rel);
+				attribute<rdc_meter>                  geometry       		:= union_data(.,BO_perjaar_koop/geometry      ,BO_perjaar_wooncorp/geometry      ,BO_perjaar_parthuur/geometry      );
+				attribute<Classifications/Eigendom>   Eigendom_rel   		:= union_data(.,BO_perjaar_koop/Eigendom_rel  ,BO_perjaar_wooncorp/Eigendom_rel  ,BO_perjaar_parthuur/Eigendom_rel  );
+				attribute<nrAsl>                      nr_aansl_frac_impl 	:= union_data(.,BO_perjaar_koop/nr_aansl      ,BO_perjaar_wooncorp/nr_aansl      ,BO_perjaar_parthuur/nr_aansl      );
+				attribute<nrAsl>                      nr_aansl_frac  		:= nr_aansl_frac_impl * NieuwBouwFactor;
+				attribute<uint32>                     nr_aansl       		:= uint32(roundDown(nr_aansl_frac + rnd_uniform(0, BO_perjaar, range(float64,0d,1d))));
+				attribute<Classifications/WoningType> Woningtype_rel 		:= union_data(.,BO_perjaar_koop/Woningtype_rel,BO_perjaar_wooncorp/Woningtype_rel,BO_perjaar_parthuur/Woningtype_rel);
 			}
 
 		}
