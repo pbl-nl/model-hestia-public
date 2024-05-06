@@ -61,7 +61,7 @@ PresWoCo7	Prestatieafspraken wocos 2022-2028	2028	2028	normering	bestaande bouw,
 PresWoCoAct1	Prestatieafspraken wocos 2022-2028 activatie	2027	2027	activatie	bestaande bouw, socialehuur	bouwdelen				Huidig label:E,F,G		0.5	
 PresWoCoAct2	Prestatieafspraken wocos 2022-2028 activatie	2028	2028	activatie	bestaande bouw, socialehuur	bouwdelen				Huidig label:E,F,G		1	
 PresWoCoInvest	Prestatieafspraken wocos 2022-2025 investering	2022	2025	subsidie	socialehuur	zonnepanelen, (hybride) warmtepompen	1	0	0	Huidig label:A,B,C,D		0.075	2022:125mln,2023:142mln,2024:125mln,2025:125mln
-PresWoCoCVVerbod	Prestatieafspraken wocos 2022-2025 CV verbod	2025	2030	verbod	socialehuur	VR, HR	1			Huidig label:A,B,C,D		1	
+PresWoCoCVVerbod	Prestatieafspraken wocos 2022-2025 CV verbod	2023	2030	verbod	socialehuur	VR, HR	1			Huidig label:A,B,C,D		1	
 sub_SVOH	Subsidieregeling Verduurzaming en Onderhoud Huurwoningen (SVOH)	2022	2025	subsidie	particulierehuur	isolatie, installatie, ventilatie	0.75	0	0	maximum bedrag: 6000		0.2	2022:38mln,2023:38mln,2024:38mln,2025:38mln
 sub_SVVE1	Subsidieregeling verduurzaming verenigingen van eigenaren	2023	2027	subsidie	koopwoning, meergezins	isolatie	0.15	0	0	Minimaal aantal maatregelen: 1	Maximaal aantal maatregelen: 1	0.06	2022:9.15mln,2023:9.15mln,2024:9.15mln,2025:9.15mln,2026:9.15mln,2027:9.15mln
 sub_SVVE2	Subsidieregeling verduurzaming verenigingen van eigenaren	2023	2027	subsidie	koopwoning, meergezins	(hybride) warmtepomp, isolatie, zonneboiler	0.3	0	0	Minimaal aantal maatregelen: 2		0.06	hoort bij sub_SVVE
