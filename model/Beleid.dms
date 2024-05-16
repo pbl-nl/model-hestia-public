@@ -253,6 +253,17 @@ container Beleid
 					SchilfactorVoorwaarde  ? IsDefined(MinSchilfactor) && IsDefined(MaxSchilfactor)  : IsNull(MinSchilfactor) && IsNull(MaxSchilfactor),
 					BouwjaarVoorwaarde     ? IsDefined(MinBouwjaar) && IsDefined(MaxBouwjaar) : IsNull(MinBouwjaar) && IsNull(MaxBouwjaar)
 					);
+					
+				attribute<bool>  LabelVoorwaarde (BestaandeBouwNorm) := strcount(voorwaarde1, lowercase('Huidig label:')) + strcount(voorwaarde2, lowercase('Huidig label:')) > 0;
+
+				container HuidigLabel := for_each_nedv(
+					  Classifications/Schillabel/name
+					, 'not(LabelVoorwaarde) ? true :
+					  strcount(voorwaarde1,'+ quote(lowercase('Huidig label:')) +') > 0 ? strcount(trim(replace(voorwaarde1,'+ quote(lowercase('Huidig label:')) +','+ quote('')+')), lowercase('+quote(Classifications/Schillabel/name)+')) > 0 
+					: strcount(trim(replace(voorwaarde2, '+quote(lowercase('Huidig label:'))+', '+quote('')+')), lowercase('+quote(Classifications/Schillabel/name)+')) > 0'
+					, BestaandeBouwNorm
+					, bool
+					);
 			}
 		}
 	}
