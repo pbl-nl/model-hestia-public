@@ -198,8 +198,16 @@ unit<uint32> BouwdeelActieveWoning := select_with_org_rel(BO/Activatie/BouwdeelA
 						attribute<bool> SchilAandeelVoldaan (UniekAmbitie) := MakeDefined(AandeelRenovatie, -1.0) >= MakeDefined(MinSchilAandeel, 0.0);
 						attribute<bool> SchilfactorVoldaan  (BO) := MakeDefined(Schilfactor, 0.0) >= MakeDefined(MinSchilfactor, 0.0) && MakeDefined(Schilfactor, 0.0) < MakeDefined(MaxSchilfactor, 9999.0);
 						attribute<bool> BouwjaarVoldaan     (BO) := MakeDefined(BO/bouwjaar,  0w) >= MakeDefined(MinBouwjaar, 0w)     && MakeDefined(BO/bouwjaar,  0w) < MakeDefined(MaxBouwjaar, 9999w);
-
-						attribute<bool> VoorwaardenVoldaan  (UniekAmbitie) := AND(SchilAandeelVoldaan,SchilfactorVoldaan[BO_rel],BouwjaarVoldaan[BO_rel],InDoelgroepED[BO_rel],InDoelgroepWT[BO_rel]);
+						
+						container LabelVoorwaarde := for_each_nedv(
+							  Classifications/Schillabel/name
+							, 'BBN/Voorwaarde/HuidigLabel/'+Classifications/SchilLabel/name+'[BBN_rel]'
+							, void
+							, bool)
+						{
+							attribute<bool> Voldaan (BO) := ='merge(uint8(BO/Energielabel_rel), bool, '+AsItemList(Classifications/Schillabel/name)+')';
+						}
+						attribute<bool> VoorwaardenVoldaan  (UniekAmbitie) := AND(SchilAandeelVoldaan,SchilfactorVoldaan[BO_rel],BouwjaarVoldaan[BO_rel],InDoelgroepED[BO_rel],InDoelgroepWT[BO_rel],LabelVoorwaarde/Voldaan[BO_rel]);
 					}
 
 					attribute<bool>  Geldig   (UniekAmbitie) := voorwaarden/VoorwaardenVoldaan && Naleving[BO_rel];
