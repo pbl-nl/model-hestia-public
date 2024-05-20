@@ -122,6 +122,20 @@ container Beleid
 				, Activatie
 				, bool
 				);
+				
+			attribute<bool>      BouwjaarVoorwaarde (Activatie) := strcount(voorwaarde1, 'bouwjaar') + strcount(voorwaarde2, 'bouwjaar') > 0;
+				attribute<yr_uint16> MinBouwjaar        (Activatie) := not(BouwjaarVoorwaarde) ? (0/0)[yr_uint16] :
+					makedefined(
+						strcount(voorwaarde1, 'bouwjaar') > 0 ? replace(trim(replace(voorwaarde1, 'bouwjaar: ', '')), ' ', '')    [yr_uint16] : (0/0)[yr_uint16],
+						strcount(voorwaarde2, 'bouwjaar') > 0 ? replace(trim(replace(voorwaarde2, 'bouwjaar: ', '')), ' ', '')    [yr_uint16] : (0/0)[yr_uint16]
+
+					);  
+				attribute<yr_uint16> MaxBouwjaar       (Activatie) := not(BouwjaarVoorwaarde) ? (0/0)[yr_uint16] :
+					makedefined(
+						strcount(voorwaarde1, 'bouwjaar') > 0 ? substr(replace(trim(replace(voorwaarde1, 'bouwjaar: ', '')), ' ', ''),  strpos(replace(trim(replace(voorwaarde1, 'bouwjaar: ', '')), ' ', ''), '-')+1)[yr_uint16] : (0/0)[yr_uint16],
+						strcount(voorwaarde2, 'bouwjaar') > 0 ? substr(replace(trim(replace(voorwaarde2, 'bouwjaar: ', '')), ' ', ''),  strpos(replace(trim(replace(voorwaarde2, 'bouwjaar: ', '')), ' ', ''), '-')+1)[yr_uint16] : (0/0)[yr_uint16]
+
+					); 	
 		}
 	}
 
@@ -436,6 +450,9 @@ container Beleid
 
 			container Voorwaarde
 			{
+				attribute<yr_uint16> Minbouwjaar     (Activatie) := /Invoer/Beleid/Activatie/ParseVoorwaarde/Minbouwjaar[org_rel];
+				attribute<yr_uint16> MaxBouwjaar     (Activatie) := /Invoer/Beleid/Activatie/ParseVoorwaarde/MaxBouwjaar[org_rel];
+				
 				attribute<bool>  LabelVoorwaarde (Activatie) := /Invoer/Beleid/Activatie/ParseVoorwaarde/LabelVoorwaarde[org_rel];
 
 				container HuidigLabel := for_each_nedv(
