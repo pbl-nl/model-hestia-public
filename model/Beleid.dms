@@ -556,6 +556,12 @@ container Beleid
 				attribute<ratio>     MaxSchilfactor  (BestaandebouwNorm) := /Invoer/Beleid/Normering/BestaandeBouwNorm/ParseVoorwaarde/MaxSchilfactor[org_rel];
 				attribute<yr_uint16> Minbouwjaar     (BestaandebouwNorm) := /Invoer/Beleid/Normering/BestaandeBouwNorm/ParseVoorwaarde/Minbouwjaar[org_rel];
 				attribute<yr_uint16> MaxBouwjaar     (BestaandebouwNorm) := /Invoer/Beleid/Normering/BestaandeBouwNorm/ParseVoorwaarde/MaxBouwjaar[org_rel];
+				container HuidigLabel := for_each_nedv(
+					  Classifications/Schillabel/name
+					, '/Invoer/Beleid/Normering/BestaandeBouwNorm/ParseVoorwaarde/HuidigLabel/'+Classifications/Schillabel/name+'[org_rel]'
+					, BestaandeBouwNorm
+					, bool
+					);
 			}
 
 			container BouwdeelNorm := for_each_nedv(
