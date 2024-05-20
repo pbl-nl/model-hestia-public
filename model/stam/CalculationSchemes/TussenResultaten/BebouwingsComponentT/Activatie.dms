@@ -29,6 +29,7 @@ container Activatie
 			parameter<ratio> R_Naleving       := makedefined(ZBA/Naleving[ZBA_rel],0.0[ratio]) , ishidden = "True";
 			attribute<bool>  Naleving    (BO) := rnd_uniform(JaarSeed * 104u, BO, range(float32, 0d, 1d)) < R_Naleving;
 			attribute<bool>  InDoelgroep (BO) := ='OR('+ AsItemList( replace('ZBA/doelgroep/@ED[ZBA_rel] && BO/Eigendom_rel == Classifications/Eigendom/V/@ED', '@ED', Classifications/Eigendom/name) ) +')';
+			attribute<bool> BouwjaarVoldaan (BO) := MakeDefined(BO/bouwjaar,  0w) >= MakeDefined(ZBA/Voorwaarde/MinBouwjaar[ZBA_rel], 0w)     && MakeDefined(BO/bouwjaar,  0w) < MakeDefined(ZBA/Voorwaarde/MaxBouwjaar[ZBA_rel], 9999w);
 
 			container LabelVoorwaarde := for_each_nedv(
 				  Classifications/Schillabel/name
@@ -39,7 +40,7 @@ container Activatie
 				attribute<bool> Voldaan (BO) := ='merge(uint8(Energielabel_rel), bool, '+AsItemList(Classifications/Schillabel/name)+')';
 			}
 
-			attribute<bool> BoSelectie(BO) := Naleving && LabelVoorwaarde/Voldaan && InDoelgroep;
+			attribute<bool> BoSelectie(BO) := Naleving && LabelVoorwaarde/Voldaan && InDoelgroep && BouwjaarVoldaan;
 			container Grondslag := for_each_nedv(
 				  classifications/bouwdeel/name
 				, 'ZBA/Grondslag/'+classifications/bouwdeel/name+'[ZBA_rel] && BoSelectie' 
