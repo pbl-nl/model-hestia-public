@@ -13,7 +13,7 @@ sub_Eprem7	energie premie regeling	2013	2013	subsidie	alle woningen	warmtepompen
 sub_Eprem8	energie premie regeling	2013	2013	subsidie	alle woningen	LTAS	0	0	230			0.01	hoort bij sub_Eprem1
 sub_Eprem9	energie premie regeling	2013	2013	subsidie	alle woningen	hybride warmtepompen	0	0	2000			0.01	hoort bij sub_Eprem1
 sub_ISDE1	isde voormalig	2016	2020	subsidie	koopwoning	biomassaketels, pelletkachels, (hybride)warmtepompen, zonneboilers	0.2	0	0			0.9	2016:70mln, 2017:90mln, 2018:100mln, 2019:100mln, 2020:100mln
-sub_ISDE2	isde voormalig	2021	2022	subsidie	koopwoning	isolatie,(hybride)warmtepompen,zonneboilers	0.2	0	0			0.9	2021:80.3mln, 2022:257.4mln,2023:454.9mln,2024:666.2mln,2025:783.7mln,2026:265.1mln,2027:95.2mln,2028:95.2mln,2029:95.2mln,2030:95.2mln,2031:95.2mln,2032:95.2mln
+sub_ISDE2	isde voormalig	2021	2022	subsidie	koopwoning	isolatie,(hybride)warmtepompen,zonneboilers	0.2	0	0			0.9	2021:80.3mln, 2022:257.4mln,2023:454.9mln,2024:673.46mln,2025:769.47mln,2026:260.21mln,2027:93.16mln,2028:93.16mln,2029:93.16mln
 sub_ISDE3	isde huidig (warmtenet)	2021	2032	subsidie	koopwoning	warmtenetaansluiting	0	0	3325			0.9	hoort bij sub_ISDE2
 sub_ISDE4	isde huidig	2023	2032	subsidie	koopwoning	(hybride) warmtepomp, isolatie, zonneboiler	0.15	0	0	Minimaal aantal maatregelen: 1	Maximaal aantal maatregelen: 1	0.9	hoort bij sub_ISDE2
 sub_ISDE5	isde huidig	2023	2032	subsidie	koopwoning	(hybride) warmtepomp, isolatie, zonneboiler	0.3	0	0	Minimaal aantal maatregelen: 2		0.9	hoort bij sub_ISDE2
