@@ -244,7 +244,7 @@ template StartingStateComponent
 				parameter<uint32>    VTseed                    := /Invoer/TechnischeInstellingen/RandomSeed * 436[uint32];
 
 				parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Bal_Vst_Wtw := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Bal_Vst_Wtw, descr = "ventilatieoptie nieuwbouw";
-				parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Bal_Wtw     := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Bal_Wtw    , descr = "ventilatieoptie balansventilatie bestaande bouw";
+			//	parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Bal_Wtw     := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Bal_Wtw    , descr = "ventilatieoptie balansventilatie bestaande bouw";
 				parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Nat         := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Nat        , descr = "ventilatieoptie natuurlijke ventilatie";
 				parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Mec_Vst_Wis := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Mec_Vst_Wis, descr = "ventilatieoptie mechanische ventilatie bestaande bouw";
 				//end parameters
@@ -284,7 +284,7 @@ template StartingStateComponent
 				attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> VT (...) :=
 					  Eerste_jaar < Peiljaar_aandelen ? VT_simple
 					: Bouwjaar    > Peiljaar_aandelen ? Bal_Vst_Wtw
-					: BalansAllocated ? Bal_Wtw
+					: BalansAllocated ? Bal_Vst_Wtw
 					: MecAllocated    ? Mec_Vst_Wis
 					: Nat;
 

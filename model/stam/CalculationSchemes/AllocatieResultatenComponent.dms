@@ -56,13 +56,24 @@ template AllocatieResultatenComponent
 		
 		container Resultaten_IsolatieStandaard
 	    {
-        unit<uint32> table := select_with_org_rel(isdefined(BO/code) && BO/Eigendom_rel == Classifications/Eigendom/V/WoonCorp)
+        unit<uint32> table := select_with_org_rel(isdefined(BO/code) && BO/Eigendom_rel == 2[Classifications/Eigendom] && BO/Bouwjaar < 1992[uint16] && BebouwingsComponenten/Woning/BO/Energielabel_rel > 0[Classifications/schillabel])
 		{attribute<String> identificatie						:= BO/code[org_rel];
 		attribute<Eur_yr> Kj_gas       							:= BO/jaarlijks/Kj_gas[org_rel];
 		attribute<Eur_yr> Kj_e       							:= BO/jaarlijks/Kj_e[org_rel];
-		attribute<GJ_yr> Aardgas       							:= BO/Metervraag/gas[org_rel];
-		attribute<GJ_yr> Elektriciteit       					:= BO/Metervraag/e[org_rel];
-		attribute<string> heeft_gas       						:= BO/Metervraag/gas[org_rel] > 0[GJ_yr] || Woning/Metervraag/H2[org_rel] > 0[GJ_yr] ? 'ja' : 'nee';
+		attribute<GJ_yr> Aardgas       							:= Woning/Metervraag/Gas[org_rel];
+		attribute<GJ_yr> Elektriciteit       					:= Woning/Metervraag/E[org_rel];
+		attribute<string> Aardgasvrij       					:= Woning/Metervraag/Gas[org_rel] > 0[GJ_yr] ? 'nee' : 'ja';
+		attribute<bool> Isolatiestandaard 						:= AND(BO/Bouwdelen/Isolatie/RB[org_rel] >= 3[Classifications/IsolatieNiveau], 
+																		BO/Bouwdelen/Isolatie/RO[org_rel] >= 3[Classifications/IsolatieNiveau], 
+																		BO/Bouwdelen/Isolatie/DR[org_rel] >= 4[Classifications/IsolatieNiveau], 
+																		BO/Bouwdelen/Isolatie/PL[org_rel] >= 1[Classifications/IsolatieNiveau],
+																		BO/Bouwdelen/Isolatie/VL[org_rel] >= 3[Classifications/IsolatieNiveau], 
+																		BO/Bouwdelen/Isolatie/MS[org_rel] >= 2[Classifications/IsolatieNiveau], 
+																		BO/Bouwdelen/Isolatie/DP[org_rel] >= 3[Classifications/IsolatieNiveau],
+																		BO/Bouwdelen/Isolatie/DS[org_rel] >= 3[Classifications/IsolatieNiveau],
+																		BO/Bouwdelen/Isolatie/KR[org_rel] >= 3[Classifications/IsolatieNiveau],
+																		OR(BO/InstallatiePerProduct/VT[org_rel] == 2[Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes], 
+																		BO/InstallatiePerProduct/VT[org_rel] == 4[Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes]));
 		attribute<GJ_yr> Functioneel_RuimteVerwarming			:= Functioneel/V_RV[org_rel];
 		attribute<GJ_yr> Functioneel_Tapwater					:= Functioneel/V_TW[org_rel];
 		attribute<GJ_yr> Netto_warmtevraag						:= BebouwingsComponenten/Woning/BO/EnergielabelBerekening/warmteverlies/Totaal[org_rel];
@@ -70,9 +81,12 @@ template AllocatieResultatenComponent
 		attribute<Eur> Ki_VT		       						:= BO/eenmalig/Ki_VT[org_rel];
 		attribute<classifications/schillabel> Energielabel_rel	:= BO/Energielabel_rel[org_rel];
 		attribute<UInt16> bouwjaar								:= BO/bouwjaar[org_rel];
+		attribute<UInt16> sloopjaar								:= BO/sloopjaar[org_rel];
 		attribute<m2> oppervlakte								:= BO/oppervlakte[org_rel];
+		attribute<nrAsl> Aansluitingen							:= BO/nrAansluitingen_i[org_rel];
 		attribute<Uint8> BebouwingsType							:= BO/BebouwingsType[org_rel];
 		attribute<Classifications/Eigendom > EigendomsType		:= BO/Eigendom_rel[org_rel];
+		attribute<Classifications/Eigendom > EigendomsType_prev		:= BO/Eigendom_prev[org_rel];
 		attribute<m2> RB_m2										:= BO/Bouwdelen/RB [org_rel];
 		attribute<m2> RO_m2										:= BO/Bouwdelen/RO [org_rel];
 		attribute<m2> DR_m2										:= BO/Bouwdelen/DR [org_rel];
@@ -105,6 +119,11 @@ template AllocatieResultatenComponent
         attribute<Classifications/IsolatieNiveau> KR_voor    	:= Bebouwingscomponenten/Woning/BO/Bouwdelen/Isolatie/KR[org_rel];
 		attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> VT_na    := BO/InstallatiePerProduct/VT[org_rel];
         attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> VT_voor    := Bebouwingscomponenten/Woning/BO/InstallatiePerProduct/VT[org_rel];
+		attribute<Invoer/Kengetallen/OverigeInstallaties/DK/Installatietypes> DK_na    := BO/InstallatiePerProduct/DK[org_rel];
+        attribute<Invoer/Kengetallen/OverigeInstallaties/DK/Installatietypes> DK_voor    := Bebouwingscomponenten/Woning/BO/InstallatiePerProduct/DK[org_rel];
+		attribute<Classifications/Installatie> RVb_na    := BO/InstallatiePerProduct/RVb[org_rel];
+		attribute<Classifications/Installatie> TWb_na    := BO/InstallatiePerProduct/TWb[org_rel];
+
 		attribute<UInt16> LastVervanging_RB    := BO/Bouwdelen/LastVervanging/RB[org_rel];
 		attribute<UInt16> LastVervanging_RO    := BO/Bouwdelen/LastVervanging/RO[org_rel];
 		attribute<UInt16> LastVervanging_DS    := BO/Bouwdelen/LastVervanging/DS[org_rel];
