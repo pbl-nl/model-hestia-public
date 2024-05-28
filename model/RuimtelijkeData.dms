@@ -466,7 +466,19 @@ container RuimtelijkeData: Using = "Units;Geography;Model", FreeData = "True"
 				parameter<string> Isolatie_vbo_path_1 := Invoer/StartgegevensAan ? 'BouwdeelKwaliteit_2020_1/vbo/' : 'BouwdeelKwaliteit_2000_1/vbo/', IsHidden = "True";
 				parameter<string> Isolatie_vbo_path_2 := Invoer/StartgegevensAan ? 'BouwdeelKwaliteit_2020_2/vbo/' : 'BouwdeelKwaliteit_2000_2/vbo/', IsHidden = "True";
 
-				unit<uint32> Isolatie_temp := Isolatie_writer, IsHidden = "True";
+				unit<uint32> Isolatie_temp := vbo
+				{
+					attribute<Classifications/Isolatieniveau> RB := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/RB,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/RB)';
+					attribute<Classifications/Isolatieniveau> RO := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/RO,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/RO)';
+					attribute<Classifications/Isolatieniveau> DR := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/DR,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/DR)';
+					attribute<Classifications/Isolatieniveau> PL := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/PL,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/PL)';
+					attribute<Classifications/Isolatieniveau> VL := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/VL,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/VL)';
+					attribute<Classifications/Isolatieniveau> MG := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/MG,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/MG)';
+					attribute<Classifications/Isolatieniveau> MS := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/MS,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/MS)';
+					attribute<Classifications/Isolatieniveau> DP := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/DP,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/DP)';
+					attribute<Classifications/Isolatieniveau> DS := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/DS,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/DS)';
+					attribute<Classifications/Isolatieniveau> KR := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/KR,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/KR)';
+				}
 				
 				container MinimaleIsolatieNiveausNa1991 : IsHidden = "True"
 				{
@@ -509,28 +521,19 @@ container RuimtelijkeData: Using = "Units;Geography;Model", FreeData = "True"
 					}
 				}
 
-				unit<uint32> IsolatieMetMinimaleIsolatieNiveaus := for_each_ind(
-				'nedv'
-				,Classifications/Bouwdeel/Name
-				,replace('recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/@BD@/IsolatieNiveau, Isolatie_temp/@BD@)', '@BD@',Classifications/Bouwdeel/Name)
-				,vbo
-				,Classifications/Isolatieniveau
-				), IsHidden = "True";
-
-				unit<uint32> Isolatie_writer := vbo, Storagename = "%HestiaDataDir%/vraag/Wonen/Isolatie.fss", IsHidden = "True"
+				unit<uint32> Isolatie_writer := vbo, IsHidden = "True", Storagename = "%HestiaDataDir%/vraag/Wonen/Isolatie.fss"
 				{
-					attribute<Classifications/Isolatieniveau> RB := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/RB,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/RB)';
-					attribute<Classifications/Isolatieniveau> RO := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/RO,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/RO)';
-					attribute<Classifications/Isolatieniveau> DR := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/DR,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/DR)';
-					attribute<Classifications/Isolatieniveau> PL := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/PL,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/PL)';
-					attribute<Classifications/Isolatieniveau> VL := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/VL,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/VL)';
-					attribute<Classifications/Isolatieniveau> MG := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/MG,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/MG)';
-					attribute<Classifications/Isolatieniveau> MS := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/MS,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/MS)';
-					attribute<Classifications/Isolatieniveau> DP := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/DP,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/DP)';
-					attribute<Classifications/Isolatieniveau> DS := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/DS,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/DS)';
-					attribute<Classifications/Isolatieniveau> KR := ='makedefined('+Isolatie_vbo_path_1 + 'Isolatie_vbo/KR,' + Isolatie_vbo_path_2 + 'Isolatie_vbo/KR)';
+					attribute<Classifications/Isolatieniveau> RB := recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/RB/IsolatieNiveau, Isolatie_temp/RB);
+					attribute<Classifications/Isolatieniveau> RO := recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/RO/IsolatieNiveau, Isolatie_temp/RO);
+					attribute<Classifications/Isolatieniveau> PL := recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/PL/IsolatieNiveau, Isolatie_temp/PL);
+					attribute<Classifications/Isolatieniveau> VL := recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/VL/IsolatieNiveau, Isolatie_temp/VL);
+					attribute<Classifications/Isolatieniveau> MG := recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/MG/IsolatieNiveau, Isolatie_temp/MG);
+					attribute<Classifications/Isolatieniveau> MS := recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/MS/IsolatieNiveau, Isolatie_temp/MS);
+					attribute<Classifications/Isolatieniveau> DP := recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/DP/IsolatieNiveau, Isolatie_temp/DP);
+					attribute<Classifications/Isolatieniveau> DS := recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/DS/IsolatieNiveau, Isolatie_temp/DS);
+					attribute<Classifications/Isolatieniveau> KR := recollect_by_cond(MinimaleIsolatieNiveausNa1991/bouwjaar_rel > 1991[uint16], MinimaleIsolatieNiveausNa1991/BouwjaarNa1991/IsolatieNiveauNieuw/KR/IsolatieNiveau, Isolatie_temp/KR);
 				}
-				
+
 				unit<uint32> Isolatie_reader := vbo, StorageName = "%HestiaDataDir%/vraag/Wonen/Isolatie.fss", StorageReadOnly = "true", IsHidden = "True"
 				{
 					attribute<Classifications/Isolatieniveau> RB;
@@ -545,7 +548,7 @@ container RuimtelijkeData: Using = "Units;Geography;Model", FreeData = "True"
 					attribute<Classifications/Isolatieniveau> KR;
 				}
 								
-				unit<uint32>    Isolatie_src    := = Invoer/HerberekenStartsituatie ?  'IsolatieMetMinimaleIsolatieNiveaus' : 'Isolatie_reader', IsHidden = "True";
+				unit<uint32>    Isolatie_src    := = Invoer/HerberekenStartsituatie ?  'Isolatie_writer' : 'Isolatie_reader', IsHidden = "True";
 
 				container Isolatie := for_each_nedv(Classifications/Bouwdeel/name, 'Isolatie_src/' + Classifications/Bouwdeel/name + '[BAG/vbo_woonfunctie_studiegebied/org_rel]',BAG/vbo_woonfunctie_studiegebied , Classifications/Isolatieniveau);
 			}
