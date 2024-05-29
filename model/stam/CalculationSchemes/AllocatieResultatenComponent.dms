@@ -56,7 +56,7 @@ template AllocatieResultatenComponent
 		
 		container Resultaten_IsolatieStandaard
 	    {
-        unit<uint32> table := select_with_org_rel(isdefined(BO/code) && BO/Eigendom_rel == 2[Classifications/Eigendom] && BO/Bouwjaar < 1992[uint16] && BebouwingsComponenten/Woning/BO/Energielabel_rel > 0[Classifications/schillabel])
+        unit<uint32> table := select_with_org_rel(isdefined(BO/code) && BO/Eigendom_rel == 2[Classifications/Eigendom] && BO/bouwjaar < 1992[yr_uint16])
 		{attribute<String> identificatie						:= BO/code[org_rel];
 		attribute<Eur_yr> Kj_gas       							:= BO/jaarlijks/Kj_gas[org_rel];
 		attribute<Eur_yr> Kj_e       							:= BO/jaarlijks/Kj_e[org_rel];
