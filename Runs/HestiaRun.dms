@@ -16,6 +16,10 @@ container HestiaRun
 	parameter<uint8>  aantal_jaar             := 31[uint8]   , Descr = "Aantal zichtjaren";
 	parameter<string> Studiegebied            := Invoer/StudieGebied;
 
+	//specifiek voor KEV:
+	parameter<string> KEVvariant := 'V';
+
+
 	//====== Opbouw lijst van zichtjaren en rekenstappen
 	unit<uint8> all_rekenstap: nrofrows = 51, IsHidden = "True";
 	unit<uint8> rekenstap:= select_with_org_rel(id(all_rekenstap) < aantal_jaar), IsHidden = "True"
