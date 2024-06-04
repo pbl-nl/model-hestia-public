@@ -627,12 +627,12 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	{
 		attribute<Eigendom>             Eigendom_rel             := first_rel;
 		attribute<IsolatieAmbitie>      IsolatieAmbitie_rel      := second_rel;
-		attribute<GebouwOptieCategorie> GebouwOptieCategorie_rel := nr_3;
+		attribute<GebouwOptieCategorie> GebouwOptieCategorie_rel := third_rel;
 		attribute<string>               EigendomName             := Eigendom/name[first_rel];
 		attribute<string>               IsolatieAmbitieName      := IsolatieAmbitie/name[second_rel];
-		attribute<string>               GebouwOptieCategorieName := GebouwOptieCategorie/name[nr_3];
+		attribute<string>               GebouwOptieCategorieName := GebouwOptieCategorie/name[third_rel];
 		attribute<string>               name                     := IsolatieAmbitieName+'_'+ GebouwOptieCategorieName+'_'+EigendomName;
-		attribute<string>               label                    := IsolatieAmbitie/label[second_rel]+'.'+GebouwOptieCategorie/label[nr_3]+'.'+Eigendom/label[first_rel], DialogType = "LabelText";
+		attribute<string>               label                    := IsolatieAmbitie/label[second_rel]+'.'+GebouwOptieCategorie/label[third_rel]+'.'+Eigendom/label[first_rel], DialogType = "LabelText";
 		
 		attribute<Scurve_investering_data> data_rel  := rlookup(uppercase(name), uppercase(Scurve_investering_data/key));
 
@@ -809,7 +809,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 						{
 							attribute<BouwjaarWoning>  Bouwjaarklasse_rel := second_rel;
 							attribute<WoningType>      Woningtype_rel     := first_rel;
-							attribute<schillabel>      Energielabel_rel   := nr_3;
+							attribute<schillabel>      Energielabel_rel   := third_rel;
 							attribute<string>          BouwjaarklasseName := BouwjaarWoning/name[Bouwjaarklasse_rel];
 							attribute<string>          WoningtypeName     := Woningtype/name[Woningtype_rel];
 							attribute<string>          EnergielabelName   := schillabel/name[Energielabel_rel];
