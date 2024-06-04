@@ -99,8 +99,8 @@ template select_with_org_relGebouwOptieT
 		// code copied form GebouwOptie maar nu per GeschiktObject vanwege rol specifieke activatie op voor welk een installatie vervanging is.
 		unit<uint32> xProduct := combine(Classifications/Product, GeschiktObject)
 		{
-			attribute<Classifications/Product>      Product_rel     := nr_1;
-			attribute<GeschiktObject> GeschiktObject_rel := nr_2;
+			attribute<Classifications/Product>      Product_rel     := first_rel;
+			attribute<GeschiktObject> GeschiktObject_rel := second_rel;
 			attribute<Classifications/GebouwOptie>  GebouwOptie_rel := GeschiktObject_rel->GebouwOptie_rel;
 //			attribute<string>       label           := BO_rel->Label + ':'+Classifications/Product/name[Product_rel] + '.' + GebouwOptie/name[GebouwOptie_rel];
 			attribute<Classifications/Installatie>  Installatie_rel := ='union_data(., '+AsItemList('GeschiktObject/GebouwOptie_rel->PerProduct/'+Classifications/Product/name)+')';
