@@ -103,8 +103,8 @@ unit<uint32> ActieveWoning := select_with_org_rel(BO/Activatie/ProductActief || 
 			
 	unit<uint32> GeschikteOptie := GeschikteOptieBerekening/results, ishidden = "True"
 	{
-		attribute<xInvesteringsOptie>          xInvesteringsOptie_rel := select_data(GeschikteOptie, xGebouwOptie/xInvesteringsOptie_rel);
-		attribute<Classifications/GebouwOptie> GebouwOptie_rel        := select_data(GeschikteOptie, xGebouwOptie/GebouwOptie_rel);
+		attribute<xInvesteringsOptie>          xInvesteringsOptie_rel := collect_by_cond(GeschikteOptie, xGebouwOptie/xInvesteringsOptie_rel);
+		attribute<Classifications/GebouwOptie> GebouwOptie_rel        := collect_by_cond(GeschikteOptie, xGebouwOptie/GebouwOptie_rel);
 	}
 	
 	// Kies GebouwOptie per xInvesteringsOptie
