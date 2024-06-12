@@ -12,6 +12,7 @@ HR_mKD_TWds	1	1	hybride	HR_mKD_TWds	N	HR	HR	DS_douche	DS_keuken	AirCoMobiel	AirC
 HR_zKD	1	1	ketel	HR_zKD	N	HR	HR	HR	HR	geen	geen
 HR_vKD	1	1	ketel	HR_vKD	N	HR	HR	HR	HR	AirCoVast	AirCoVast
 HR_mKD	1	1	ketel	HR_mKD	N	HR	HR	HR	HR	AirCoMobiel	AirCoMobiel
+hBioketel_zKD	1	1	ketel	hBioketel_zKD	N	HR	Bioketel	HR	HR	geen	geen
 Pellet_zKD	1	1	ketel	Pellet_zKD	N	Pelletkachel	HR	HR	HR	geen	geen
 Pellet_vKD	1	1	ketel	Pellet_vKD	N	Pelletkachel	HR	HR	HR	AirCoVast	AirCoVast
 Pellet_mKD	1	1	ketel	Pellet_mKD	N	Pelletkachel	HR	HR	HR	AirCoMobiel	AirCoMobiel
@@ -25,8 +26,8 @@ LweWP_zKD	0	0	electric	LweWP_zKD	B	eWP_lw	eWP_lw	eWP_lw	eWP_lw	geen	geen
 LweWP_wKD	0	0	electric	LweWP_wKD	B	eWP_lw	eWP_lw	eWP_lw	eWP_lw	eWP_lw	eWP_lw
 BweWP_zKD	0	0	electric	BweWP_zKD	B	eWP_bw	eWP_bw	eWP_bw	eWP_bw	geen	geen
 BweWP_wKD	0	0	electric	BweWP_wKD	B	eWP_bw	eWP_bw	eWP_bw	eWP_bw	eWP_bw	eWP_bw
-LleWP_zKD	0	0	electric	LleWP_zKD	B	eWP_ll	eWP_ll	eWP_ll	eWP_ll	geen	geen
-LleWP_wKD	0	0	electric	LleWP_wKD	B	eWP_ll	eWP_ll	eWP_ll	eWP_ll	eWP_ll	eWP_ll
+LlhWP_zKD	0	0	hybride	LlhWP_zKD	B	eWP_ll	HR	HR	HR	geen	geen
+LlhWP_wKD	0	0	hybride	LlhWP_wKD	B	eWP_ll	HR	HR	HR	eWP_ll	eWP_ll
 hEWV_TWg_zKD	0	1	hybride	hEWV_TWg_zKD	D	EWVklein	hHR	hHR	hHR	geen	geen
 hEWV_TWg_vKD	0	1	hybride	hEWV_TWg_vKD	D	EWVklein	hHR	hHR	hHR	AirCoVast	AirCoVast
 hEWV_TWg_mKD	0	1	hybride	hEWV_TWg_mKD	D	EWVklein	hHR	hHR	hHR	AirCoMobiel	AirCoMobiel

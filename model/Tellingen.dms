@@ -30,10 +30,16 @@ unit<uint8> Jaarreeksen := select_with_org_rel(ID(classifications/zichtjaar) < 4
 	attribute<uint32> AxIO_Zonder_GO        := ='A_xInvesteringsOptie - union_data(., '+AsItemList('sum_uint32(pcount(/TussenResultaten/'+name+'/BebouwingsComponenten/Woning/ActieveWoning/GeschikteOptie/xInvesteringsOptie_rel)>0)')+')', Ishidden = "true";
 
 	attribute<units/GJ_yr> Gasvraag           := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/EnergyResults/Metervraag/gebouwen/Gas/totaal)')+')'                  , Ishidden = "true";
+	attribute<units/GJ_yr> Elekvraag          := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/EnergyResults/Metervraag/gebouwen/Elektriciteit/totaal)')+')'                  , Ishidden = "true";
+
 	attribute<units/GJ_yr> Warmtelevering_GJ  := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/EnergyResults/Metervraag/gebouwen/WarmteKoudeLevering/V_warmte)')+')', Ishidden = "true";
 	attribute<units/GJ_yr> Zonneboiler        := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/EnergyResults/Metervraag/ZonB/Oj_ZonB)')+')'                         , Ishidden = "true";
 	attribute<units/nrasl> Warmtelevering_asl := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/EnergyResults/Metervraag/gebouwen/WarmteKoudeLevering/asl_warmte)')+')', Ishidden = "true";
+	attribute<units/nrasl> eWP_asl            := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/Installaties/results/aantal_installaties/eWP)')+')', Ishidden = "true";
+	attribute<units/nrasl> hWP_asl            := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/Installaties/results/aantal_installaties/hWP)')+')', Ishidden = "true";
 
+	attribute<units/nrasl> eWP_bestaand       := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/Installaties/results/aantal_installaties/eWP) - sum(/Resultaten/'+name+'/Installaties/results/aantal_installaties_nieuwbouw/eWP)')+')', Ishidden = "true";
+	attribute<units/nrasl> hWP_bestaand       := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/Installaties/results/aantal_installaties/hWP) - sum(/Resultaten/'+name+'/Installaties/results/aantal_installaties_nieuwbouw/hWP)')+')', Ishidden = "true";
 
 	container Subsidies
 	{
@@ -84,10 +90,10 @@ unit<uint8> Jaarreeksen := select_with_org_rel(ID(classifications/zichtjaar) < 4
 			, units/ratio ), IsHidden = "True";
 	}
 
-
+	parameter<units/ratio> BedrijfswoningenFactor := float64(1.0) - float64(188000)/float64(7915000); //specifiek voor KEV
 	container Processen := for_each_nedv(
-		Jaarreeksen/name,
-		'Resultaten/'+Jaarreeksen/name+'/Processen/Installatie_x_ProductType/long_sparse/PJ',
+		replace(Jaarreeksen/name, 'StartJaar', 'R0_2020'),
+		'Resultaten/'+Jaarreeksen/name+'/Processen/Installatie_x_ProductType/long_sparse/PJ * BedrijfswoningenFactor',
 		Resultaten/StartJaar/Processen/Installatie_x_ProductType/long_sparse,
 		units/PJ_yr)
 	{

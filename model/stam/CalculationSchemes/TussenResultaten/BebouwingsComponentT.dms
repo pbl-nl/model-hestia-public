@@ -147,13 +147,18 @@ template BebouwingsComponentT
 		attribute<ratio> NietGeslooptFactor := Float64(Sloopjaar > Zichtjaar_jaar);
 			
 		attribute<bool>  Afbouw             := =Classifications/Periode/isHistorisch[Periode_rel] ? 'const(false,.)' : 'PrevObject/ResterendNu > 0.0 && (Sloopjaar <= Zichtjaar_jaar)';
-		attribute<bool>  Aanbouw            := MakeDefined(Bouwjaar, 0w) >= StartNieuwbouwJaar, ishidden = "True";
+		attribute<bool>  Aanbouw            := MakeDefined(Bouwjaar, 0w) >= StartNieuwbouwJaar && bouwperiode_eindjaar >= Zichtjaar_jaar, ishidden = "True";
 
 		parameter<ratio> AanbouwPerJaar := Zichtjaar_jaar <= 2030w ? 1d / (2030w - (StartNieuwbouwJaar -1[yr_uint16]))[float64] : 0.1, ishidden = "True";
 		attribute<yr_uint16> bouwperiode_beginjaar := 
 			Bouwjaar > 2040[yr_uint16] ? 2041[yr_uint16] : 
 			Bouwjaar > 2030[yr_uint16] ? 2031[yr_uint16] : 
 			Bouwjaar > StartNieuwbouwJaar - 1[yr_uint16] ? StartNieuwbouwJaar : Bouwjaar, ishidden = "True";
+		attribute<yr_uint16> bouwperiode_eindjaar := 
+			Bouwjaar < StartNieuwbouwJaar ? Bouwjaar        :
+			Bouwjaar < 2030[yr_uint16]    ? 2030[yr_uint16] : 
+			Bouwjaar < 2040[yr_uint16]    ? 2040[yr_uint16] : 
+			                                2050[yr_uint16] , ishidden = "True";
 		
 		attribute<ratio> Aanbouwfactor   := =Invoer/DefaultInstellingen/Basis/RuimtelijkeOntwikkelingAan ? 
 			'Aanbouw ?'

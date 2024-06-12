@@ -39,6 +39,7 @@ container Rekenstap
 				parameter<string> Pellet_zKD:     ['Criteria/Never'];
 				parameter<string> Pellet_vKD:     ['Criteria/Never'];
 				parameter<string> Pellet_mKD:     ['Criteria/Never'];
+				parameter<string> hBioketel_zKD:  ['Criteria/Never'];
 
 				parameter<string> Olie_zKD:       ['Criteria/Never'];
 				parameter<string> Olie_vKD:       ['Criteria/Never'];
@@ -54,8 +55,8 @@ container Rekenstap
 				parameter<string> BweWP_zKD:      ['Criteria/NoAlloc'];
 				parameter<string> BweWP_wKD:      ['Criteria/NoAlloc'];
 
-				parameter<string> LleWP_zKD:      ['Criteria/Never'];
-				parameter<string> LleWP_wKD:      ['Criteria/Never'];
+				parameter<string> LlhWP_zKD:      ['Criteria/NoAlloc'];
+				parameter<string> LlhWP_wKD:      ['Criteria/NoAlloc'];
 
 				parameter<string> hEWV_TWg_zKD:   ['Criteria/Never'];
 				parameter<string> hEWV_TWg_vKD:   ['Criteria/Never'];

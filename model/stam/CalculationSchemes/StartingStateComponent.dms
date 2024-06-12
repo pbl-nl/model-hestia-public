@@ -211,7 +211,7 @@ template StartingStateComponent
 			
 		container InstallatiePerProduct := for_each_nedv(Classifications/Product/name
 			, 
-				  (Classifications/Product/name == 'KDb' || Classifications/Product/name == 'KDp') && eerste_jaar >= 2020[yr_uint16] ? 'AircoMobielAllocatie ? Classifications/Installatie/V/AircoMobiel : Classifications/Installatie/V/Geen'
+				  (Classifications/Product/name == 'KDb' || Classifications/Product/name == 'KDp') && eerste_jaar >= 2020[yr_uint16] ? 'AircoVastAllocatie ? Classifications/Installatie/V/AircoVast : AircoMobielAllocatie ? Classifications/Installatie/V/AircoMobiel : RVb == Classifications/Installatie/V/ewp_ll ? RVb : Classifications/Installatie/V/Geen'
 				: 'Classifications/GebouwOptie/PerProduct/'+Classifications/Product/name+'[GebouwOptie_rel]'
 			, .
 			, Classifications/Installatie)
@@ -227,8 +227,9 @@ template StartingStateComponent
 					attribute<yr_uint16> DK (...) := (uint16(Startjaar_jaar) - mod(uint16(sub_or_null(Startjaar_jaar, Bouwjaar)), Invoer/Kengetallen/OverigeInstallaties/DK/Installatietypes/Levensduur[InstallatiePerProduct/DK]))[yr_uint16];
 				}
 
-			attribute<bool> AircoMobielAllocatie (..) := rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 437[uint32], .., range(float64, 0d, 1d)) <= 0.052[float64];
-				
+			attribute<bool> AircoMobielAllocatie (..) := rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 437[uint32], .., range(float64, 0d, 1d)) <= ( Eigendom_rel == Classifications/eigendom/v/koop ? 0.18[float64] : 0.052[float64] );
+			attribute<bool> AircoVastAllocatie   (..) := rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 438[uint32], .., range(float64, 0d, 1d)) <= ( Eigendom_rel == Classifications/eigendom/v/koop ? 0.18[float64] : 0.052[float64] );
+
 			//Allocatie van initiele kookopties
 			container KokenAllocatieInitieel := Model/CalculationSchemes/KokenAllocatieInitieel(..);
 
@@ -244,7 +245,7 @@ template StartingStateComponent
 				parameter<uint32>    VTseed                    := /Invoer/TechnischeInstellingen/RandomSeed * 436[uint32];
 
 				parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Bal_Vst_Wtw := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Bal_Vst_Wtw, descr = "ventilatieoptie nieuwbouw";
-			//	parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Bal_Wtw     := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Bal_Wtw    , descr = "ventilatieoptie balansventilatie bestaande bouw";
+				parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Mec_Glk_oud := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Mec_Glk_oud, descr = "ventilatieoptie mechanische ventilatie bestaande bouw, oud";
 				parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Nat         := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Nat        , descr = "ventilatieoptie natuurlijke ventilatie";
 				parameter<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> Mec_Vst_Wis := /Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/V/Mec_Vst_Wis, descr = "ventilatieoptie mechanische ventilatie bestaande bouw";
 				//end parameters
@@ -252,7 +253,7 @@ template StartingStateComponent
 				attribute<float64> rndA (...) :=  rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * VTseed, ..., range(float64, 0d, 1d));
 				attribute<float64> rndB (...) :=  rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * BMseed, ..., range(float64, 0d, 1d));
 
-				attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> VT_simple (...) := Bouwjaar > Peiljaar_aandelen ? Bal_Vst_Wtw : Bouwjaar > Jaar_Normering_Mechanisch ? Mec_Vst_Wis : Nat;
+				attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> VT_simple (...) := Bouwjaar > Peiljaar_aandelen ? Bal_Vst_Wtw : Bouwjaar > Jaar_Normering_Mechanisch ? Mec_Vst_Wis :  Nat;
 
 				//Welk aandeel van bestaande bouw valt binnen periode dat mechanische ventilatie te verwachten is?
 				parameter<ratio>  AandeelBinnenMecPeriode             := sum(float64(Bouwjaar <= Peiljaar_aandelen && Bouwjaar > Jaar_Normering_Mechanisch)) / sum(float64(Bouwjaar <= Peiljaar_aandelen));
@@ -280,15 +281,15 @@ template StartingStateComponent
 				//Is woning gealloceerd op balansventilatie?
 				attribute<bool>  BalansAllocated (...) := AllocatieNonSpecifiek && rndB <= float64(Aandeel_Bal_vs_Mec);
 				attribute<bool>  MecAllocated    (...) := AllocatieNonSpecifiek && not(BalansAllocated);
+				attribute<bool>  MecAllocatedOud (...) := not(or(BalansAllocated, MecAllocated)) && bouwjaar >= 1980[yr_uint16];
 
 				attribute<Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes> VT (...) :=
 					  Eerste_jaar < Peiljaar_aandelen ? VT_simple
 					: Bouwjaar    > Peiljaar_aandelen ? Bal_Vst_Wtw
 					: BalansAllocated ? Bal_Vst_Wtw
 					: MecAllocated    ? Mec_Vst_Wis
+					: MecAllocatedOud ? Mec_Glk_oud
 					: Nat;
-
-
 				
 			}
 			
