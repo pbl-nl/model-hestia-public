@@ -211,7 +211,8 @@ template StartingStateComponent
 			
 		container InstallatiePerProduct := for_each_nedv(Classifications/Product/name
 			, 
-				  (Classifications/Product/name == 'KDb' || Classifications/Product/name == 'KDp') && eerste_jaar >= 2020[yr_uint16] ? 'AircoVastAllocatie ? Classifications/Installatie/V/AircoVast : AircoMobielAllocatie ? Classifications/Installatie/V/AircoMobiel : RVb == Classifications/Installatie/V/ewp_ll ? RVb : Classifications/Installatie/V/Geen'
+				  (Classifications/Product/name == 'KDb') && eerste_jaar >= 2020[yr_uint16] ? 'AircoVastAllocatie ? Classifications/Installatie/V/AircoVast : AircoMobielAllocatie ? Classifications/Installatie/V/AircoMobiel : RVb == Classifications/Installatie/V/ewp_ll ? RVb : Classifications/Installatie/V/Geen'
+  				: (Classifications/Product/name == 'KDp') && eerste_jaar >= 2020[yr_uint16] ? 'AircoVastAllocatie ? Classifications/Installatie/V/AircoVast : AircoMobielAllocatie ? Classifications/Installatie/V/Geen        : RVb == Classifications/Installatie/V/ewp_ll ? RVb : Classifications/Installatie/V/Geen'
 				: 'Classifications/GebouwOptie/PerProduct/'+Classifications/Product/name+'[GebouwOptie_rel]'
 			, .
 			, Classifications/Installatie)
@@ -227,8 +228,8 @@ template StartingStateComponent
 					attribute<yr_uint16> DK (...) := (uint16(Startjaar_jaar) - mod(uint16(sub_or_null(Startjaar_jaar, Bouwjaar)), Invoer/Kengetallen/OverigeInstallaties/DK/Installatietypes/Levensduur[InstallatiePerProduct/DK]))[yr_uint16];
 				}
 
-			attribute<bool> AircoMobielAllocatie (..) := rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 437[uint32], .., range(float64, 0d, 1d)) <= ( Eigendom_rel == Classifications/eigendom/v/koop ? 0.18[float64] : 0.052[float64] );
-			attribute<bool> AircoVastAllocatie   (..) := rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 438[uint32], .., range(float64, 0d, 1d)) <= ( Eigendom_rel == Classifications/eigendom/v/koop ? 0.18[float64] : 0.052[float64] );
+			attribute<bool> AircoMobielAllocatie (..) := rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 437[uint32], .., range(float64, 0d, 1d)) <= ( Eigendom_rel == Classifications/eigendom/v/koop ? 0.032[float64] : 0.032[float64] );
+			attribute<bool> AircoVastAllocatie   (..) := rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 438[uint32], .., range(float64, 0d, 1d)) <= ( Eigendom_rel == Classifications/eigendom/v/koop ? 0.063[float64] : 0.063[float64] );
 
 			//Allocatie van initiele kookopties
 			container KokenAllocatieInitieel := Model/CalculationSchemes/KokenAllocatieInitieel(..);
