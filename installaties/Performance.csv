@@ -16,7 +16,7 @@ hHR	x	RV	MTAS	gas	0.7	0.6	1.04	1.04	0.014	0
 hHR	x	TW	MTAS	gas	0.8	0.6	0.76	0.76	0.014	0
 eWP_lw	x	KD	geen	e	0.9	0.6	3	3	0	0
 eWP_bw	x	KD	geen	e	0.9	0.8	45	45	0	0
-eWP_ll	x	KD	geen	e	0.9	0.8	4	4	0	0
+eWP_ll	x	KD	geen	e	0.58	0.68	6.2	6.2	0	0
 eWP_lw	x	TW	geen	e	0.8	0.6	1.75	1.75	0	0
 eWP_bw	x	TW	geen	e	0.8	0.6	3	3	0	0
 eWP_ll	x	TW	geen	e	0.8	0.6	2.3	2.3	0	0
@@ -68,7 +68,7 @@ EWVklein	x	RV	geen	e	0.42	0.5	1	1	0	0
 EWVgroot	x	RV	geen	e	1	1	1	1	0	0
 mWKK	x	RV	MTAS	gas	0.7	0.6	0.83	0.73	0	-0.21
 mWKK	x	TW	geen	gas	0.8	0.6	0.72	0.72	0	-0.21
-AircoVast	x	KD	geen	e	0.8	0.8	3.5	3.5	0	0
+AircoVast	x	KD	geen	e	0.58	0.68	6.2	6.2	0	0
 Olieketel	x	TW	geen	olie	0.8	0.6	0.8	0.8	0.014	0
 Olieketel	x	RV	MTAS	olie	0.7	0.6	0.8	0.8	0.014	0
-AircoMobiel	x	KD	geen	e	0.5	0.5	2	2	0	0
+AircoMobiel	x	KD	geen	e	0.58	0.68	1.81	1.81	0	0
