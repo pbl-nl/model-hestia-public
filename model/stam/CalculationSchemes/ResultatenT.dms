@@ -246,7 +246,10 @@ template ResultatenT
 			attribute<nrAsl>  nrAansluitingen_nieuwbouw := sum(imp/BO/nrAansluitingen * float64(imp/BO/Bouwjaar >= 2020[yr_uint16]), imp/results_rel);
 			container Functioneel := for_each_nedv(Classifications/FunctioneleVraag/name
 			,	'sum(imp/BO/Functioneel/'+Classifications/FunctioneleVraag/name+', imp/results_rel)'
-			,	., GJ_yr );
+			,	., GJ_yr )
+			{
+				attribute<string> label (..) := results/label;
+			}
 			
 			container metervraag := for_each_nedv(Classifications/BemeterdeGebouwInput/name
 			,	'sum(imp/BO/metervraag/'+Classifications/BemeterdeGebouwInput/name+', imp/results_rel)'
@@ -268,7 +271,16 @@ template ResultatenT
 			unit<uint32> aantal_installaties := results
 			{
 				attribute<string> label           := results/label;
-				attribute<nrAsl>  nrAansluitingen := results/nrAansluitingen;
+
+				attribute<string> Label_RV := imp/Voorkomend_InstallatieGetalRV/Label[Voorkomend_InstallatieGetalRV_rel];
+				attribute<string> Label_TW := imp/Voorkomend_InstallatieGetalTW/Label[Voorkomend_InstallatieGetalTW_rel];
+				attribute<string> Label_KD := imp/Voorkomend_InstallatieGetalKD/Label[Voorkomend_InstallatieGetalKD_rel];
+				attribute<string> Label_OV := imp/Voorkomend_InstallatieGetalOV/Label[Voorkomend_InstallatieGetalOV_rel];
+
+				attribute<nrAsl>  nrAansluitingen         := results/nrAansluitingen;
+				attribute<nrAsl>  nrAansluitingenNieuw    := results/nrAansluitingen_nieuwbouw;
+				attribute<nrAsl>  nrAansluitingenBestaand := nrAansluitingen - nrAansluitingenNieuw;
+
 				attribute<nrAsl>  eWP             := float64(strcount(lowercase(label), 'ewp') > 0[uint32]) * nrAansluitingen;
 				attribute<nrAsl>  hWP             := float64(strcount(lowercase(label), 'hwp') > 0[uint32]) * nrAansluitingen;
 			}
