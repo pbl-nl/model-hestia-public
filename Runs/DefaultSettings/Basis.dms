@@ -147,9 +147,12 @@ container Basis : Using = "Units"
 	{
 		container Gedrag
 		{
-			attribute<float64> RV (RekenStap) := Rekenstap/Jaar == 2022[yr_uint16] ? 0.85[float64] : Rekenstap/Jaar == 2023[yr_uint16] ? 0.7[float64] : Rekenstap/Jaar > 2023[yr_uint16] ? 0.9[float64] : 1.0[float64], Descr = "Schuif om functionele vraag naar ruimteverwarming hoger of lager te schalen (1 = geen schalingsfactor)";
+			attribute<float64> RV (RekenStap) := Rekenstap/Jaar == 2022[yr_uint16] ? 0.85[float64] : Rekenstap/Jaar == 2023[yr_uint16] ? 0.7[float64] : Rekenstap/Jaar > 2023[yr_uint16] ? 1.0[float64] : 1.0[float64], Descr = "Schuif om functionele vraag naar ruimteverwarming hoger of lager te schalen (1 = geen schalingsfactor)";
+
 			attribute<float64> KD (RekenStap) := const(1.00[float64],RekenStap), Descr = "Schuif om functionele vraag naar koude hoger of lager te schalen (1 = geen schalingsfactor)";
-			attribute<float64> TW (RekenStap) := Rekenstap/Jaar == 2022[yr_uint16] ? 0.85[float64] : Rekenstap/Jaar == 2023[yr_uint16] ? 0.7[float64] : Rekenstap/Jaar > 2023[yr_uint16] ? 0.9[float64] : 1.0[float64], Descr = "Schuif om functionele vraag naar warm water hoger of lager te schalen (1 = geen schalingsfactor)";
+
+			attribute<float64> TW (RekenStap) := Rekenstap/Jaar == 2022[yr_uint16] ? 0.85[float64] : Rekenstap/Jaar == 2023[yr_uint16] ? 0.7[float64] : Rekenstap/Jaar > 2023[yr_uint16] ? 1.0[float64] : 1.0[float64], Descr = "Schuif om functionele vraag naar warm water hoger of lager te schalen (1 = geen schalingsfactor)";
+
 			attribute<float64> EA (RekenStap) := const(1.00[float64],RekenStap), Descr = "Schuif om functionele vraag naar elektriciteit voor apparatuur waaronder ventilatie hoger of lager te schalen (1 = geen schalingsfactor)";
 			attribute<float64> VT (RekenStap) := const(1.00[float64],RekenStap), Descr = "Schuif om functionele vraag naar ventilatie hoger of lager te schalen (1 = geen schalingsfactor)";
 			attribute<float64> KK (RekenStap) := const(1.00[float64],RekenStap), Descr = "Schuif om functionele vraag naar koken hoger of lager te schalen (1 = geen schalingsfactor)";
