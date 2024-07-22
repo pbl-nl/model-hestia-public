@@ -111,9 +111,17 @@ container StartGebouwOpties
 			: Woningtype_rel == Classifications/WoningType/V/twee_onder_1_kap ? (rnd < 0.040[ratio])
 			: Woningtype_rel == Classifications/WoningType/V/hoekwoning || Woningtype_rel == Classifications/WoningType/V/tussenwoning ? (rnd < 0.243[ratio])
 			: Woningtype_rel == Classifications/WoningType/V/meergezinspand_laag_midden || Woningtype_rel == Classifications/WoningType/V/meergezinspand_hoog ? (rnd < 0.262[ratio])
-			: false;
+			: false, Source = "Aandelen ruimteverwarming SAWEC KEV2022 vv3", Descr = "Random allocatie warmtenetten nieuwbouwwoningen", IntegrityCheck = "isdefined(this)";
+			
 		attribute<bool>   Bestaand (results) := MakeDefined(BestaandAflevergebied/StartJaar_or_2000[BestaandAflevergebied_rel], 9999w) <= first(/Rekenstap/Jaar);
-		attribute<bool>   Alloc    (results) := Bestaand || Alloc_i && BouwjaarOf9999 > /Invoer/RuimtelijkeData/BAG/Jaar;
+		attribute<bool>   Alloc    (results) := Bestaand || Alloc_i && BouwjaarOf9999 >= /Invoer/RuimtelijkeData/BAG/Jaar;
+
+		unit<uint32> nieuwbouwcheck := subset(BouwjaarOf9999 >= /Invoer/RuimtelijkeData/BAG/Jaar && BouwjaarOf9999 < 2031[yr_uint16])
+		{
+			attribute<bool> Alloc_here := Alloc[nr_orgentity];
+			attribute<nrAsl> nrAansl   := nrAansluitingen_i[nr_orgentity];
+			attribute<Classifications/GebouwOptie> GebouwOptie_rel_here := GebouwOptie_rel[nr_orgentity];
+		}
 	}
 
 	//heeft gebouw een warmtenetaansluiting? initiele check o.b.v. ligging warmtenetten (gebouw ligt in warmtenetgebied, en dat gebied is eerder dan eerste rekenjaar aangelegd)

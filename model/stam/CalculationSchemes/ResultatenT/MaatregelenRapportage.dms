@@ -21,7 +21,13 @@ container MaatregelenRapportage: isHidden = "true"
 
 		unit<uint32> BouwdeelNiveau := =BO_before
 		{
-			//====== is er een maatregel toegepast?
+			//====== is er een maatregel toegepast? zo ja, tel aansluitingen
+			container AnyChange := for_each_nedv(Classifications/Bouwdeel/name, replace(''+BO_before+'/Bouwdelen/Isolatie/@BD@ !='+ BO_after +'/Bouwdelen/Isolatie/@BD@', '@BD@', Classifications/Bouwdeel/name), .,bool)
+			{
+				attribute<nrAsl> Any (..) := = BO_after+'/nrAansluitingen * float64(OR('+AsItemList(Classifications/Bouwdeel/name)+'))';
+			}
+
+			//====== is er een maatregel toegepast? zo ja, tel oppervlak
 			container Change := for_each_nedv(Classifications/Bouwdeel/name, replace('sum(float64('+BO_before+'/Bouwdelen/Isolatie/@BD@ !='+ BO_after +'/Bouwdelen/Isolatie/@BD@) * '+BO_before+'/Bouwdelen/@BD@)', '@BD@', Classifications/Bouwdeel/name), void,m2);
 
 			//====== welk aandeel is geïsoleerd (> N0)
@@ -53,9 +59,5 @@ container MaatregelenRapportage: isHidden = "true"
 					 / sum('+ BO_after +'/nrAansluitingen * float64('+ BO_after +'/bouwdelen/VL > 0.0[m2] ))';
 			}
 		}
-
-
 	}
-
-	
 }

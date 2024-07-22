@@ -56,7 +56,7 @@ template AllocatieResultatenComponent
 		
 		container Resultaten_IsolatieStandaard
 	    {
-        unit<uint32> table := select_with_org_rel(isdefined(BO/code) && BO/Eigendom_rel == 2[Classifications/Eigendom] && BO/bouwjaar < 1992[yr_uint16])
+        unit<uint32> table := select_with_org_rel(isdefined(BO/code) && BO/Eigendom_rel == Classifications/Eigendom/v/wooncorp && BO/bouwjaar < 2024[yr_uint16])
 		{attribute<String> identificatie						:= BO/code[org_rel];
 		attribute<Eur_yr> Kj_gas       							:= BO/jaarlijks/Kj_gas[org_rel];
 		attribute<Eur_yr> Kj_e       							:= BO/jaarlijks/Kj_e[org_rel];
@@ -122,7 +122,15 @@ template AllocatieResultatenComponent
 		attribute<Invoer/Kengetallen/OverigeInstallaties/DK/Installatietypes> DK_na    := BO/InstallatiePerProduct/DK[org_rel];
         attribute<Invoer/Kengetallen/OverigeInstallaties/DK/Installatietypes> DK_voor    := Bebouwingscomponenten/Woning/BO/InstallatiePerProduct/DK[org_rel];
 		attribute<Classifications/Installatie> RVb_na    := BO/InstallatiePerProduct/RVb[org_rel];
+		attribute<Classifications/Installatie> RVp_na    := BO/InstallatiePerProduct/RVp[org_rel];
 		attribute<Classifications/Installatie> TWb_na    := BO/InstallatiePerProduct/TWb[org_rel];
+		attribute<Classifications/Installatie> TWp_na    := BO/InstallatiePerProduct/TWp[org_rel];
+		attribute<bool> WarmtenetAansluiting := OR(RVb_na == Classifications/Installatie/V/Gebiedsoptie,RVp_na == Classifications/Installatie/V/Gebiedsoptie,TWb_na == Classifications/Installatie/V/Gebiedsoptie,TWp_na == Classifications/Installatie/V/Gebiedsoptie);
+		attribute<bool> AllElectric          := 
+			BO/Func2Meter/BemeterdeGebouwInput_rel/RVb[org_rel] == Classifications/BemeterdeGebouwInput/v/e &&
+			BO/Func2Meter/BemeterdeGebouwInput_rel/RVp[org_rel] == Classifications/BemeterdeGebouwInput/v/e &&
+			BO/Func2Meter/BemeterdeGebouwInput_rel/TWb[org_rel] == Classifications/BemeterdeGebouwInput/v/e &&
+			BO/Func2Meter/BemeterdeGebouwInput_rel/TWp[org_rel] == Classifications/BemeterdeGebouwInput/v/e;
 
 		attribute<UInt16> LastVervanging_RB    := BO/Bouwdelen/LastVervanging/RB[org_rel];
 		attribute<UInt16> LastVervanging_RO    := BO/Bouwdelen/LastVervanging/RO[org_rel];

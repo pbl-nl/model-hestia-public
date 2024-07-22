@@ -248,6 +248,8 @@ unit<uint32> ActieveWoning := select_with_org_rel(BO/Activatie/ProductActief || 
 															, BO/metervraagBerekening/eEffect/volume/Vj_elek        
 															+ BO/metervraagBerekening/eEffect/capaciteit/Vj_elek) ;
 
+			attribute<GJ_yr_asl> V_gas_onlygas (BO) := gas / (float64( BemeterdeGebouwInput_rel/RVb == Classifications/BemeterdeGebouwInput/V/gas &&  BemeterdeGebouwInput_rel/RVp == Classifications/BemeterdeGebouwInput/V/gas) * nrAansluitingen);
+
 		} 
 
 		container functioneel := for_each_nedv(
@@ -261,6 +263,7 @@ unit<uint32> ActieveWoning := select_with_org_rel(BO/Activatie/ProductActief || 
 				attribute<GJ_yr> Winst_RV      (BO) := makedefined( GeschikteOptie/functioneel/Winst_RV      [ Choice_per_BO/GeschikteOptie_rel ], BO/functioneel/warmtewinst/Totaal   );
 				attribute<ratio> Correction_RV (BO) := makedefined( GeschikteOptie/functioneel/Correction_RV [ Choice_per_BO/GeschikteOptie_rel ], BO/functioneel/Correction_RV );
 				attribute<GJ_yr> Vrv_VT        (BO) := makedefined( GeschikteOptie/functioneel/Vrv_VT        [ Choice_per_BO/GeschikteOptie_rel ], BO/functioneel/Vrv_VT ), Descr = "Verlies ruimteverwarming door ventilatie, niet gecorrigeerd voor binnentemperatuurfactor";
+				attribute<GJ_yr_asl> RV_asl        (BO) := RV / nrAansluitingen;
 			}
 
 			container kapitaallasten := for_each_nedv(
