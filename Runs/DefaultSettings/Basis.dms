@@ -18,7 +18,7 @@ container Basis : Using = "Units"
 
 	parameter<bool> RuimtelijkeOntwikkelingAan := true, Descr = "Wordt nieuwbouw meegenomen JA/NEE";
 
-	parameter<string> RuimtelijkeOntwikkelingScenario := 'GR'; //Keuze uit:
+	parameter<string> RuimtelijkeOntwikkelingScenario := 'BAU'; //Keuze uit:
 		//GR, NOS, OO, VW, BAU
 
 	parameter<string> KlimaatScenario := 'GL'; //Keuze uit WH, WL, GH, GL
