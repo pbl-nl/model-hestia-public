@@ -61,8 +61,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		attribute<Units/asl_pand> StapelFactor                : [ 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 6.0 ];
 		attribute<Units/pand_asl> pand_aandeel                := IsMeergezins ? 1.0 / StapelFactor : 1.0[units/pand_asl];
 		attribute<Units/m2_asl>   Default_oppervlak_Nieuwbouw : [ 0.0, 199, 142, 122, 118, 78, 78 ]; //gemiddelden BAG 2021-01-01
-		attribute<ratio>          VerhuisKans_i                 : [ 0.0, 0.0332, 0.0404, 0.0432, 0.0487, 0.1069, 0.1069 ]; //Uit WP6, 2023
-		attribute<ratio>          VerhuisKans                 := VerhuisKans_i * 2.0[ratio];
+		attribute<ratio>          VerhuisKans                 : [ 0.0, 0.0332, 0.0404, 0.0432, 0.0487, 0.1069, 0.1069 ]; //Uit WP6, 2023
 
 		attribute<uint32> BrushColor: DialogType = "BrushColor",
 		[
