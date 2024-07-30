@@ -40,7 +40,16 @@ unit<uint8> Jaarreeksen := select_with_org_rel(ID(classifications/zichtjaar) < 4
 	attribute<units/nrasl> gebiedsoptie_nieuw        := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/Installaties/results/aantal_installaties/gebiedsoptie_nieuw)')+')', Ishidden = "true";
 	attribute<units/nrasl> gebiedsoptie_bestaand     := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/Installaties/results/aantal_installaties/gebiedsoptie_bestaand)')+')', Ishidden = "true";
 
-	attribute<units/nrasl> nrWoningen_met_maatregel  := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/MaatregelenRapportage/Rapport/Woning/BouwdeelNiveau/AnyChange/any)')+')', Ishidden = "true";
+	attribute<units/nrasl> nrWoningen_bw_met_maatregel    := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/MaatregelenRapportage/Rapport/Woning/BouwdeelNiveau/AnyChange/any)')+')', Ishidden = "true";
+	attribute<units/nrasl> nrWoningen_bw_naar_allElectric := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/MaatregelenRapportage/Rapport/Woning/Installaties/bw_ChangedToAllElectric)')+')', Ishidden = "true";
+	attribute<units/nrasl> nrWoningen_bw_naar_Hybride     := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/MaatregelenRapportage/Rapport/Woning/Installaties/bw_ChangedToHybride)')+')', Ishidden = "true";
+	attribute<units/nrasl> nrWoningen_bw_naar_Warmte      := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/MaatregelenRapportage/Rapport/Woning/Installaties/bw_ChangedToWarmte)')+')', Ishidden = "true";
+
+	attribute<units/nrasl> nrWoningen_nw_naar_allElectric := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/MaatregelenRapportage/Rapport/Woning/Installaties/nw_ChangedToAllElectric)')+')', Ishidden = "true";
+	attribute<units/nrasl> nrWoningen_nw_naar_Hybride     := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/MaatregelenRapportage/Rapport/Woning/Installaties/nw_ChangedToHybride)')+')', Ishidden = "true";
+	attribute<units/nrasl> nrWoningen_nw_naar_Warmte      := ='union_data(., '+AsItemList('sum(/Resultaten/'+name+'/MaatregelenRapportage/Rapport/Woning/Installaties/nw_ChangedToWarmte)')+')', Ishidden = "true";
+
+
 
 	container Subsidies
 	{

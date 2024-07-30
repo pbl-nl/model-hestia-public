@@ -19,6 +19,65 @@ container MaatregelenRapportage: isHidden = "true"
 		parameter<string> BO_before	:= 'TussenResultaten/BebouwingsComponenten/'+BcName+'/BO';
 		parameter<string> BO_after  := 'TussenResultaten/AllocatieResultaten/'+BcName+'/BO';
 
+		unit<uint32> Installaties := =BO_before
+		{
+			//====== is er een maatregel toegepast? zo ja, tel aansluitingen
+			container AnyChange := for_each_nedv(Classifications/Product/name, replace(''+BO_before+'/InstallatiePerProduct/@PD@ !='+ BO_after +'/InstallatiePerProduct/@PD@', '@PD@', Classifications/Product/name), .,bool)
+			{
+				attribute<nrAsl> Any (..) := = BO_after+'/nrAansluitingen * float64(OR('+AsItemList(Classifications/Product/name)+'))';
+			}
+			attribute<nrAsl> bw_ChangedToAllElectric := =''+ BO_after +'/nrAansluitingen * float64('+BO_after+'/Bouwjaar < 2024[yr_uint16]) * float64(  and(
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVb == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVp == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWb == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWp == Classifications/bemeterdegebouwinput/v/e)
+													&& or(
+					not('+BO_before+'/BemeterdeGebouwInput_rel/RVb == Classifications/bemeterdegebouwinput/v/e),
+				 	not('+BO_before+'/BemeterdeGebouwInput_rel/RVp == Classifications/bemeterdegebouwinput/v/e),
+				 	not('+BO_before+'/BemeterdeGebouwInput_rel/TWb == Classifications/bemeterdegebouwinput/v/e),
+				 	not('+BO_before+'/BemeterdeGebouwInput_rel/TWp == Classifications/bemeterdegebouwinput/v/e)))';								
+
+			attribute<nrAsl> bw_ChangedToHybride  := =''+ BO_after +'/nrAansluitingen * float64('+BO_after+'/Bouwjaar < 2024[yr_uint16]) * float64( not(bw_ChangedToAllElectric) &&   or(
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVb == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVp == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWb == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWp == Classifications/bemeterdegebouwinput/v/e)
+													&& and(
+					not('+BO_before+'/BemeterdeGebouwInput_rel/RVb == Classifications/bemeterdegebouwinput/v/e),
+				 	not('+BO_before+'/BemeterdeGebouwInput_rel/RVp == Classifications/bemeterdegebouwinput/v/e),
+				 	not('+BO_before+'/BemeterdeGebouwInput_rel/TWb == Classifications/bemeterdegebouwinput/v/e),
+				 	not('+BO_before+'/BemeterdeGebouwInput_rel/TWp == Classifications/bemeterdegebouwinput/v/e)))';
+
+			attribute<nrAsl> bw_ChangedToWarmte  := =''+ BO_after +'/nrAansluitingen * float64('+BO_after+'/Bouwjaar < 2024[yr_uint16]) * float64( or(
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVb == Classifications/bemeterdegebouwinput/v/warmte_70,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVp == Classifications/bemeterdegebouwinput/v/warmte_70,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWb == Classifications/bemeterdegebouwinput/v/warmte_70,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWp == Classifications/bemeterdegebouwinput/v/warmte_70)
+													&& and(
+					not('+BO_before+'/BemeterdeGebouwInput_rel/RVb == Classifications/bemeterdegebouwinput/v/warmte_70),
+				 	not('+BO_before+'/BemeterdeGebouwInput_rel/RVp == Classifications/bemeterdegebouwinput/v/warmte_70),
+				 	not('+BO_before+'/BemeterdeGebouwInput_rel/TWb == Classifications/bemeterdegebouwinput/v/warmte_70),
+				 	not('+BO_before+'/BemeterdeGebouwInput_rel/TWp == Classifications/bemeterdegebouwinput/v/warmte_70)))';
+
+
+			attribute<nrAsl> nw_ChangedToAllElectric := =''+ BO_after +'/nrAansluitingen * float64('+BO_after+'/Bouwjaar == TussenResultaten/Zichtjaar_jaar) * float64(and(
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVb == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVp == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWb == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWp == Classifications/bemeterdegebouwinput/v/e) )';
+			attribute<nrAsl> nw_ChangedToHybride     := =''+ BO_after +'/nrAansluitingen * float64('+BO_after+'/Bouwjaar == TussenResultaten/Zichtjaar_jaar) * float64(not(nw_ChangedToAllElectric) && or(
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVb == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVp == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWb == Classifications/bemeterdegebouwinput/v/e,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWp == Classifications/bemeterdegebouwinput/v/e) )';
+			attribute<nrAsl> nw_ChangedToWarmte      := =''+ BO_after +'/nrAansluitingen * float64('+BO_after+'/Bouwjaar == TussenResultaten/Zichtjaar_jaar) * float64(or(
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVb == Classifications/bemeterdegebouwinput/v/warmte_70,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/RVp == Classifications/bemeterdegebouwinput/v/warmte_70,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWb == Classifications/bemeterdegebouwinput/v/warmte_70,
+				 '+ BO_after +'/BemeterdeGebouwInput_rel/TWp == Classifications/bemeterdegebouwinput/v/warmte_70) )';
+
+		}
+
 		unit<uint32> BouwdeelNiveau := =BO_before
 		{
 			//====== is er een maatregel toegepast? zo ja, tel aansluitingen
