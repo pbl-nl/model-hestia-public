@@ -16,7 +16,7 @@ container EnergiePrijzen
 		attribute<Eur_GJ>     netwerk          (table) := replace(table/netkosten_eur_e,',','.')[Eur_GJ], IntegrityCheck = "isdefined(this)";
 		attribute<Eur_GJ>     CommodityPrice   (table) := replace(table/commodity_eur_e,',','.')[Eur_GJ] + replace(table/opslag_GG_eur_GJ,',','.')[Eur_GJ], IntegrityCheck = "isdefined(this) && this > 0.1[eur_GJ]";
 		attribute<Eur_GJ>     Marge            (table) := ='replace(table/marge_eur_e_'+code+','+Quote(',')+','+Quote('.')+')[Eur_GJ]';
-		attribute<Eur_GJ>     EnergieHeffing   (table) := ='replace(table/EB_eur_e_'+code+','+Quote(',')+','+Quote('.')+')[Eur_GJ] + replace(table/ODE_eur_e_'+code+','+Quote(',')+','+Quote('.')+')[Eur_GJ] ', IntegrityCheck = "isdefined(this)";
+		attribute<Eur_GJ>     EnergieHeffing   (table) := ='replace(table/EB_eur_e_'+code+','+Quote(',')+','+Quote('.')+')[Eur_GJ] + replace(table/ODE_eur_e_'+code+','+Quote(',')+','+Quote('.')+')[Eur_GJ] + replace(table/Opslag_ETS_eur_GJ,'+Quote(',')+','+Quote('.')+')[Eur_GJ]', IntegrityCheck = "isdefined(this)";
 		attribute<Eur_GJ>     Maatschappelijk  (table) := CommodityPrice + Marge + netwerk, IntegrityCheck = "isdefined(this)";
 		attribute<Eur_GJ>     eindgebruik_excl (table) := Maatschappelijk + EnergieHeffing, IntegrityCheck = "isdefined(this)";
 		attribute<eur_yr_asl> Heffingskorting  (table) := ='replace(table/Heffingskorting_eur_asl_'+code+','+Quote(',')+','+Quote('.')+')[Eur_yr_asl]', IntegrityCheck = "isdefined(this)" ;
