@@ -244,6 +244,7 @@ template ResultatenT
 			attribute<uint32> nrWoningen                := pcount(imp/results_rel);
 			attribute<nrAsl>  nrAansluitingen           := sum(imp/BO/nrAansluitingen, imp/results_rel);
 			attribute<nrAsl>  nrAansluitingen_nieuwbouw := sum(imp/BO/nrAansluitingen * float64(imp/BO/Bouwjaar >= 2024[yr_uint16]), imp/results_rel);
+			attribute<nrAsl>  nrAansluitingen_bestaandsociaal := sum(imp/BO/nrAansluitingen * float64(imp/BO/Bouwjaar < 2024[yr_uint16]) * float64(imp/BO/Eigendom_rel == Classifications/Eigendom/v/wooncorp), imp/results_rel);
 			container Functioneel := for_each_nedv(Classifications/FunctioneleVraag/name
 			,	'sum(imp/BO/Functioneel/'+Classifications/FunctioneleVraag/name+', imp/results_rel)'
 			,	., GJ_yr )
@@ -285,6 +286,7 @@ template ResultatenT
 				attribute<nrAsl>  hWP             := float64(strcount(lowercase(label), 'hwp') > 0[uint32]) * nrAansluitingen;
 				attribute<nrAsl>  gebiedsoptie_nieuw    := float64(strcount(lowercase(label), 'gebiedsoptie') > 0[uint32]) * nrAansluitingenNieuw;
 				attribute<nrAsl>  gebiedsoptie_bestaand := float64(strcount(lowercase(label), 'gebiedsoptie') > 0[uint32]) * nrAansluitingenBestaand;
+				attribute<nrAsl>  gebiedsoptie_bestaand_sociaal := float64(strcount(lowercase(label), 'gebiedsoptie') > 0[uint32]) * nrAansluitingen_bestaandsociaal;
 
 			}
 		}
