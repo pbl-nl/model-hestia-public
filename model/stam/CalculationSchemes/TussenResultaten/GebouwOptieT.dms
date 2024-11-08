@@ -76,7 +76,7 @@ template select_with_org_relGebouwOptieT
 			attribute<GJ_yr>     Winst_RV      (GeschiktObject) := collect_by_cond(GeschiktObject, ActiefObject/Functioneel/Winst_RV);
 			attribute<GJ_yr>     Verlies_RV    (GeschiktObject) := collect_by_cond(GeschiktObject, ActiefObject/Functioneel/Verlies_RV) - BO/Functioneel/Vrv_VT[BO_rel] + OverigeInstallaties/Ventilatie/Afweging/V_RV;
 			attribute<Kwh_yr_m2> Kwh_m2_RV     (GeschiktObject) := makedefined(((collect_by_cond( GeschiktObject , ActiefObject/Functioneel/Verlies_RV) - BO/Functioneel/Vrv_VT[BO_rel] + OverigeInstallaties/Ventilatie/Afweging/V_RV) / 3.6[MJ / kWh] * 1000 [ MJ / GJ]) / BO/Oppervlakte[BO_rel],0.0[Kwh_yr_m2]), ishidden = "True";
-			attribute<ratio>     Correction_RV (GeschiktObject) := 1.0[ratio] + Invoer/Kengetallen/Constanten/BinnenTemp_A * Invoer/Kengetallen/Constanten/BinnenTemp_B ^ Kwh_m2_RV;
+			attribute<ratio>     Correction_RV (GeschiktObject) := 1.0[ratio] + Invoer/Kengetallen/Constanten/BinnenTemp_A * Invoer/Kengetallen/Constanten/BinnenTemp_B ^ (kWh_m2_RV / 1.0[kWh_yr_m2]);
 			attribute<GJ_yr>     Vrv_VT        (GeschiktObject) := OverigeInstallaties/Ventilatie/Afweging/V_RV;
 		}
 		

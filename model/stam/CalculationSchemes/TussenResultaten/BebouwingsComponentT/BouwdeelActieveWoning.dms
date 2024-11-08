@@ -95,7 +95,7 @@ unit<uint32> BouwdeelActieveWoning := select_with_org_rel(BO/Activatie/BouwdeelA
 		// TODO: check for overflow
 		parameter<float64> LOG_MAX_FLOAT64 := 700.0, ishidden = "True"; // slightly less than ln( 2^1024 / pcount(classifications/BouwdeelIsolatie/bouwdeel_rel) )
 		container OddsRatio := for_each_nedv(classifications/IsolatieMaatregel/name
-		,	replace('IsDefined(Geschiktheid/@BDI) ? exp(min_elem(Geschiktheid/@BDI * SpecificBeta/@BDI, LOG_MAX_FLOAT64)) : 0.0'
+		,	replace('IsDefined(Geschiktheid/@BDI) ? exp(min_elem(Geschiktheid/@BDI * SpecificBeta/@BDI / 1.0[EUR], LOG_MAX_FLOAT64)) : 0.0'
 			,	'@BDI', classifications/IsolatieMaatregel/name)
 		,	AmbitieBerekening, float64
 		)
