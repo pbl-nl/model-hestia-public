@@ -25,7 +25,7 @@ template ResultatenT
 	container bebouwing             := StateNaAllocatie/bebouwing              , isHidden = "true";
 	container Voorkeuren            := TussenResultaten/Voorkeuren             , isHidden = "true";
 	container Allocatie             := TussenResultaten/AllocatieResultaten    , isHidden = "true";
-	
+
 	container Generate: isHidden = "true"
 	{
 		container impl
@@ -369,7 +369,8 @@ template ResultatenT
 
 	container Processen
 	{
-		unit<uint32> BO := Allocatie/Woning/BO;
+		unit<uint32> BO        := Allocatie/Woning/BO;
+		unit<uint32> BO_before := BebouwingsComponenten/Woning/BO;
 
 		unit<uint32> Installatie_x_Product := combine(Classifications/Installatie, Classifications/Product)
 		{
@@ -509,6 +510,24 @@ template ResultatenT
 		container AansluitingenPerInstallatie := for_each_nedv(
 			Installatie_x_Product/Name, 
 			replace('sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@) * BO/nrAansluitingen)',
+				'@PD@', Classifications/Product/name[Installatie_x_Product/nr_2],
+				'@IN@', Classifications/Installatie/Name[Installatie_x_Product/nr_1]),
+			void,
+			nrAsl );
+
+		container AansluitingenPerInstallatie_in := for_each_nedv(
+			Installatie_x_Product/Name, 
+			replace('sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@ 
+					&& BO_before/InstallatiePerProduct/@PD@ != Classifications/Installatie/V/@IN@ ) * BO/nrAansluitingen)',
+				'@PD@', Classifications/Product/name[Installatie_x_Product/nr_2],
+				'@IN@', Classifications/Installatie/Name[Installatie_x_Product/nr_1]),
+			void,
+			nrAsl );
+
+		container AansluitingenPerInstallatie_out := for_each_nedv(
+			Installatie_x_Product/Name, 
+			replace('sum(float64(BO/InstallatiePerProduct/@PD@ != Classifications/Installatie/V/@IN@ 
+					&& BO_before/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@ ) * BO/nrAansluitingen)',
 				'@PD@', Classifications/Product/name[Installatie_x_Product/nr_2],
 				'@IN@', Classifications/Installatie/Name[Installatie_x_Product/nr_1]),
 			void,
