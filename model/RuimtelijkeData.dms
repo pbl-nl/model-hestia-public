@@ -290,7 +290,7 @@ container RuimtelijkeData: Using = "Units;Geography;Model", FreeData = "True"
 		{
 			parameter<string> FreqTableName;
 
-			unit<uint32> BouwdeelSrc: StorageName = "= '%projDir%/isolatie/' + FreqTableName", StorageType = "gdal2.vect", StorageReadOnly = "True";
+			unit<uint32> BouwdeelSrc: StorageName = "= '%projDir%/isolatie/' + FreqTableName", StorageType = "gdal.vect", StorageReadOnly = "True";
 			
 				container Bouwdeeldata := for_each_nedv(Classifications/Bouwdeel/name ,Classifications/Bouwdeel/name == 'KR' ? 'const((0/0)[Classifications/IsolatieNiveau],BouwdeelSrc)' : 'rlookup(BouwdeelSrc/'+Classifications/Bouwdeel/name+', Classifications/IsolatieNiveau/name)' ,BouwdeelSrc ,Classifications/IsolatieNiveau )
 				{
@@ -357,7 +357,7 @@ container RuimtelijkeData: Using = "Units;Geography;Model", FreeData = "True"
 					}
 					unit<uint32> unique_combi_label := combine(unique_combi, Classifications/SchilLabel)
 					{
-						attribute<string> Label := unique_combi/label[nr_1] + '_' + Classifications/SchilLabel/name[nr_2];
+						attribute<string> Label := unique_combi/label[first_rel] + '_' + Classifications/SchilLabel/name[second_rel];
 						container V := for_each_nedv(Label, 'value('+string(id(.))+', ..)', void, .);
 					}
 
@@ -394,7 +394,7 @@ container RuimtelijkeData: Using = "Units;Geography;Model", FreeData = "True"
 		template BouwdeelKwaliteitAllocatieT2 : IsHidden = "True"
 		{
 			parameter<string> FreqTableName;
-			unit<uint32> Src: StorageName = "= '%projDir%/isolatie/' + FreqTableName", StorageType = "gdal2.vect", StorageReadOnly = "True";
+			unit<uint32> Src: StorageName = "= '%projDir%/isolatie/' + FreqTableName", StorageType = "gdal.vect", StorageReadOnly = "True";
 
 			container BouwdeelSamples := for_each_nt(Classifications/Bouwdeel/name, BouwdeelSampleT);
 
