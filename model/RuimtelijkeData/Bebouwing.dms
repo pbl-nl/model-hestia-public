@@ -66,6 +66,7 @@ container Bebouwing : isHidden = "True"
 
 		attribute<nrAsl> nrAansluitingen_i := =replace(unionExpr, '@ATTR', 'nrAansluitingen_i');
 		attribute<m2> Oppervlakte_i        := =replace(unionExpr, '@ATTR', 'Oppervlakte_i');
+		attribute<BAG/import/pand> pand_rel           := union_data(.,  BagWoning/pand_rel, const(null_u[BAG/import/pand], VastgoedProjectie/results));
 
 		attribute<Classifications/combines/WBE> ModelObjectKey := =replace(unionExpr, '@ATTR', 'ModelObjectKey');
 
@@ -154,7 +155,7 @@ container Bebouwing : isHidden = "True"
 				,	RuimtelijkeData/Nieuwbouw/ZU/Periode_Eindjaar > 2010w && strlen(RuimtelijkeData/Nieuwbouw/ZU/wlo_filename_Nieuwbouw) > 0 
 				?	'int32(sum( '
 						'Util/Oppervlakte_i * ' +
-						'float64(Util/BebouwingsTypeDomein/UtilTypeNieuwbouw_rel[Util/BebouwingsType] == '+string(RuimtelijkeData/Nieuwbouw/ZU/nr_2)+'[uint8])'
+						'float64(Util/BebouwingsTypeDomein/UtilTypeNieuwbouw_rel[Util/BebouwingsType] == '+string(RuimtelijkeData/Nieuwbouw/ZU/second_rel)+'[uint8])'
 					+	', Util/point[rdc_grids/m100]'
 					')'
 					'*max_elem(float64(RuimtelijkeData/Nieuwbouw/InbreidingUtilFactor/'+RuimtelijkeData/Nieuwbouw/ZU/name+') - 1.0 , 0.0)'
