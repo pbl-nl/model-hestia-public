@@ -102,13 +102,13 @@ unit<uint8> Jaarreeksen := select_with_org_rel(ID(classifications/zichtjaar) < 4
 	}
 
 	parameter<units/ratio> BedrijfswoningenFactor := float64(1.0) - float64(188000)/float64(7915000); //specifiek voor KEV
-	container Processen := for_each_nedv(
-		replace(Jaarreeksen/name, 'StartJaar', 'R0_2020'),
-		'Resultaten/'+Jaarreeksen/name+'/Processen/Installatie_x_ProductType/long_sparse/PJ * BedrijfswoningenFactor',
+	container Processen := for_each_neidv(
+		eerste_jaar = 2020[uint16] ? replace(Jaarreeksen/name, 'StartJaar', 'R0_2020') : replace(Jaarreeksen/name, 'StartJaar', 'R0_2000'), 
+		'Resultaten/'+Jaarreeksen/name+'/Processen/Installatie_x_ProductType/long_sparse/PJ * BedrijfswoningenFactor', 'eerste_jaar == 2000[uint16] || eerste_jaar == 2020[uint16]',
 		Resultaten/StartJaar/Processen/Installatie_x_ProductType/long_sparse,
 		units/PJ_yr)
 	{
-		attribute<string> Procescode (Resultaten/StartJaar/Processen/Installatie_x_ProductType/long_sparse) := Resultaten/Startjaar/Processen/Installatie_x_ProductType/long_sparse/name;
+		attribute<string> Procescode (Resultaten/StartJaar/Processen/Installatie_x_ProductType/long_sparse) := Resultaten/Startjaar/Processen/Installatie_x_ProductType/long_sparse/name, IntegrityCheck = "eerste_jaar[uint32] == 2000 && aantal_jaar[uint32] < 22 || eerste_jaar[uint32] == 2020";
 	}
 	container AansluitingenPerProces := for_each_nedv(
 		Jaarreeksen/name,
