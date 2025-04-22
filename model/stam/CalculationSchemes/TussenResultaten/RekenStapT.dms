@@ -29,7 +29,9 @@ template RekenstapT
 	// specifieke code om KEV2024 aan te laten sluiten bij reeks uit NEV-RS
 	parameter<ratio> KEVklimaatmean                                     := Invoer/RuimtelijkeData/Klimaat/KEVklimaatfactor[Zichtjaar_rel];
 	parameter<ratio> MeancleanEffect                                    := mean(KlimaatFactorMapPartial[BebouwingsComponenten/Woning/BO/gridm100_rel]);
-	parameter<ratio> DiffKEVcleanmean                                   := KEVklimaatmean / MeancleanEffect;
+	//parameter<ratio> DiffKEVcleanmean                                   := KEVklimaatmean / MeancleanEffect; // Enkel voor de KEV
+	parameter<ratio> DiffKEVcleanmean                                   := Zichtjaar_jaar < 2020[yr_uint16] ? 1.00[ratio] : KEVklimaatmean / MeancleanEffect;
+	
 	// end specifieke code
 
 	container ZichtjaarBeleid := Invoer/Beleid/PerJaar(Zichtjaar_jaar);
