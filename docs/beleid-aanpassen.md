@@ -26,8 +26,8 @@ Een van de toepassingen van Hestia is het onderzoeken van de effecten van beleid
 <details>
 <summary><b>Verbod</b></summary>
     
-- **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type eigendom dit geldt (bijv. koophuizen, huurhuizen). Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`. 
-- **ParseGrondslag**: Ga hier na of de juiste verwarmingsinstallaties de waarde `True` en `False` hebben. Hierbij betekent `True` dat het verbod geldt voor deze installatie.
+- **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type woning dit geldt. Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`. 
+- **ParseGrondslag**: Ga hier na of de juiste installaties de waarde `True` en `False` hebben. Hierbij betekent `True` dat het verbod geldt voor deze installatie.
 - **ParseVoorwaarde**: Ga hier in de submap **HuidigLabel** na of de juiste hudige energielabels de waarde `True` en `False` hebben. Hierbij betekent `True` dat het beleid geldt voor dit huidige energielabel.
   
 </details>
@@ -35,7 +35,7 @@ Een van de toepassingen van Hestia is het onderzoeken van de effecten van beleid
 <details>
 <summary><b>Activatie</b></summary>
     
-- **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type eigendom dit geldt (bijv. koophuizen, huurhuizen). Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`. 
+- **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type woning dit geldt. Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`. 
 - **ParseGrondslag**: Ga hier na of de juiste bouwdelen de waarde `True` en `False` hebben.
 - **ParseVoorwaarde**: Ga hier in de submap **HuidigLabel** na of de juiste hudige energielabels de waarde `True` en `False` hebben. Hierbij betekent `True` dat het beleid geldt voor dit huidige energielabel.
   
@@ -69,7 +69,7 @@ Een van de toepassingen van Hestia is het onderzoeken van de effecten van beleid
 
 ## Testen of het nieuwe beleid effect heeft
 
-Het testen van het effect van nieuw beleid kan het beste gedaan worden door een run met en zonder de aanpassing te doen, en te kijken naar het verschil in een relevant resultaat. Bij een verbod op CV-ketels zouden bijvoorbeeld de jaarreeksen van het totale gasverbruik kunnen worden berekend. Als hier geen verschil in gevonden wordt, is het waarschijnlijk dat de beleidsaanpassing niet correct is geïnterpreteerd door Hestia.
+Het testen van het effect van nieuw beleid kan het beste gedaan worden door een run met en zonder de aanpassing te doen, en te kijken naar het verschil in een relevant resultaat. Bij een verbod op CV-ketels zouden bijvoorbeeld de jaarreeksen van het totale gasverbruik kunnen worden berekend. Als hier geen verschil in gevonden wordt, is het waarschijnlijk dat de beleidsaanpassing niet correct is geïnterpreteerd door Hestia. 
 
 
 
