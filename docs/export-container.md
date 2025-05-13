@@ -56,7 +56,7 @@ Het symbool `||` betekent 'of', terwijl `&&` wordt gebruikt om 'en' aan te geven
 Het **tweede** aspect geeft aan uit hoeveel unieke isolatieambities (unieke isolatiepakketten) een woning kan kiezen. 
 
 <details>
-<summary><b>Lees meer** over unieke isolatieambities</summary>
+<summary><b>Lees meer</b> over unieke isolatieambities</summary>
 	
 In totaal zijn er een enorme hoeveelheid combinaties die in theorie genomen zouden kunnen worden maar om de looptijd van een modelrun te beperken is er een voorselectie gemaakt. Hierdoor zijn er vijf relevante sets toepasbaar en worden gekozen op het spectrum van veel isoleter to niets doen. De niveaus zijn:
 1. Geen (alle bouwdelen behouden huidige isolatiegraad)
@@ -74,17 +74,21 @@ Door verder te navigeren naar **Bo_rel** blijft de structuur van de elementen bi
 Net als in het tweede aspect wordt in het **derde** aspect de `count`-functie gebruikt om het aantal geschikte opties te tellen. Dit betreft een uniek isolatiepakket met een installatie, gespecificeerd per categorie (ketel, hybride, all-electric).
 
 <details>
-<summary>**Lees meer** over aantal geschikte opties</summary>
+<summary><b>Lees meer</b> over aantal geschikte opties</summary>
+	
 De aantal geschikte opties is afhankelijkvan de volgorde en verhoudingen tussen de stappen in het afwegingsschema. Het afwegingsschema kan worden geinterpreteerd als volg:
 	- ProductActief en BouwdeelActief = 3 x 5 = 15 unieke combinaties
 	- ProductActief en niet BouwdeelActief = 3 unieke combinaties
 	- niet ProductActief en BouwdeelActief = 5 unieke combinaties
 	- niet ProductActief en niet BouwdeelActief = 0 unieke combinaties
+ 
 </details>
 
 Verder staat in de definitie een **IntegrityCheck** wat wordt gebruikt om te controleren of een (tussen)resultaat aan bepaalde eisen voldoet, bijvoorbeeld dat alle waarden binnen een bepaald bereik moeten liggen of dat er geen gegevens mogen ontbreken. In de definitie refereert ‘this’ naar zichzelf .
 
 In het **vierde** aspect wordt beoordeeld of een woning daadwerkelijk een investering doet. De uitkomst is wederom **True** of **False**, waardoor de **value-unit** voor deze attribuut ook wordt ingesteld als `bool`.
 
-_De uitlegfragmenten in de 'Lees meer'-dropdowns zijn afkomstig uit het functioneel ontwerp van Hestia 1.0, waar een uitgebreidere toelichting te vinden is.
+
+  
+_De uitlegfragmenten in de 'Lees meer'-dropdowns zijn afkomstig uit het functioneel ontwerp van Hestia 1.0, waar een uitgebreidere toelichting te vinden is.  
 Meer informatie over de syntax en de betekenis van functies is te vinden op [GeoDMS.nl](https://geodms.nl/)._
