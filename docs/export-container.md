@@ -21,5 +21,21 @@ Met CTRL+E kan je de code van het domein 'BO' openen. 'BO' staat voor bebouwings
 1. domain-unit; definieert een entiteit die kenmerken (of te wel attributes) kan hebben
 2. value-unit; beschrijft hoe waarden van een gegevensitem moeten worden geïnterpreteerd (bijv. eenheid)
 
-In dit geval wordt een domein unit bedoeld, en in de 'BO' unit kan de desbetreffende container gemaakt worden.
-Voor het maken van een container worden er accolades gebruikt.
+In dit geval verwijst 'unit' naar een domeinunit. Binnen de 'BO'-unit kan de betreffende container worden aangemaakt. De exacte locatie binnen de unit maakt niet veel uit, maar in dit geval is ervoor gekozen om deze aan de onderkant te plaatsen.
+
+Bij het maken van een container worden accolades gebruikt.
+
+```
+container InvesteringenSamenvatting
+		{
+			attribute<bool> ProductActief 			(BO) := Activatie/ProductActief;
+			attribute<bool> BouwdeelActief 			(BO) := Activatie/BouwdeelActief;
+			attribute<bool> BouwdeelOfProductActief	(BO) := ProductActief || BouwdeelActief;
+			attribute<bool> BouwdeelEnProductActief (BO) := ProductActief && BouwdeelActief;
+		
+			attribute<uint32> 	AantalUniekeAmbities 		(BO) := count(BouwdeelActieveWoning/UniekAmbitie/Bo_rel, BouwdeelActieveWoning/UniekAmbitie/Bo_rel);
+			attribute<uint32> 	AantalInvesteringsopties 	(BO) := count(ActieveWoning/xInvesteringsOptie/Bo_rel, ActieveWoning/xInvesteringsOptie/Bo_rel), IntegrityCheck = 'ProductActief && BouwdeelActief ? this <= 3 * AantalUniekeAmbities : ProductActief && not(BouwdeelActief) ? this <= 3 :  this <=5', Descr = 'Isolatieambitites x GebouwoptieCategorie';
+			attribute<bool> 	InvesteringGedaan			(BO) := any(ActieveWoning/Choice_per_ActieveWoning/isSelected, invert(ActieveWoning/Choice_per_ActieveWoning/xInvesteringsOptie_rel))[invert(ActieveWoning/Bo_rel)];
+		}
+```
+
