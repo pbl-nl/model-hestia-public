@@ -15,6 +15,11 @@ De oplossing hiervoor is het creëren van een container die per woning inzicht b
 - wel/niet geschikte optie gekozen, doet de woning daadwerkelijk een investering
 - gekozen isolatieambitie; welke isolatieambitie is gekozen
 
-### Waar moet de container in te komen staan?
+### Waar moet de container in te komen staan en hoe wordt de container gemaakt?
+Gezien de container een inzicht per woning moet geven zal die in het domein 'BO' moeten komen te staan. Deze kan je vinden in de TussenrResultaten > StartJaar > BebouwingsComponenten > Woning > BO.
+Met CTRL+E kan je de code van het domein 'BO' openen. 'BO' staat voor bebouwingsobject en is een unit waar alle woningen in een studiegebied in zitten. Een unit in GeoDMS heeft twee betekenissen:
+1. domain-unit; definieert een entiteit die kenmerken (of te wel attributes) kan hebben
+2. value-unit; beschrijft hoe waarden van een gegevensitem moeten worden geïnterpreteerd (bijv. eenheid)
 
-
+In dit geval wordt een domein unit bedoeld, en in de 'BO' unit kan de desbetreffende container gemaakt worden.
+Voor het maken van een container worden er accolades gebruikt.
