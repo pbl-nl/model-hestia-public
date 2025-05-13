@@ -22,17 +22,54 @@ Een van de toepassingen van Hestia is het onderzoeken van de effecten van beleid
 1. Open **GeoDMS** en laad `HestiaRun.dms` in. Als het al open stond, herlaad met `Alt+R` of via **File** &rarr; **Reopen current Configuration**
 2. Navigeer binnen GeoDMS naar `/Invoer/Beleid`
 3. Open de map die hoort bij het type beleid dat is aangepast (**Verbod, Activatie, Normering** of **Subsidie**) en controleer of de onderstaande dingen juist zijn geïnterpreteerd in Hestia.
-<details open>
+
+<details>
 <summary><b>Verbod</b></summary>
     
 - **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type eigendom dit geldt (bijv. koophuizen, huurhuizen). Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`. 
-- **ParseGrondslag**: Ga hier na of de juiste verwarmingsinstallaties de waarde `True` en `False` hebben.
-- **ParseVoorwaarde**: Ga hier in de submap **HuidigLabel** na of de juiste hudige energielabels de waarde `True` en `False` hebben.
+- **ParseGrondslag**: Ga hier na of de juiste verwarmingsinstallaties de waarde `True` en `False` hebben. Hierbij betekent `True` dat het verbod geldt voor deze installatie.
+- **ParseVoorwaarde**: Ga hier in de submap **HuidigLabel** na of de juiste hudige energielabels de waarde `True` en `False` hebben. Hierbij betekent `True` dat het beleid geldt voor dit huidige energielabel.
+  
+</details>
+
+<details>
+<summary><b>Activatie</b></summary>
+    
+- **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type eigendom dit geldt (bijv. koophuizen, huurhuizen). Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`. 
+- **ParseGrondslag**: Ga hier na of de juiste bouwdelen de waarde `True` en `False` hebben.
+- **ParseVoorwaarde**: Ga hier in de submap **HuidigLabel** na of de juiste hudige energielabels de waarde `True` en `False` hebben. Hierbij betekent `True` dat het beleid geldt voor dit huidige energielabel.
+  
+</details>
+
+<details>
+<summary><b>Normering</b></summary>
+    
+- **NieuwbouwNorm**
+    - **BouwdeelNorm**: Ga hier na of bij elk bouwdeel het juiste isolatieniveau staat.
+    - **VentilatieNorm**
+- **BestaandeBouwNorm**
+
+    - **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type eigendom dit geldt (bijv. koophuizen, huurhuizen). Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`.
+    - **BouwdeelNorm**: Ga hier na of bij elk bouwdeel het juiste isolatieniveau staat.
+    - **VentilatieNorm**
+    - **LabelNorm**
+    - **ParseVoorwaarde**
+      
+</details>
+
+<details>
+<summary><b>Subsidie</b></summary>
+    
+- **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type eigendom dit geldt (bijv. koophuizen, huurhuizen). Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`. 
+- **ParseMaatregel**
+- **ParseVoorwaarde**
+- **Subsiediebudget?**
   
 </details>
 
 ## Testen of het nieuwe beleid effect heeft
 
+Het testen van het effect van nieuw beleid kan het beste gedaan worden door een run met en zonder de aanpassing te doen, en te kijken naar het verschil in een relevant resultaat. Bij een verbod op CV-ketels zouden bijvoorbeeld de jaarreeksen van het totale gasverbruik kunnen worden berekend. Als hier geen verschil in gevonden wordt, is het waarschijnlijk dat de beleidsaanpassing niet correct is geïnterpreteerd door Hestia.
 
 
 
