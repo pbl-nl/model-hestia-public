@@ -56,7 +56,7 @@ Het symbool `||` betekent 'of', terwijl `&&` wordt gebruikt om 'en' aan te geven
 Het **tweede** aspect geeft aan uit hoeveel unieke isolatieambities (unieke isolatiepakketten) een woning kan kiezen. 
 
 <details>
-<summary><**Lees meer** over unieke isolatieambities</summary>
+<summary><b>Lees meer** over unieke isolatieambities</summary>
 	
 In totaal zijn er een enorme hoeveelheid combinaties die in theorie genomen zouden kunnen worden maar om de looptijd van een modelrun te beperken is er een voorselectie gemaakt. Hierdoor zijn er vijf relevante sets toepasbaar en worden gekozen op het spectrum van veel isoleter to niets doen. De niveaus zijn:
 1. Geen (alle bouwdelen behouden huidige isolatiegraad)
