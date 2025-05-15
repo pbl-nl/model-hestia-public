@@ -186,12 +186,13 @@ container WarmteBronnen : IsHidden = "True"
 	container Lijnbronnen
 	{
 		unit<uint32> LijnenSet :
-				StorageName     = "%HestiaDataDir%/aanbod/Lijnbronnen.dbf",
+				StorageName     = "%HestiaDataDir%/aanbod/Lijnbronnen.shp",
 				StorageReadOnly = "True",
+				StorageType 	= "gdal.vect",
 				DialogType      = "Map",
 				DialogData      = "geometry"
 			{
-				attribute<rdc_meter> geometry (arc) : StorageName = "%HestiaDataDir%/aanbod/Lijnbronnen.shp", StorageReadOnly = "True";
+				attribute<rdc_meter> geometry (arc);
 				attribute<string>    bron_naam;
 				attribute<bool>      Geschikt := const(true,.);
 			}

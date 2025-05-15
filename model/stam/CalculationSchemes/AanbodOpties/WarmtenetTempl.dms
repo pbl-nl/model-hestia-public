@@ -200,7 +200,7 @@ template WarmtenetTempl
 		attribute<bool> isUtil   := const(false,.); //TODO: later hier opnemen of vbo utiliteit is of niet
 		attribute<bool> vraagtKD := not(isdefined(BO/BemeterdeGebouwInput_rel/KDb[BO_rel])) && not(isdefined(BO/BemeterdeGebouwInput_rel/KDb[BO_rel]));
 
-		unit<uint32> StudieGebiedPand_candidate := subset(pand/vbo_count_studiegebied > 0.0[uint32])
+		unit<uint32> StudieGebiedPand_candidate := subset(pand/vbo_count > 0.0[uint32])
 		{
 			attribute<pand>                pand_rel    := nr_orgentity;
 			attribute<kW>                  P_wd        := sum(PartialContributie/P_wd, rlookup(AllCandidate/pand_rel, pand_rel)); 
@@ -393,19 +393,19 @@ template WarmtenetTempl
 				attribute<Eur_yr> Kj_adm_LO      (AllCandidate) := BO/jaarlijks/Kj_adm_LO[BO_rel] - BO/jaarlijks/adm_KD[BO_rel], Descr = "jaarlijkse administratiekosten van alternatief, exclusief eventuele administratiekosten koudeinstallatie";
 				
 				//====== Energiekosten alternatief
-				attribute<Eur_yr> Kj_elek        (AllCandidate) := BO/jaarlijks/Kj_elek[BO_rel] - ((BO/Metervraag/wv_e_koude[BO_rel] + BO/metervraagberekening/eEffect/Vj_elek[BO_rel]) * prijzen/Elektriciteit/Staffel/KGJ_eindgebruik_excl[ind_gebruiksgrootteklasse_rel]);
+				attribute<Eur_yr> Kj_elek        (AllCandidate) := BO/jaarlijks/Kj_elek[BO_rel] - ((BO/Metervraag/Vj_e_KD[BO_rel] + BO/metervraagberekening/eEffect/Vj_elek[BO_rel]) * prijzen/Elektriciteit/Staffel/KGJ_eindgebruik_excl[ind_gebruiksgrootteklasse_rel]);
 				attribute<Eur_yr> Kj_gas         (AllCandidate) := BO/jaarlijks/Kj_gas[BO_rel];
 				attribute<Eur_yr> Kj_biomassa    (AllCandidate) := BO/jaarlijks/Kj_biomassa[BO_rel];
 				attribute<Eur_yr> Kj_pellets     (AllCandidate) := BO/jaarlijks/Kj_pellets[BO_rel];
 				attribute<Eur_yr> Kj_olie        (AllCandidate) := BO/jaarlijks/Kj_olie[BO_rel];
-				attribute<Eur_yr> Kj_H2          (AllCandidate) := BO/jaarlijks/Kj_H2[BO_rel];
+//				attribute<Eur_yr> Kj_H2          (AllCandidate) := BO/jaarlijks/Kj_H2[BO_rel];
 
 				//====== Kapitaallasten alternatief
 				attribute<Eur_yr> Kji30_LO_net   (AllCandidate) := BO/kapitaallasten/Kji30_LO[BO_rel] - BO/kapitaallasten/Oji30_LO[BO_rel];
 				attribute<Eur_yr> Kji20_LO_net   (AllCandidate) := BO/kapitaallasten/Kji20_LO[BO_rel] - BO/kapitaallasten/Oji20_LO[BO_rel];
 				attribute<Eur_yr> Kji15_LO_net   (AllCandidate) := BO/kapitaallasten/Kji15_LO[BO_rel] - BO/kapitaallasten/Oji15_LO[BO_rel];
 
-				attribute<Eur_yr> kosten         (AllCandidate) := add(Kj_oh_LO, Kj_adm_LO, Kj_elek, Kj_gas, Kj_biomassa, Kj_pellets, Kj_olie, Kj_H2, Kji30_LO_net, Kji20_LO_net, Kji15_LO_net);
+				attribute<Eur_yr> kosten         (AllCandidate) := add(Kj_oh_LO, Kj_adm_LO, Kj_elek, Kj_gas, Kj_biomassa, Kj_pellets, Kj_olie, /*Kj_H2, */ Kji30_LO_net, Kji20_LO_net, Kji15_LO_net);
 			}		
 
 			attribute<classifications/gebruiksgrootteklasse> ind_gebruiksgrootteklasse_rel (AllCandidate) := classify((V_id_Elek + BO/metervraagberekening/eEffect/Vj_elek[BO_rel]), Prijzen/Elektriciteit/Staffel/ClassBreak);
@@ -420,19 +420,20 @@ template WarmtenetTempl
 				attribute<Celsius> DT (ObjectDomain);
 				//end parameters
 
-				attribute<mw> P    (ObjectDomain) := P_kW * 0.001[mW / kW];
+				attribute<MW>      P (ObjectDomain) := P_kW * 0.001[mW / kW];
+				attribute<float64> P_(ObjectDomain) := P / 1.0[MW];
 				
 				//====== berekening ondergrens en bovengrens investeringskosten o.b.v. formule per niveau van delta-T
-				attribute<eur_m> Ki_max_DT10 (ObjectDomain) := (1585.4 * P ^ 0.36)[eur_m], Descr = "bovengrens leidingkosten delta-T 10C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 1 ";
-				attribute<eur_m> Ki_min_DT10 (ObjectDomain) := (1069.2 * P ^ 0.41)[eur_m], Descr = "ondergrens leidingkosten delta-T 10C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 2 ";
-				attribute<eur_m> Ki_max_DT20 (ObjectDomain) := (1114.4 * P ^ 0.38)[eur_m], Descr = "bovengrens leidingkosten delta-T 20C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 3 ";
-				attribute<eur_m> Ki_min_DT20 (ObjectDomain) := ( 776.1 * P ^ 0.42)[eur_m], Descr = "ondergrens leidingkosten delta-T 20C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 4 ";
-				attribute<eur_m> Ki_max_DT30 (ObjectDomain) := (1075.5 * P ^ 0.35)[eur_m], Descr = "bovengrens leidingkosten delta-T 30C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 5 ";
-				attribute<eur_m> Ki_min_DT30 (ObjectDomain) := ( 680.3 * P ^ 0.41)[eur_m], Descr = "ondergrens leidingkosten delta-T 30C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 6 ";
-				attribute<eur_m> Ki_max_DT50 (ObjectDomain) := ( 890.4 * P ^ 0.36)[eur_m], Descr = "bovengrens leidingkosten delta-T 50C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 7 ";
-				attribute<eur_m> Ki_min_DT50 (ObjectDomain) := ( 407.8 * P ^ 0.48)[eur_m], Descr = "ondergrens leidingkosten delta-T 50C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 8 ";
-				attribute<eur_m> Ki_max_DT70 (ObjectDomain) := ( 320.5 * P ^ 0.50)[eur_m], Descr = "bovengrens leidingkosten delta-T 70C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 9 ";
-				attribute<eur_m> Ki_min_DT70 (ObjectDomain) := ( 871.4 * P ^ 0.33)[eur_m], Descr = "ondergrens leidingkosten delta-T 70C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 10";
+				attribute<eur_m> Ki_max_DT10 (ObjectDomain) := (1585.4 * P_ ^ 0.36)[eur_m], Descr = "bovengrens leidingkosten delta-T 10C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 1 ";
+				attribute<eur_m> Ki_min_DT10 (ObjectDomain) := (1069.2 * P_ ^ 0.41)[eur_m], Descr = "ondergrens leidingkosten delta-T 10C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 2 ";
+				attribute<eur_m> Ki_max_DT20 (ObjectDomain) := (1114.4 * P_ ^ 0.38)[eur_m], Descr = "bovengrens leidingkosten delta-T 20C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 3 ";
+				attribute<eur_m> Ki_min_DT20 (ObjectDomain) := ( 776.1 * P_ ^ 0.42)[eur_m], Descr = "ondergrens leidingkosten delta-T 20C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 4 ";
+				attribute<eur_m> Ki_max_DT30 (ObjectDomain) := (1075.5 * P_ ^ 0.35)[eur_m], Descr = "bovengrens leidingkosten delta-T 30C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 5 ";
+				attribute<eur_m> Ki_min_DT30 (ObjectDomain) := ( 680.3 * P_ ^ 0.41)[eur_m], Descr = "ondergrens leidingkosten delta-T 30C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 6 ";
+				attribute<eur_m> Ki_max_DT50 (ObjectDomain) := ( 890.4 * P_ ^ 0.36)[eur_m], Descr = "bovengrens leidingkosten delta-T 50C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 7 ";
+				attribute<eur_m> Ki_min_DT50 (ObjectDomain) := ( 407.8 * P_ ^ 0.48)[eur_m], Descr = "ondergrens leidingkosten delta-T 50C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 8 ";
+				attribute<eur_m> Ki_max_DT70 (ObjectDomain) := ( 320.5 * P_ ^ 0.50)[eur_m], Descr = "bovengrens leidingkosten delta-T 70C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 9 ";
+				attribute<eur_m> Ki_min_DT70 (ObjectDomain) := ( 871.4 * P_ ^ 0.33)[eur_m], Descr = "ondergrens leidingkosten delta-T 70C", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.34 formule 10";
 
 				//====== bepaling welke delta-T van toepassing is per object en waarde binnen bandbreedte bepalen o.b.v. invoerschuif
 				attribute<eur_m> Ki_max      (ObjectDomain) := DT <= 10[Celsius] ? Ki_max_DT10 : DT <= 20[Celsius] ? Ki_max_DT20 : DT <= 30[Celsius] ? Ki_max_DT30 : DT <= 50[Celsius] ? Ki_max_DT50 : Ki_max_DT70;
@@ -513,7 +514,7 @@ template WarmtenetTempl
 		unit<uint32> allocIter := range(uint32, 0, nrBronAllocatieIteraties)
 		{
 			attribute<string> name := 'I'+string(id(.));
-			attribute<string> prevName := MakeDefined(name[ID(.)-1]+'/nextAugmentation', 'initialAugmentation');
+			attribute<string> prevName := MakeDefined(name[sub_or_null(ID(.),1)]+'/nextAugmentation', 'initialAugmentation');
 		}
 		
 		attribute<m> initialAugmentation(WarmteBronnen/bron) := (1.0 - WarmteBronnen/bron/Ki_cap / max(WarmteBronnen/bron/Ki_cap)) * WarmteBronnen/bron/max_dist, KeepData = "False";
@@ -651,7 +652,7 @@ template WarmtenetTempl
 				attribute<Eur>    Ki_ge            (Afnemer) := AllCandidate/PartialContributie/Ki_ge[nr_orgentity];
 
 				//subsidie SDE
-				attribute<Eur_yr> Oj_lv_SDE        (Afnemer) := SpecifiekeInstellingen/Beleid/SDE/SDE[Warmtebronnen/bron/BronType_rel[Bron_rel]] * vraag/V_ow_warmte;
+				attribute<Eur_yr> Oj_lv_SDE        (Afnemer) := SpecifiekeInstellingen/Beleid/SDE/SDE_LT[Warmtebronnen/bron/BronType_rel[Bron_rel]] * vraag/V_ow_warmte;
 
 				//kosten te berekenen met inachtneming bronallocatie
 				attribute<Eur>    Ki_wd_OS         (Afnemer) := Vraag/P_wd * 50[eur_kw]                                                                                         , Descr = "kosten van onderstations en hulpketel", Source = "CE Delft 210347 Eindconceptadvies Warmtenetten in Vesta MAIS (versie 2022-08-09) pp.42";

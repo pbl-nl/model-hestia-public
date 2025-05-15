@@ -162,7 +162,7 @@ template RekenstapT
 		for_each_ne(
 			Voorkeuren/ActieveGebiedsOptie/name,
 			'CalculationSchemes/AanbodOpties/'+Voorkeuren/ActieveGebiedsOptie/SchemaName+'(
-				'+MakeDefined(Voorkeuren/ActieveGebiedsOptie/name[id(Voorkeuren/ActieveGebiedsOptie)-1b]+'/Results', 'BestaandWarmtenet/result')+')'
+				'+MakeDefined(Voorkeuren/ActieveGebiedsOptie/name[sub_or_null(id(Voorkeuren/ActieveGebiedsOptie), 1b)]+'/Results', 'BestaandWarmtenet/result')+')'
 		), IsHidden = "True"
 		{
 			parameter<string> ResultStateName := MakeDefined(last(Voorkeuren/ActieveGebiedsOptie/name)+'/Results', 'BestaandWarmtenet/result');
