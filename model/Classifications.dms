@@ -992,12 +992,12 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	
 	unit<uint32> SP  := combine(SchillabelEx, ProductTypeEx)
 	{
-		attribute<string> name := first_Rel->name + '.' + second_rel->name;
+		attribute<string> name := first_rel->name + '.' + second_rel->name;
 		attribute<string> label := name, DialogType = "LabelText";
 	}
 	unit<uint32> ISP := combine(Installatie, SP)
 	{
-		attribute<string> code := first_Rel->name + '.' + second_rel->name;
+		attribute<string> code := first_rel->name + '.' + second_rel->name;
 		attribute<Performance> Performance_rel := invert(Performance/ISP_rel);
 		attribute<string> label := code, DialogType = "LabelText";
 		
@@ -1069,7 +1069,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	
 	unit<uint32> InvesteringsOptie := combine(GebouwOptieCategorie, IsolatieAmbitie)
 	{
-		attribute<GebouwOptieCategorie> GebouwOptieCategorie_rel := first_Rel;
+		attribute<GebouwOptieCategorie> GebouwOptieCategorie_rel := first_rel;
 		attribute<IsolatieAmbitie>      IsolatieAmbitie_rel      := second_rel;
 	}
 	
@@ -1455,23 +1455,23 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			25, 30, 20, 15, 20, 15, 15
 			];
 	}
-	unit<uint8> GebouwOptie_jaarlijks : nrofrows = 19
+	unit<uint8> GebouwOptie_jaarlijks : nrofrows = 17
 	{
 		attribute<string> name  : [
 			'Kj_oh_LO'      , 'Kj_adm_LO'     ,
 			'Kj_elek'       , 'Kj_gas'        ,
-			'Kj_biomassa'   , 'Kj_olie'       , 'Kj_olie_eh'    , 'Kj_pellets'    , 'Kj_H2',
+			'Kj_biomassa'   , 'Kj_olie'       , 'Kj_olie_eh'    , 'Kj_pellets',    // 'Kj_H2',
 			'Kj_vastrecht_G', 'Kj_vastrecht_E', 'Kj_vastrecht_W', 'Kj_vastrecht_K',
 			'Km_elek'       , 'Km_gas'        ,
-			'Km_biomassa'   , 'Km_olie'       , 'Km_pellets'    , 'Km_H2'
+			'Km_biomassa'   , 'Km_olie'       , 'Km_pellets'    //, 'Km_H2'
 			];
 		attribute<bool> isEindgebruikerskosten : [
 			true , true ,
 			true , true ,
-			true , true , true , true , true ,
+			true , true , true , true , //true ,
 			true , true , true , true ,
 			false, false,
-			false, false, false, false
+			false, false, false //, false
 			];
 	}
 

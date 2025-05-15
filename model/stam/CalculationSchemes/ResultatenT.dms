@@ -173,7 +173,7 @@ template ResultatenT
 			unit<uint32> I := Classifications/Installatie;
 			unit<uint32> II := combine(I, I)
 			{
-				attribute<string> label := first_Rel == second_rel ? I/label[first_Rel] : 'basis: '+I/label[first_Rel] + '; piek: '+I/label[second_rel], DialogType = "LabelText";
+				attribute<string> label := first_rel == second_rel ? I/label[first_rel] : 'basis: '+I/label[first_rel] + '; piek: '+I/label[second_rel], DialogType = "LabelText";
 			}
 			attribute<II> InstallatieGetalRV_rel(BO) := combine_data(II, BO/InstallatiePerProduct/RVb, BO/InstallatiePerProduct/RVp);
 			attribute<II> InstallatieGetalTW_rel(BO) := combine_data(II, BO/InstallatiePerProduct/TWb, BO/InstallatiePerProduct/TWp);
@@ -374,8 +374,8 @@ template ResultatenT
 
 		unit<uint32> Installatie_x_Product := combine(Classifications/Installatie, Classifications/Product)
 		{
-			attribute<string> name   := Classifications/Installatie/name[first_Rel] + '_' + Classifications/Product/name[second_rel];
-			attribute<string> label  := Classifications/Installatie/label[first_Rel] + ' : ' + Classifications/Product/label[second_rel];
+			attribute<string> name   := Classifications/Installatie/name[first_rel] + '_' + Classifications/Product/name[second_rel];
+			attribute<string> label  := Classifications/Installatie/label[first_rel] + ' : ' + Classifications/Product/label[second_rel];
 
 			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 
@@ -384,19 +384,20 @@ template ResultatenT
 			attribute<GJ_yr> Omgeving_tot := ='merge( uint8(id(.)), GJ_yr,'+ AsItemList('OmgevingPerInstallatie/'+name)+')';
 			attribute<nrAsl> Aansluitingen:= ='merge( uint8(id(.)), nrAsl,'+ AsItemList('AansluitingenPerInstallatie/'+name)+')';
 
-			attribute<Classifications/Installatie> Installatie_rel := first_Rel;
+			attribute<Classifications/Installatie> Installatie_rel := first_rel;
 			attribute<Classifications/Product>     Product_rel     := second_rel;
 			attribute<Classifications/ProductType> ProductType_rel := Classifications/Product/ProductType_rel[Product_rel];
 
-			attribute<Installatie_x_ProductType> Installatie_x_ProductType_rel := rlookup(Classifications/Installatie/name[first_Rel] + '_' + Classifications/ProductType/name[ProductType_rel] , Installatie_x_ProductType/name);
+			attribute<Installatie_x_ProductType> Installatie_x_ProductType_rel := rlookup(Classifications/Installatie/name[first_rel] + '_' + Classifications/ProductType/name[ProductType_rel] , Installatie_x_ProductType/name);
+		
 		}
 		
 		unit<uint32> Installatie_x_ProductType := combine(Classifications/Installatie, Classifications/ProductType)
 		{
-			attribute<string> name   := Classifications/Installatie/name[first_Rel] + '_' + Classifications/ProductType/name[second_rel];
-			attribute<string> label  := Classifications/Installatie/label[first_Rel] + ' : ' + Classifications/ProductType/label[second_rel];
+			attribute<string> name   := Classifications/Installatie/name[first_rel] + '_' + Classifications/ProductType/name[second_rel];
+			attribute<string> label  := Classifications/Installatie/label[first_rel] + ' : ' + Classifications/ProductType/label[second_rel];
 
-			attribute<Classifications/Installatie> Installatie_rel := first_Rel;
+			attribute<Classifications/Installatie> Installatie_rel := first_rel;
 			attribute<Classifications/ProductType> ProductType_rel := second_rel;
 
 			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
@@ -548,8 +549,8 @@ template ResultatenT
 					 sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@) * BO/Func2Meter/Functioneel_per_product/@PD@) -
 					 sum(float64(BO/InstallatiePerProduct/@PD@ == Classifications/Installatie/V/@IN@) * BO/Func2Meter/metervraag_per_product/@PD@)
 					 : 0.0[GJ_yr] ',
-				'@PD@', Classifications/Product/name[Installatie_x_Product/second_Rel],
-				'@IN@', Classifications/Installatie/Name[Installatie_x_Product/first_Rel]),
+				'@PD@', Classifications/Product/name[Installatie_x_Product/second_rel],
+				'@IN@', Classifications/Installatie/Name[Installatie_x_Product/first_rel]),
 			void,
 			GJ_yr );
 	}

@@ -10,7 +10,7 @@
 //                                                                                      //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-//====== Berekeningen voor woningen die actief zijn op minimaal één functioneel product =====
+//====== Berekeningen voor woningen die actief zijn op minimaal ï¿½ï¿½n functioneel product =====
 unit<uint32> ProductActieveWoning := select_with_org_rel(BO/Activatie/ProductActief)
 {		
 	attribute<BO> BO_rel := org_rel, ishidden = "True";
@@ -18,7 +18,7 @@ unit<uint32> ProductActieveWoning := select_with_org_rel(BO/Activatie/ProductAct
 	
 	attribute<ProductActieveWoning> per_BO(BO) := invert(BO_rel), ishidden = "True";
 	
-	//====== Indeling van gebouwopties in categorieën: ketelopties (vaak gas), all-electric opties, en hybride opties =====
+	//====== Indeling van gebouwopties in categorieï¿½n: ketelopties (vaak gas), all-electric opties, en hybride opties =====
 	unit<uint8> OptiesHere := select_with_org_rel(IsDefined(classifications/gebouwoptie/categorie_rel)), ishidden = "True"
 	{
 		attribute<classifications/gebouwoptie> GebouwOptie_rel := org_rel;
@@ -32,7 +32,7 @@ unit<uint32> ProductActieveWoning := select_with_org_rel(BO/Activatie/ProductAct
 	
 	attribute<bool> is_BouwdeelActief     := BO/Activatie/BouwdeelActief[BO_rel], Descr = "Check of ook bouwdelen actief zijn";
 	
-	//====== Berekeningen voor woningen die actief zijn op minimaal één functioneel product en ook op één of meerdere bouwdelen =====
+	//====== Berekeningen voor woningen die actief zijn op minimaal ï¿½ï¿½n functioneel product en ook op ï¿½ï¿½n of meerdere bouwdelen =====
 	unit<uint32> sub_BouwdeelActief   := select_with_org_rel(is_BouwdeelActief)
 	{
 		attribute<ProductActieveWoning> ProductActieveWoning_rel := org_rel, IsHidden = "True";
@@ -72,7 +72,7 @@ unit<uint32> ProductActieveWoning := select_with_org_rel(BO/Activatie/ProductAct
 			}
 		}
 	}
-	//====== Berekeningen voor woningen die actief zijn op minimaal één functioneel product waarbij de bouwdelen allen inactief zijn =====
+	//====== Berekeningen voor woningen die actief zijn op minimaal ï¿½ï¿½n functioneel product waarbij de bouwdelen allen inactief zijn =====
 	unit<uint32> sub_BouwdeelInactief := select_with_org_rel(not(is_BouwdeelActief)), IsHidden = "True"
 	{
 		attribute<ProductActieveWoning> ProductActieveWoning_rel := org_rel;
@@ -129,8 +129,8 @@ unit<uint32> ProductActieveWoning := select_with_org_rel(BO/Activatie/ProductAct
 		unit<uint32> PAW_xInvesteringsOptie := combine(xIsolatieAmbitie, Classifications/GebouwOptieCategorie)
 		{
 			attribute<BO>                                   BO_rel                   := xIsolatieAmbitie/BO_rel[xIsolatieAmbitie_rel], ishidden = "True";
-			attribute<xIsolatieAmbitie>                     xIsolatieAmbitie_rel     := first_Rel, ishidden = "True";
-			attribute<Classifications/GebouwOptieCategorie> GebouwOptieCategorie_rel := second_Rel, ishidden = "True";
+			attribute<xIsolatieAmbitie>                     xIsolatieAmbitie_rel     := first_rel, ishidden = "True";
+			attribute<Classifications/GebouwOptieCategorie> GebouwOptieCategorie_rel := second_rel, ishidden = "True";
 			
 			attribute<ProductActieveWoning>                 ProductActieveWoning_rel := xIsolatieAmbitie_rel->ProductActieveWoning_rel, ishidden = "True"; //[xIsolatieAmbitie_rel];
 			attribute<Classifications/IsolatieAmbitie>      MinIsolatieAmbitie_rel   := xIsolatieAmbitie_rel->MinIsolatieAmbitie_rel, ishidden = "True";
@@ -156,8 +156,8 @@ unit<uint32> ProductActieveWoning := select_with_org_rel(BO/Activatie/ProductAct
 		// TODO OPTIMIZE: consider gebruik Optie_xIsolatieAmbitie zonder transponeren in fast mode
 		unit<uint32> xGebouwOptie := combine_unit(xIsolatieAmbitie, OptiesHere)
 		{
-			attribute<xIsolatieAmbitie>  xIsolatieAmbitie_rel := value(ID(.) / #OptiesHere, xIsolatieAmbitie), ishidden = "True"; 
-			attribute<OptiesHere>        OptiesHere_rel       := value(ID(.) % #OptiesHere, OptiesHere), ishidden = "True"; 
+			attribute<xIsolatieAmbitie>  xIsolatieAmbitie_rel := value(ID(.) / #OptiesHere, xIsolatieAmbitie), ishidden = "True"; //first_rel
+			attribute<OptiesHere>        OptiesHere_rel       := value(ID(.) % #OptiesHere, OptiesHere), ishidden = "True"; //second_rel
 			
 			attribute<BO>         BO_rel  := xIsolatieAmbitie_rel->BO_rel, ishidden = "True";
 			attribute<Classifications/GebouwOptie>           GebouwOptie_rel        := OptiesHere_rel->GebouwOptie_rel;
