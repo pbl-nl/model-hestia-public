@@ -102,7 +102,6 @@ template select_with_org_relGebouwOptieT
 			attribute<Classifications/Product>      Product_rel     := first_rel;
 			attribute<GeschiktObject> GeschiktObject_rel := second_rel;
 			attribute<Classifications/GebouwOptie>  GebouwOptie_rel := GeschiktObject_rel->GebouwOptie_rel;
-//			attribute<string>       label           := BO_rel->Label + ':'+Classifications/Product/name[Product_rel] + '.' + GebouwOptie/name[GebouwOptie_rel];
 			attribute<Classifications/Installatie>  Installatie_rel := ='union_data(., '+AsItemList('GeschiktObject/GebouwOptie_rel->PerProduct/'+Classifications/Product/name)+')';
 			attribute<bool>         IsActief        := ='union_data(.,'+AsItemList(replace(IPP_invest_cond, '@PN', Classifications/Product/name))+')'; 
 				
@@ -478,7 +477,17 @@ template select_with_org_relGebouwOptieT
 			attribute<bool> InDoelgroepED  (GeschiktObject) := ='OR('+AsItemList(replace('BBN/doelgroep/@ED[BBN_rel] && BO/Eigendom_rel[geschiktobject/BO_rel] == Classifications/Eigendom/V/@ED','@ED',Classifications/Eigendom/label))+')', ishidden = "True";
 			attribute<bool> InDoelgroepWT  (GeschiktObject) := BBN/doelgroep/EGW[BBN_rel] && BO/IsMeergezins[GeschiktObject/BO_rel] || BBN/doelgroep/MGW[BBN_rel] && not(BO/IsMeergezins[GeschiktObject/BO_rel]);
 			attribute<bool> BouwjaarVoldaan(GeschiktObject) := BO/Bouwjaar[GeschiktObject/BO_rel] >= MakeDefined(BBN/Voorwaarde/MinBouwjaar[BBN_rel], 0w) && BO/Bouwjaar[GeschiktObject/BO_rel] < MakeDefined(BBN/Voorwaarde/MaxBouwjaar[BBN_rel], 9999w);
-			attribute<bool> Geldig         (GeschiktObject) := Naleving && InDoelgroepED && InDoelgroepWT && BouwjaarVoldaan;
+			
+			container LabelVoorwaarde := for_each_nedv(
+				  Classifications/Schillabel/name
+				, 'BBN/Voorwaarde/HuidigLabel/'+Classifications/SchilLabel/name+'[BBN_rel]'
+				, void
+				, bool)
+			{
+				attribute<bool> Voldaan (GeschiktObject) := ='merge(uint8(BO/Energielabel_rel[GeschiktObject/BO_rel]), bool, '+AsItemList(Classifications/Schillabel/name)+')';
+			}
+			
+			attribute<bool> Geldig         (GeschiktObject) := Naleving && InDoelgroepED && InDoelgroepWT && BouwjaarVoldaan && LabelVoorwaarde/Voldaan;
 
 			attribute<Classifications/SchilLabel> LabelNorm (GeschiktObject) := not(Geldig) ? Classifications/Schillabel/V/N : BBN/LabelNorm/Min_label[BBN_rel];
 		}

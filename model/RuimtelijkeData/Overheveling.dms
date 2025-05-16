@@ -126,13 +126,41 @@ container Overheveling
 		Class/jaren/headertext,
 		'sum(nrAansl_yr/' +Class/jaren/headertext +',BouwSoortBouwJaarKlasse_rel)[BouwSoortBouwJaarKlasse_rel]',
 		.,
-		Units/nrAsl);
+		Units/nrAsl)
+		{
+			attribute<Units/nrAsl> _2000 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2001 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2002 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2003 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2004 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2005 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2006 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2007 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2008 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2009 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2010 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2011 (..) := const(0.0[Units/nrAsl],..);
+		}
 		
 		container nrAansl_yr := for_each_ind(
 		'nedv',
 		Class/jaren/headertext,
 		'src/' +Class/jaren/headertext +'[Units/nrAsl][data_rel]',
 		.,
-		Units/nrAsl);
+		Units/nrAsl)
+		{
+			attribute<Units/nrAsl> _2000 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2001 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2002 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2003 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2004 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2005 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2006 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2007 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2008 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2009 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2010 (..) := const(0.0[Units/nrAsl],..);
+			attribute<Units/nrAsl> _2011 (..) := const(0.0[Units/nrAsl],..);
+		}
 	}
 }

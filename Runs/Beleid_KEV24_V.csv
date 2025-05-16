@@ -32,8 +32,8 @@ sub_STEP9	step-regeling subsidie	2016	2018	subsidie	socialehuur	isolatie, instal
 sub_STEP10	step-regeling subsidie	2016	2018	subsidie	socialehuur	isolatie, installaties	0	0	3600	Maximum bedrag: 3800	Aantal labelstappen: 4	0.8	hoort bij sub_STEP1	
 sub_STEP11	step-regeling subsidie	2016	2018	subsidie	socialehuur	isolatie, installaties	0	0	2800	Maximum bedrag: 2800	Aantal labelstappen: 3	0.8	hoort bij sub_STEP1	
 sub_STEP12	step-regeling subsidie	2016	2018	subsidie	socialehuur	isolatie, installaties	0	0	1500	Maximum bedrag: 1500	Aantal labelstappen: 2	0.8	hoort bij sub_STEP1	
-sub_SAH1	sah-subsidie	2020	2023	subsidie	particulierehuur,socialehuur	afsluiten gas	0.4	0	0		Maximum bedrag: 1200	1	2020:27.9mln, 2021:55.8mln, 2022:55.8mln, 2023:55.8mln	
-sub_SAH2	sah-subsidie	2020	2023	subsidie	particulierehuur,socialehuur	warmtenetaansluiting	0.3	0	0		Maximum bedrag: 3800	1	hoort bij sub_SAH1	
+sub_SAH1	sah-subsidie	2020	2023	subsidie	particulierehuur,socialehuur	afsluiten gas	0.4	0	0		Maximum bedrag: 1200	0.094	2020:27.9mln, 2021:55.8mln, 2022:55.8mln, 2023:55.8mln	
+sub_SAH2	sah-subsidie	2020	2023	subsidie	particulierehuur,socialehuur	warmtenetaansluiting	0.3	0	0		Maximum bedrag: 3800	0.094	hoort bij sub_SAH1	
 nrm_EPC1	Bouwbesluit/EPC 2000-2005	2000	2005	normering	nieuwbouw	DR_N0,MG_N3,DP_N2,DS_N2,RO_N2,RB_N2,MS_N2,VL_N2						1		
 nrm_EPC2	Bouwbesluit/EPC 2006-2010	2006	2010	normering	nieuwbouw	DR_N0,MG_N3,DP_N2,DS_N2,RO_N2,RB_N2,MS_N2,VL_N2						1		
 nrm_EPC3	Bouwbesluit/EPC 2011-2014	2011	2014	normering	nieuwbouw	DR_N0,MG_N3,DP_N3,DS_N3,RO_N2,RB_N2,MS_N3,VL_N2						1		
@@ -63,7 +63,7 @@ PresWoCoAct2	Prestatieafspraken wocos 2022-2028 activatie	2028	2028	activatie	be
 PresWoCoInvest	Prestatieafspraken wocos 2022-2025 investering	2022	2028	subsidie	socialehuur	zonnepanelen, (hybride) warmtepompen	1	0	0	Huidig label:A,B,C,D		0.66	2022:125mln,2023:125mln,2024:125mln,2025:125mln	
 PresWoCoCVVerbod	Prestatieafspraken wocos 2022-2025 CV verbod	2023	2030	verbod	socialehuur, eengezins	VR, HR	1			Huidig label:A,B,C,D		0.2		
 sub_SVOH	Subsidieregeling Verduurzaming en Onderhoud Huurwoningen (SVOH)	2022	2025	subsidie	particulierehuur	isolatie, installatie, ventilatie	0.75	0	0	maximum bedrag: 6000		0.2	2022:38mln,2023:38mln,2024:38mln,2025:38mln	
-sub_SVVE1	Subsidieregeling verduurzaming verenigingen van eigenaren	2022	2027	subsidie	koopwoning, meergezins	isolatie	0.15	0	0	Minimaal aantal maatregelen: 1	Maximaal aantal maatregelen: 1	0.03	2022:9.15mln,2023:9.15mln,2024:9.15mln,2025:9.15mln,2026:9.15mln,2027:9.15mln	
-sub_SVVE2	Subsidieregeling verduurzaming verenigingen van eigenaren	2022	2027	subsidie	koopwoning, meergezins	(hybride) warmtepomp, isolatie, zonneboiler	0.3	0	0	Minimaal aantal maatregelen: 2		0.03	hoort bij sub_SVVE1	
+sub_SVVE1	Subsidieregeling verduurzaming verenigingen van eigenaren	2023	2027	subsidie	koopwoning, meergezins	isolatie	0.15	0	0	Minimaal aantal maatregelen: 1	Maximaal aantal maatregelen: 1	0.03	2022:9.15mln,2023:9.15mln,2024:9.15mln,2025:9.15mln,2026:9.15mln,2027:9.15mln	
+sub_SVVE2	Subsidieregeling verduurzaming verenigingen van eigenaren	2023	2027	subsidie	koopwoning, meergezins	(hybride) warmtepomp, isolatie, zonneboiler	0.3	0	0	Minimaal aantal maatregelen: 2		0.03	hoort bij sub_SVVE1	
 PresWoCoIsolatie	Prestatieafspraken wocos 2024-2030	2024	2030	normering	bestaande bouw,socialehuur	KR_N3,DP_N3,DS_N3,RO_N3,RB_N3,MS_N2,VL_N3,PL_N1,DR_N4,VT_Mec_Vst_Glk_New				Huidig label:B,C,D,E,F,G,N	bouwjaar: 0-1992	0.97		 
-PresWoCoAardgasvrij	Prestatieafspraken wocos 2024-2030	2024	2030	verbod	bestaande bouw,socialehuur	VR, HR, BasisHWP_w, hHR				Huidig label:A,B,C,D,E,F,G,N		0.2		 
+PresWoCoAardgasvrij	Prestatieafspraken wocos 2024-2030	2024	2040	verbod	bestaande bouw,socialehuur	VR, HR, BasisHWP_w, hHR				Huidig label:A,B,C,D,E,F,G,N		0.2		 
