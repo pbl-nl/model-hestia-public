@@ -13,8 +13,9 @@
 
 container BestaandeWarmtenetten
 {
+	parameter<string> AflevergebiedPath := '%HestiaDataDir%/infra/BestaandeWarmtenetten/shapefiles/aflevergebied_KEV24'+KEVvariant+'.shp';
 	unit<uint32> Aflevergebied_data
-	:   StorageName     = "%HestiaDataDir%/infra/BestaandeWarmtenetten/shapefiles/aflevergebied_BKGlaag.shp"
+	:   StorageName     = "=AflevergebiedPath"
 	,   StorageType     = "gdal.vect"
 	,	DialogData      = "geometry"
 	,	DialogType      = "Map"

@@ -124,7 +124,7 @@ unit<uint32> ActieveWoning := select_with_org_rel(BO/Activatie/ProductActief || 
 		attribute<Float64> SpecificBeta  (GeschikteOptie)     := Classifications/Scurve_gebouwoptie/beta_f[combine_data(Classifications/Scurve_gebouwoptie, BO/Eigendom_rel[GeschikteOptie/BO_rel], GeschikteOptie/GebouwOptie_rel)];
 		attribute<Float64> MaxKosten     (xInvesteringsOptie) := max(GeschikteOptie/kosten_tbv_afweging, GeschikteOptie/xInvesteringsOptie_rel);
 		attribute<Float64> Geschiktheid  (GeschikteOptie)     := MaxKosten[GeschikteOptie/xInvesteringsOptie_rel] - GeschikteOptie/kosten_tbv_afweging;
-		attribute<Float64> OddsRatio     (GeschikteOptie)     := IsDefined(Geschiktheid) ? exp(min_elem(Geschiktheid * beta * SpecificBeta / 1.0[EUR_yr], LOG_MAX_FLOAT64)) : 0.0;
+		attribute<Float64> OddsRatio     (GeschikteOptie)     := IsDefined(Geschiktheid) ? exp(min_elem((Geschiktheid / 1.0[eur_yr]) * beta * SpecificBeta, LOG_MAX_FLOAT64)) : 0.0;
 		attribute<Float64> TotalOddsRatio(xInvesteringsOptie) := sum(OddsRatio, GeschikteOptie/xInvesteringsOptie_rel);
 		attribute<Float64> Probability   (GeschikteOptie)     := OddsRatio / TotalOddsRatio[GeschikteOptie/xInvesteringsOptie_rel];
 		attribute<Float64> CumulProb     (GeschikteOptie)     := cumulate(Probability, GeschikteOptie/xInvesteringsOptie_rel);
@@ -171,7 +171,7 @@ unit<uint32> ActieveWoning := select_with_org_rel(BO/Activatie/ProductActief || 
 				];		 
 		attribute<Float64> MaxKosten     (ActieveWoning)      := max(Choice_per_xInvesteringsOptie/kosten_tbv_afweging, xInvesteringsOptie/ActieveWoning_rel);
 		attribute<Float64> Geschiktheid  (xInvesteringsOptie) := MaxKosten[xInvesteringsOptie/ActieveWoning_rel] - Choice_per_xInvesteringsOptie/kosten_tbv_afweging;
-		attribute<Float64> OddsRatio     (xInvesteringsOptie) := IsDefined(Geschiktheid) ? exp(min_elem(Geschiktheid * beta * SpecificBeta / 1.0[EUR_yr], LOG_MAX_FLOAT64)) : 0.0;
+		attribute<Float64> OddsRatio     (xInvesteringsOptie) := IsDefined(Geschiktheid) ? exp(min_elem((Geschiktheid / 1.0[eur_yr]) * beta * SpecificBeta, LOG_MAX_FLOAT64)) : 0.0;
 		attribute<Float64> TotalOddsRatio(ActieveWoning)      := sum(OddsRatio, xInvesteringsOptie/ActieveWoning_rel);
 		attribute<Float64> Probability   (xInvesteringsOptie) := OddsRatio / TotalOddsRatio[xInvesteringsOptie/ActieveWoning_rel];
 		attribute<Float64> CumulProb     (xInvesteringsOptie) := cumulate(Probability, xInvesteringsOptie/ActieveWoning_rel);
@@ -248,6 +248,8 @@ unit<uint32> ActieveWoning := select_with_org_rel(BO/Activatie/ProductActief || 
 															, BO/metervraagBerekening/eEffect/volume/Vj_elek        
 															+ BO/metervraagBerekening/eEffect/capaciteit/Vj_elek) ;
 
+			attribute<GJ_yr_asl> V_gas_onlygas (BO) := gas / (float64( BemeterdeGebouwInput_rel/RVb == Classifications/BemeterdeGebouwInput/V/gas &&  BemeterdeGebouwInput_rel/RVp == Classifications/BemeterdeGebouwInput/V/gas) * nrAansluitingen);
+
 		} 
 
 		container functioneel := for_each_nedv(
@@ -261,6 +263,7 @@ unit<uint32> ActieveWoning := select_with_org_rel(BO/Activatie/ProductActief || 
 				attribute<GJ_yr> Winst_RV      (BO) := makedefined( GeschikteOptie/functioneel/Winst_RV      [ Choice_per_BO/GeschikteOptie_rel ], BO/functioneel/warmtewinst/Totaal   );
 				attribute<ratio> Correction_RV (BO) := makedefined( GeschikteOptie/functioneel/Correction_RV [ Choice_per_BO/GeschikteOptie_rel ], BO/functioneel/Correction_RV );
 				attribute<GJ_yr> Vrv_VT        (BO) := makedefined( GeschikteOptie/functioneel/Vrv_VT        [ Choice_per_BO/GeschikteOptie_rel ], BO/functioneel/Vrv_VT ), Descr = "Verlies ruimteverwarming door ventilatie, niet gecorrigeerd voor binnentemperatuurfactor";
+				attribute<GJ_yr_asl> RV_asl        (BO) := RV / nrAansluitingen;
 			}
 
 			container kapitaallasten := for_each_nedv(

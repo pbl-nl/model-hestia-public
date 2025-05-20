@@ -1,0 +1,100 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                   (C) Hestia 2024 - PBL & TNO                                        //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//       In deze configuratiefile worden de brondata geconfigureerd.                    //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+container Klimaat
+{
+	parameter<string>  KlimaatScenario   :=  DefaultInstellingen/Basis/KlimaatScenario;
+	parameter<float32> ReferentieJaar    := 2020[float32];
+	parameter<string>  ReferentieStation := 'DE_BILT';
+	
+	unit<uint32> kevdata_jaar := range(0,31)
+	{
+		attribute<uint32> id := id(.);
+		attribute<percent> scenario_waarde: [ 100.0,	99.7,	99.3,	99.0,	98.7,	98.3,	98.0,	97.6,	97.3,	97.0,	96.7,	96.3,	96.0,	95.7,	95.4,	95.1,	94.9,	94.6,	94.4,	94.1,	93.9, 93.9, 93.9, 93.9, 93.9, 93.9, 93.9, 93.9, 93.9, 93.9, 93.9 ];
+	}
+	
+	attribute<percent> KEVscenario (Classifications/ZichtJaar) := MakeDefined(rjoin(uint32(id(Classifications/ZichtJaar)), id(kevdata_jaar), kevdata_jaar/scenario_waarde));
+	attribute<ratio>   KEVklimaatfactor (Classifications/ZichtJaar) := KEVscenario[percent] / 100[percent], IntegrityCheck = "eerste_jaar[uint32] == 2000 && aantal_jaar[uint32] < 22 || eerste_jaar[uint32] == 2020";
+	
+	unit<uint32> Station : StorageName = "%HestiaDataDir%/hulpbestanden/klimaat/Tempdata_stations.shp"
+		,   StorageType     = "gdal.vect"
+		,	DialogData      = "geometry"
+		,	DialogType      = "Map"
+		,	StorageReadOnly = "True"
+	{
+		attribute<rdc_meter> geometry;
+		attribute<rdc_mm>    geometry_mm := geometry[rdc_mm];
+		attribute<string>    label       := name;
+		attribute<string>    ItemName    := AsItemName(name);
+
+		attribute<float32> T1995;
+		attribute<float32> T2030;
+
+		attribute<float32> T2050WH;
+		attribute<float32> T2050WL;
+		attribute<float32> T2050GH;
+		attribute<float32> T2050GL;
+
+		parameter<float32> Referentie_T := =replace('T1995[V/@RS@] + (ReferentieJaar - 1995[float32]) * ((T2030[V/@RS@] - T1995[V/@RS@]) / 35[float32])', '@RS@', ReferentieStation);   
+		parameter<float32> Referentie_Graaddagen := 6369[float32] - (337[float32] * Referentie_T);   
+	
+		container V := for_each_nedv(ItemName, string(id(.))+'[..]', void, .), IsHidden = "True";
+	}
+	unit<wpoint> Grid := Geography/rdc_grids/m100
+	{
+		container Dist := for_each_nedv(
+			  Station/ItemName
+			, replace('value(dist(Grid/point, const(Station/geometry[Station/V/@SN@], Grid)),float32)', '@SN@', Station/ItemName)
+			, Grid
+			, float32
+			);
+		container Weight := for_each_nedv(
+			  Station/ItemName
+			, replace('1.0[float32] / (dist/@SN@ ^ 4[float32])', '@SN@', Station/ItemName)
+			, Grid
+			, float32
+			);
+		container Tdata
+		{
+			attribute<float32> T1995 (Grid) := ='add('+AsItemList(replace('weight/@SN@ * Station/T1995[Station/V/@SN@]','@SN@',Station/ItemName))+') / add('+AsItemList(replace('weight/@SN@','@SN@',Station/ItemName))+')';
+			attribute<float32> T2030 (Grid) := ='add('+AsItemList(replace('weight/@SN@ * Station/T2030[Station/V/@SN@]','@SN@',Station/ItemName))+') / add('+AsItemList(replace('weight/@SN@','@SN@',Station/ItemName))+')';
+			attribute<float32> T2050 (Grid) := ='add('+AsItemList(replace('weight/@SN@ * Station/T2050'+KlimaatScenario+'[Station/V/@SN@]','@SN@',Station/ItemName))+') / add('+AsItemList(replace('weight/@SN@','@SN@',Station/ItemName))+')';
+
+			attribute<float32> T1995_T2030_yr (Grid) := (T2030 - T1995) / 35[float32];
+			attribute<float32> T2030_T2050_yr (Grid) := (T2050 - T2030) / 20[float32];
+		}
+		attribute<yr_uint16 > refjaar(Classifications/Zichtjaar) := Classifications/Rekenjaar/values[Classifications/Zichtjaar/Rekenjaar_rel] < 2031w ? 1995[yr_uint16] : 2030[yr_uint16];
+		
+		container Tjaar := for_each_nedv(
+			  Classifications/Zichtjaar/name
+			, (uint32(Classifications/Rekenjaar/values[Classifications/Zichtjaar/Rekenjaar_rel]) < uint32(2031)
+				? 'Tdata/T1995 + Tdata/T1995_T2030_yr'
+				: 'Tdata/T2030 + Tdata/T2030_T2050_yr')
+			  + ' * ' + string(Classifications/Rekenjaar/values[Classifications/Zichtjaar/Rekenjaar_rel] - refjaar) + '[float32]'
+			, Grid				
+			, float32
+			);
+		container Graaddagen := for_each_nedv(
+			  Classifications/Zichtjaar/name
+			, '6369[float32] - (337[float32] * Tjaar/'+Classifications/Zichtjaar/name+')' //Graaddagenberekening = 6369 - (337 * gemiddelde T), formule uit Visser (2005), zie pdf Bas van Bemmel
+			, Grid				
+			, float32
+			);
+		container Kaart := for_each_nedv(
+			  Classifications/Zichtjaar/name
+			, 'Graaddagen/' + Classifications/Zichtjaar/name + '/ Station/Referentie_Graaddagen'
+			, Grid				
+			, float32
+			);
+	}
+}

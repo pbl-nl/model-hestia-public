@@ -447,7 +447,6 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		attribute<string> IsolatieNiveau_name:= IsolatieNiveau/name[second_rel];
 		
 		attribute<IsolatieMaatregel> IsolatieMaatregel_rel := rlookup(name, IsolatieMaatregel/name);
-//		attribute<bool>              isActieveMaatregel    := second_rel > 0[uint32] && Maatregel_label != ''; TODO: optimize, alleen maatregelen doorrekenen die daadwerkelijk gebruikt worden
 		attribute<string>            Maatregel_label       := Isolatie_imp/maatregel[Isolatiemaatregel/imp[IsolatieMaatregel_rel]];
 		attribute<percent>           R_RV                  := rjoin(name, Isolatie_imp/name, Isolatie_imp/R_RV)[percent];
 		
@@ -467,12 +466,9 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		container kosten := for_each_nedv(Uitvoering/name, 'Isolatie_imp/'+ Uitvoering/name + '[imp][eur_m2]' ,IsolatieMaatregel, eur_m2);
 		
 		unit<uint32> xUitvoering := combine(IsolatieMaatregel, Uitvoering) {
-//			attribute<eur_m2> kosten := ='union_data(xUitvoering, '+AsItemList('IsolatieMaatregel/kosten/'+Uitvoering/name)+')';
 			attribute<eur_m2> kosten := ='merge(uint8(second_rel), eur_m2,'+AsItemList('IsolatieMaatregel/kosten/'+Uitvoering/name+'[first_rel]')+')';
 		}
-		
-//		container R_RV    := for_each_nedv(Vraagprofiel/name, 'Isolatie_imp/besparing_' + Vraagprofiel/name+'[imp][percent]', ., percent);
-		attribute<percent> R_RV := Isolatie_imp/R_RV[imp][percent];
+			attribute<percent> R_RV := Isolatie_imp/R_RV[imp][percent];
 		
 		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 	}
@@ -691,13 +687,13 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		parameter<.> AllemaalKoop     : [5];
 	}
 
-	unit<uint8> GebruiksgrootteKlasse : nrofrows = 5
+	unit<uint8> GebruiksgrootteKlasse : nrofrows = 4
 	{
-		attribute<string> code           : [ 'TL', 'KG', 'KMG', 'MMG', 'GG' ];
-		attribute<string> label          : [ 'Teruglevering', 'Klein Gebruik', 'Klein Middelgroot Gebruik', 'Midden Middelgroot Gebruik', 'Groot middelgroot en groot gebruik' ];
-		attribute<string> name           : [ 'Teruglevering', 'KleinGebruik', 'KleinMiddelGebruik', 'MiddelMiddelGebruik', 'GrootGebruik' ];
-		attribute<m3_yr>  gas_break_m3   : [-1e+10, 0,  5000, 170000,  1000000 ];
-		attribute<kwh_yr> elek_break_kwh : [-1e+10, 0, 10000,  50000, 10000000 ];
+		attribute<string> code           : [ 'TL', 'ZKG', 'KG', 'KMG'];
+		attribute<string> label          : [ 'Teruglevering', 'Zeer Klein Gebruik', 'Klein Gebruik', 'Klein Middelgroot Gebruik'];
+		attribute<string> name           : [ 'Teruglevering', 'ZeerKleinGebruik', 'KleinGebruik', 'KleinMiddelGebruik'];
+		attribute<m3_yr>  gas_break_m3   : [-1e+10, 0, 1000,  5000   ];
+		attribute<kwh_yr> elek_break_kwh : [-1e+10, 0, 2900,  10000  ];
 
 		attribute<GJ_yr>  gas_break      := gas_break_m3 * Invoer/Kengetallen/constanten/GasEnergie;
 		attribute<GJ_yr>  elek_break     := elek_break_kwh [GJ_yr];

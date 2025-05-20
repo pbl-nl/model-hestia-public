@@ -12,14 +12,17 @@ container StartGebouwOpties
 	container par
 	{
 		//parameters voor toekenning o.b.v. liggingsgegevens
-		parameter<Classifications/SchilLabel>   label_cutoff_ewp := Classifications/SchilLabel/V/B          , descr = "energielabel vanaf welk niveau warmtepomp wordt toegekent bij onbekend verwarmingssysteem";
-		parameter<Classifications/GebouwOptie>  optie_bioketel   := Classifications/GebouwOptie/V/Bioketel_zKD, descr = "GebouwOptie voor gebouwen op biomassa";
-		parameter<Classifications/GebouwOptie>  optie_hwp        := Classifications/GebouwOptie/V/HWP_zKD_TWg , descr = "GebouwOptie voor gebouwen op warmtepomp (hybride)";
-		parameter<Classifications/GebouwOptie>  optie_warmtenet  := Classifications/GebouwOptie/V/Gebied_zK   , descr = "GebouwOptie voor gebouwen op warmtenet";
-		parameter<Classifications/GebouwOptie>  optie_lwp        := Classifications/GebouwOptie/V/LweWP_zKD   , descr = "GebouwOptie voor gebouwen op warmtepomp (lucht)";
-		parameter<Classifications/GebouwOptie>  optie_bwp        := Classifications/GebouwOptie/V/BweWP_zKD   , descr = "GebouwOptie voor gebouwen op warmtepomp (bodem)";
-		parameter<Classifications/GebouwOptie>  optie_olieketel  := Classifications/GebouwOptie/V/Olie_zKD    , descr = "GebouwOptie voor gebouwen op olie";
-		parameter<Classifications/GebouwOptie>  optie_HRketel    := Classifications/GebouwOptie/V/HR_zKD;
+		parameter<Classifications/SchilLabel>   label_cutoff_ewp   := Classifications/SchilLabel/V/B            , descr = "energielabel vanaf welk niveau warmtepomp wordt toegekent bij onbekend verwarmingssysteem";
+		parameter<Classifications/GebouwOptie>  optie_bioketel     := Classifications/GebouwOptie/V/Bioketel_zKD, descr = "GebouwOptie voor gebouwen op biomassa";
+		parameter<Classifications/GebouwOptie>  optie_hwp          := Classifications/GebouwOptie/V/HWP_zKD_TWg , descr = "GebouwOptie voor gebouwen op warmtepomp (hybride)";
+		parameter<Classifications/GebouwOptie>  optie_warmtenet    := Classifications/GebouwOptie/V/Gebied_zK   , descr = "GebouwOptie voor gebouwen op warmtenet";
+		parameter<Classifications/GebouwOptie>  optie_lwp          := Classifications/GebouwOptie/V/LweWP_zKD   , descr = "GebouwOptie voor gebouwen op warmtepomp (lucht)";
+		parameter<Classifications/GebouwOptie>  optie_bwp          := Classifications/GebouwOptie/V/BweWP_zKD   , descr = "GebouwOptie voor gebouwen op warmtepomp (bodem)";
+		parameter<Classifications/GebouwOptie>  optie_olieketel    := Classifications/GebouwOptie/V/Olie_zKD    , descr = "GebouwOptie voor gebouwen op olie";
+		parameter<Classifications/GebouwOptie>  optie_HRketel      := Classifications/GebouwOptie/V/HR_zKD;
+		parameter<Classifications/GebouwOptie>  optie_llewP        := Classifications/GebouwOptie/V/LlhWP_zKD;
+		parameter<Classifications/GebouwOptie>  optie_houtkachel   := Classifications/GebouwOptie/V/hBioketel_zKD;
+		parameter<Classifications/GebouwOptie>  optie_pelletkachel := Classifications/GebouwOptie/V/Pellet_zKD;
 		
 		//parameters voor kansberekening
 		parameter<ratio> aandeelHR := Invoer/StartgegevensAan ? 0.75[ratio] : 0.00[ratio], descr = "aandeel gebouwen met moderne HR ketel i.t.t. verouderde VR ketel";
@@ -89,12 +92,13 @@ container StartGebouwOpties
 			&& (BouwjaarOf9999 >= 1960[yr_uint16] && BouwjaarOf9999 < 1980[yr_uint16])
 			)), 0.0);
 
-		parameter<uint32> HRseed   := /Invoer/TechnischeInstellingen/RandomSeed * 314[uint32];
-		parameter<uint32> Oseed    := /Invoer/TechnischeInstellingen/RandomSeed * 315[uint32];
-		parameter<uint32> HWPseed  := /Invoer/TechnischeInstellingen/RandomSeed * 316[uint32];
-		parameter<uint32> LWPseed  := /Invoer/TechnischeInstellingen/RandomSeed * 317[uint32];
-		parameter<uint32> BWPseed  := /Invoer/TechnischeInstellingen/RandomSeed * 318[uint32];
-		parameter<uint32> Wseed    := /Invoer/TechnischeInstellingen/RandomSeed * 319[uint32];
+		parameter<uint32> HRseed    := /Invoer/TechnischeInstellingen/RandomSeed * 314[uint32];
+		parameter<uint32> Oseed     := /Invoer/TechnischeInstellingen/RandomSeed * 315[uint32];
+		parameter<uint32> HWPseed   := /Invoer/TechnischeInstellingen/RandomSeed * 316[uint32];
+		parameter<uint32> LWPseed   := /Invoer/TechnischeInstellingen/RandomSeed * 317[uint32];
+		parameter<uint32> llewpseed := /Invoer/TechnischeInstellingen/RandomSeed * 320[uint32];
+		parameter<uint32> BWPseed   := /Invoer/TechnischeInstellingen/RandomSeed * 318[uint32];
+		parameter<uint32> Wseed     := /Invoer/TechnischeInstellingen/RandomSeed * 319[uint32];
 
 		parameter<ratio>  R_Bodem  := 0.13[ratio], Source = "Datasheet TNO ingroei warmtepompen";
 	}
@@ -107,9 +111,17 @@ container StartGebouwOpties
 			: Woningtype_rel == Classifications/WoningType/V/twee_onder_1_kap ? (rnd < 0.040[ratio])
 			: Woningtype_rel == Classifications/WoningType/V/hoekwoning || Woningtype_rel == Classifications/WoningType/V/tussenwoning ? (rnd < 0.243[ratio])
 			: Woningtype_rel == Classifications/WoningType/V/meergezinspand_laag_midden || Woningtype_rel == Classifications/WoningType/V/meergezinspand_hoog ? (rnd < 0.262[ratio])
-			: false;
+			: false, Source = "Aandelen ruimteverwarming SAWEC KEV2022 vv3", Descr = "Random allocatie warmtenetten nieuwbouwwoningen", IntegrityCheck = "isdefined(this)";
+			
 		attribute<bool>   Bestaand (results) := MakeDefined(BestaandAflevergebied/StartJaar_or_2000[BestaandAflevergebied_rel], 9999w) <= first(/Rekenstap/Jaar);
-		attribute<bool>   Alloc    (results) := Bestaand || Alloc_i && BouwjaarOf9999 > /Invoer/RuimtelijkeData/BAG/Jaar;
+		attribute<bool>   Alloc    (results) := Bestaand || Alloc_i && BouwjaarOf9999 >= /Invoer/RuimtelijkeData/BAG/Jaar;
+
+		unit<uint32> nieuwbouwcheck := subset(BouwjaarOf9999 >= /Invoer/RuimtelijkeData/BAG/Jaar && BouwjaarOf9999 < 2031[yr_uint16])
+		{
+			attribute<bool> Alloc_here := Alloc[nr_orgentity];
+			attribute<nrAsl> nrAansl   := nrAansluitingen_i[nr_orgentity];
+			attribute<Classifications/GebouwOptie> GebouwOptie_rel_here := GebouwOptie_rel[nr_orgentity];
+		}
 	}
 
 	//heeft gebouw een warmtenetaansluiting? initiele check o.b.v. ligging warmtenetten (gebouw ligt in warmtenetgebied, en dat gebied is eerder dan eerste rekenjaar aangelegd)
@@ -194,7 +206,7 @@ container StartGebouwOpties
 			  BouwjaarOf9999  < 2020[yr_uint16] ? false
 			: Bouwjaar == 2020[yr_uint16] ? rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 441[uint32], results, range(float64, 0d, 1d)) < 0.86[float64]
 			: Bouwjaar == 2021[yr_uint16] ? rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 442[uint32], results, range(float64, 0d, 1d)) < 0.91[float64]
-			: true;
+			: true, Descr = "wordt gebouw gasloos gebouwd? voor 2020 nooit, na 2022 altijd, in de tussenjaren grotendeels", Source = "https://energeia.nl/bijna-91-van-de-nieuwbouwwoningen-in-2021-zonder-gasaansluiting/";
 
 		attribute<bool> BWP_normering (results) := WPnormering_geldig && rnd_uniform(/Invoer/TechnischeInstellingen/RandomSeed * 443[uint32], results, range(float64, 0d, 1d)) < par/R_Bodem;
 		attribute<bool> LWP_normering (results) := WPnormering_geldig && not(BWP_normering);
@@ -240,6 +252,16 @@ container StartGebouwOpties
 	attribute<float64> rnd_2        (results) := rnd_uniform(par/HRseed, results, range(float64, 0d, 1d));
 	attribute<bool> AllocHRketel    (results) := not(AllocWarmtenet) && not(AllocHWP) && not(AllocBWP) && not(AllocLWP) && not(AllocBioketel) && not(AllocOlieketel) && float64(par/aandeelHR) > rnd_2;
 
+	//allocatie lucht-lucht warmtepompen 381000 in 2020 (Bron: https://www.cbs.nl/nl-nl/nieuws/2022/40/steeds-meer-warmtepompen-bij-woningen#:~:text=In%202021%20stonden%20er%20206,meer%20dan%20een%20jaar%20eerder. )
+	//op 7914510 woningen totaal (BAG) is dit afgerond 4,8 %. 
+	parameter<float64> lleWPkans            := 0.048[float64];
+	attribute<float64> rndllewp   (results) := rnd_uniform(par/llewpseed, results, range(float64, 0d, 1d));
+	Attribute<bool>    AllocLlewp (results) := Invoer/StartgegevensAan ? rndllewp <= lleWPkans : const(false,results);
+	parameter<float64> pelletkachelkans     := 0.007[float64]; //56782 / 7914510
+	parameter<float64> houtkachelkans       := 0.117[float64]; //(985332 - 56782) / 7914510
+	Attribute<bool>    AllocPellet (results) := Invoer/StartgegevensAan ? not(AllocLlewp) && rndllewp <= pelletkachelkans + lleWPkans : const(false,results);
+	Attribute<bool>    AllocHout   (results) := Invoer/StartgegevensAan ? not(AllocLlewp) && not(AllocPellet) && rndllewp <= houtkachelkans + lleWPkans + pelletkachelkans : const(false,results);
+
 	attribute<Classifications/GebouwOptie> GebouwOptie_rel (results) :=
 				AllocBioketel   ? par/optie_bioketel
 			:	AllocWarmtenet  ? par/optie_warmtenet
@@ -247,6 +269,9 @@ container StartGebouwOpties
 			:	AllocLWP        ? par/optie_LWP
 			:	AllocBWP        ? par/optie_BWP
 			:	AllocOlieketel  ? par/optie_olieketel
+			:   AllocLlewp      ? par/optie_llewp
+			:   AllocPellet     ? par/optie_pelletkachel
+			:   AllocHout       ? par/optie_houtkachel
 			:   AllocHRketel    ? par/optie_HRketel
 			:	ModelObject/StartOptie_rel[ModelObject_rel];
 }

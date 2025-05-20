@@ -74,7 +74,7 @@ container DK
 		attribute<Eur_yr> Kosten_tbv_afweging (GeschiktObject) := =( LocatieSpecifiekeOpties/GebouwOpties/KiesMaatschappelijk ) ? 'Kmi_afweging' : 'Kji_afweging' ;
 
 		attribute<float64> Geschiktheid (GeschiktObject) := Choice/Kj_duursteoptie - kosten_tbv_afweging;
-		attribute<float64> Odds         (GeschiktObject) := IsDefined(Geschiktheid) ? exp(min_elem(Geschiktheid * inst/beta[inst_rel] / 1.0[EUR_yr], LOG_MAX_FLOAT64)) : 0.0;
+		attribute<float64> Odds         (GeschiktObject) := IsDefined(Geschiktheid) ? exp(min_elem((Geschiktheid / 1.0[eur_yr]) * inst/beta[inst_rel], LOG_MAX_FLOAT64)) : 0.0;
 		attribute<float64> Probability  (GeschiktObject) := Odds / Choice/TotalOdds;
 		attribute<float64> Cumulprob    (GeschiktObject) := ='add('+AsItemList('float64(PerOptie/'+inst/Name+'/inst_rel <= inst_rel) * PerOptie/'+inst/Name+'/Probability')+')';
 		attribute<bool>    IsSelected   (GeschiktObject) := CumulProb - Probability <= Choice/rnd && Choice/rnd < CumulProb;
