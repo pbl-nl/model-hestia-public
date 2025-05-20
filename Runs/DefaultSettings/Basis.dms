@@ -299,8 +299,8 @@ container Basis : Using = "Units"
 	}
 	container Probabilisering
 	{	
-		parameter<ratio> StartKoudeBasis     := 0.034, Descr = "kans per jaar dat gebouw begint in actieve koeling (basisvraag) te voorzien";
-		parameter<ratio> StartOokKoudePiek   := 0.66, Descr = "kans per jaar dat gebouw begint in actieve koeling (piekvraag) te voorzien, indien basisvraag ook (al langer) ingevuld wordt";
+		parameter<ratio> StartKoudeBasis     := 0.03125, Descr = "kans per jaar dat gebouw begint in actieve koeling (basisvraag) te voorzien";
+		parameter<ratio> StartOokKoudePiek   := 0.50, Descr = "kans per jaar dat gebouw begint in actieve koeling (piekvraag) te voorzien, indien basisvraag ook (al langer) ingevuld wordt";
 		
 		parameter<ratio> SpreidingsFactor    := 0.95, Descr = "spreiding rondom nominale levensduur eengezinswoningen: 0.8 = 20 procent later of eerder, 1.0 = geen spreiding";
 		parameter<ratio> StaartFactor        := 0.10, Descr = "uitloop van de rechterzijde van de kans op activatie: 0.5 = symmetrisch, hoger is een kortere staart en vice versa";
