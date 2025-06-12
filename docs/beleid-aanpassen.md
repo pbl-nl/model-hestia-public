@@ -12,7 +12,7 @@ Een van de toepassingen van Hestia is het onderzoeken van de effecten van beleid
     [Hestia map]/Runs/Beleid.csv
     ```
     Pas hierbij op met het gebruik van Excel of vergelijkbaar, omdat bij het importeren van de .csv de informatie soms verkeerd geïnterpreteerd wordt, bijvoorbeeld door een andere instelling van de betekenis van komma's en punten. 
-    Een minder foutgevoelige, maar minder overzichtelijke optie is het gebruik van een simpele text editor zoals Notepad++.
+    **Visual Studio Code** met de **edit CSV** extensie is een goede optie. Een simpele text editor zoals Notepad++ werkt ook, maar is minder overzichtelijk.
 
 2. Pas een regel aan of voeg er een toe. Bij het toevoegen van een nieuwe regel is het het minst foutgevoelig om een vergelijkbare te kopiëren. In het functioneel ontwerp staat in detail beschreven wat de mogelijkheden voor isolatiemaatregelen en installaties zijn. Ook staat hierin welke mogelijkheden er per beleidsmaatregel zijn om voorwaarden toe te voegen.
 3. Sla `Beleid.csv` op. Let er hierbij op dat de formatting hetzelfde is gebleven, zeker bij het gebruik van Excel.
@@ -49,21 +49,20 @@ Een van de toepassingen van Hestia is het onderzoeken van de effecten van beleid
     - **VentilatieNorm**
 - **BestaandeBouwNorm**
 
-    - **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type eigendom dit geldt (bijv. koophuizen, huurhuizen). Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`.
+    - **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type woning dit geldt. Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`. 
     - **BouwdeelNorm**: Ga hier na of bij elk bouwdeel het juiste isolatieniveau staat.
     - **VentilatieNorm**
-    - **LabelNorm**
-    - **ParseVoorwaarde**
+    - **LabelNorm**: Als er een minimumlabel is aangegeven in de beleidsregel, ga hier dan na of die goed is ingelezen.
+    - **ParseVoorwaarde**: Ga hier na of de aangegeven voorwaarden goed zijn ingelezen (bijv. bouwjaar, minimaal te isoleren aandeel van de schil). Controleer verder in de submap **HuidigLabel** of de juiste hudige energielabels de waarde `True` en `False` hebben. Hierbij betekent `True` dat het beleid geldt voor dit huidige energielabel.
       
 </details>
 
 <details>
 <summary><b>Subsidie</b></summary>
     
-- **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type eigendom dit geldt (bijv. koophuizen, huurhuizen). Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`. 
+- **ParseDoelgroep**: Dit is een tabel die per beleidsregel met boolean waarden aangeeft voor welk type woning dit geldt. Ga na of dit is zoals verwacht, m.a.w. dat er bij de doelgroepen van de nieuwe beleidsregel `True` staat en bij alle andere `False`.  
 - **ParseMaatregel**
 - **ParseVoorwaarde**
-- **Subsiediebudget?**
   
 </details>
 
