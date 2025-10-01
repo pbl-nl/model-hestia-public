@@ -45,7 +45,7 @@ template ResultatenT
 			')'
 		), IsHidden = "true"
 	{
-		container Totaal := =(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name != 'NL')
+		container Totaal := =(first(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name) != 'NL')
 			? 'Rapportage/Flow(geography/RegioIndelingen/NL, ''NL'', value(0, geography/RegioIndelingen/NL) )'
 			: '.', IsHidden = "True";
 	}

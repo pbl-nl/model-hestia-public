@@ -18,8 +18,8 @@ container Resultaten := for_each_ne(Classifications/Zichtjaar/name
 
 		parameter<string> GenerateAllIndicatoren := 'Ready', ExplicitSuppliers = "= impl/GenerateAllIndicatorenList";
 
-		container StartTables := =(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name != 'NL') ? 'StartJaar/InputOutput/totaal/Ongewogen' : 'StartJaar/InputOutput/NL/Ongewogen';
-		container LastTables  := =(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name != 'NL') ? Last(Rekenstap/name)+'/InputOutput/totaal/Ongewogen' : Last(Rekenstap/name)+'/InputOutput/NL/Ongewogen';
+		container StartTables := =(first(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name) != 'NL') ? 'StartJaar/InputOutput/totaal/Ongewogen' : 'StartJaar/InputOutput/NL/Ongewogen';
+		container LastTables  := =(first(SpecifiekeInstellingen/Rapportage/RapportageSchaal/name) != 'NL') ? Last(Rekenstap/name)+'/InputOutput/totaal/Ongewogen' : Last(Rekenstap/name)+'/InputOutput/NL/Ongewogen';
 
 		container BAG
 		{

@@ -275,10 +275,8 @@ unit<uint32> ActieveWoning := select_with_org_rel(BO/Activatie/ProductActief || 
 				Classifications/GebouwOptie_eenmalig/name,
 				replace('makedefined(GeschikteOptie/eenmalig/@GE@[Choice_per_BO/GeschikteOptie_rel], 0[Eur])', '@GE@', Classifications/GebouwOptie_eenmalig/name ),
 				BO,
-				Eur)
-			{
-				attribute<eur> Ki_gv (BO) := makedefined(GeschikteOptie/eenmalig/Ki_gv[Choice_per_BO/GeschikteOptie_rel], 0.0[eur]);
-			}
+				Eur);
+				
 			container jaarlijks := for_each_nedv(
 				Classifications/GebouwOptie_jaarlijks/name,
 				replace('makedefined(GeschikteOptie/jaarlijks/@GJ@[Choice_per_BO/GeschikteOptie_rel], BO/jaarlijks/@GJ@)', '@GJ@', Classifications/GebouwOptie_jaarlijks/name ),
