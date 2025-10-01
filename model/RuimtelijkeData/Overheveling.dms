@@ -21,7 +21,7 @@ container Overheveling
 			container V := for_each_nedv(label, string(id(.))+'[..]', void, .);
 		}
 		
-		unit<uint8> BouwjaarWoning : nrofrows = 6
+		unit<uint8> BouwjaarWoning : nrofrows = 5
 		{
 			attribute<units/yr_uint16> ClassBreak : [ 0, 1930,  1959,  1980, 2000];
 			attribute<string>   name       : ['v1931','v1959','v1980','v2000', 'n2000'];
@@ -45,7 +45,6 @@ container Overheveling
 			];
 
 			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
-			parameter<.> onbekend := V/v1992;
 		}
 		
 		unit<uint8> muttype : nrofrows = 7
