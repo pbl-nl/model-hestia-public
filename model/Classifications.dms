@@ -132,7 +132,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 // =========  Classificaties voor bouw/zichtjaren
 	unit<uint8> BouwjaarWoning : nrofrows = 14
 	{
-		attribute<units/yr_uint16> ClassBreak : [ -9998 ,  1930 ,  1946 ,  1965 ,  1975 ,  1992 ,  1996 ,  2000 ,  2006 ,  2011 ,  2015,    2021,    2031,    2041 ];
+		attribute<units/yr_uint16> ClassBreak : [0,  1930 ,  1946 ,  1965 ,  1975 ,  1992 ,  1996 ,  2000 ,  2006 ,  2011 ,  2015,    2021,    2031,    2041 ];
 		attribute<string>   name       : ['v1930','v1946','v1965','v1975','v1992','v1996','v2000','v2006','v2011','v2014','v2020', 'v2030', 'v2040', 'v2050'];
 		attribute<Schillabel> Default_label :
 			[ 
@@ -215,7 +215,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
 	unit<uint8> BouwjaarDecennium : nrofrows = 14
 	{
-		attribute<units/yr_uint16> ClassBreak : [ -9998 ,  1921 ,  1931 ,  1941 ,  1951 ,  1961 ,  1971 ,  1981 ,  1991 ,  2001 ,  2011,    2021,    2031,    2041 ];
+		attribute<units/yr_uint16> ClassBreak : [ 0,  1921 ,  1931 ,  1941 ,  1951 ,  1961 ,  1971 ,  1981 ,  1991 ,  2001 ,  2011,    2021,    2031,    2041 ];
 		attribute<string>   name       : ['v1920','v1930','v1940','v1950','v1960','v1970','v1980','v1990','v2000','v2010','v2020', 'v2030', 'v2040', 'v2050'];
 
 		attribute<string> Excel_code:
@@ -276,7 +276,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	
 	unit<uint8> BouwjaarWoningMinimaleBouwdeelkwaliteit : nrofrows = 4
 	{
-		attribute<units/yr_uint16> ClassBreak : [ -9998, 1992,  2012,  2015];
+		attribute<units/yr_uint16> ClassBreak : [ 0, 1992,  2012,  2015];
 		attribute<string>   name       : ['v1992','v2012','v2015','v2022'];
 
 		attribute<string> Excel_code:
@@ -301,7 +301,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	
 	unit<uint8> BouwjaarWoningRapportage: nrofrows = 8
 	{	
-		attribute<yr_uint16> ClassBreak : [ -9998 ,  1930 ,  1946 ,  1965 ,  1975 ,  1992 ,  2006 ,  2021 ];
+		attribute<yr_uint16> ClassBreak : [0,  1930 ,  1946 ,  1965 ,  1975 ,  1992 ,  2006 ,  2021 ];
 		attribute<string>   name       : ['v1930','v1946','v1965','v1975','v1992','v2006','v2020','v2050'];
 
 		attribute<string> Label:
@@ -335,7 +335,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	unit<uint8> BouwjaarUtilBestaand: nrofrows = 9
 	{
 		attribute<yr_uint16> ClassBreak : [     0 ,  1920 ,  1975 ,  1990 ,  1995 , 2021, 2031, 2041, null];
-		attribute<string>   name       : ['v1920','v1975','v1990','v1995','v1995','v2030','v2040','v2050','onbekend'];
+		attribute<string>   name       : ['v1920','v1975','v1990','v1995','v2020','v2030','v2040','v2050','onbekend'];
 
 		attribute<string> Excel_code:
 		[

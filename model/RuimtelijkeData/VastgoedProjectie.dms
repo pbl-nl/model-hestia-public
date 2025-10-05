@@ -280,7 +280,7 @@ container VastgoedProjectie
 				Eur_yr), IsHidden = "True";
 			container Jaarlijks := for_each_nedv(
 				Classifications/GebouwOptie_jaarlijks/name,
-				'const(0[Eur_yr], BebouwingsObject)',
+				'const(0.0[Eur_yr], BebouwingsObject)',
 				BebouwingsObject,
 				Eur_yr)
 				{
