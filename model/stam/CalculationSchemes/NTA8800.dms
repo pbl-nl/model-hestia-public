@@ -22,10 +22,10 @@
 			, 0.000	//biomass
 			, 1.000	//olie
 			, 0.000	//pellets
-			, 0.000 //Wamte_30
-			, 0.000 //Wamte_50
-			, 0.000 //Wamte_70
-			, 0.000 //Koude
+			, null //Wamte_30
+			, null //Wamte_50
+			, null //Wamte_70
+			, null //Koude
 			], Source = "NTA8800 2020+A1 5.5.5 Tabel 5.2";
 		parameter<ratio> Emissiefactor_warmte : [0.9];
 		attribute<ratio> Emissiefactor (Classifications/BemeterdeGebouwInput) := makedefined(Emissiefactor_i, Emissiefactor_warmte);
