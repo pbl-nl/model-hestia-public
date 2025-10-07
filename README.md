@@ -1,6 +1,9 @@
 ﻿# Hestia 1.1.0 - Simulatie model gebouwde omgeving Nederland
 ![goddess-hestia_medium](https://github.com/RuudvandenWijngaart/VestaDV/assets/96182097/e2f3578d-6d44-4c40-853b-107187a1baa7)
 
+**Update 7 Oktober 2025: 
+Hestia Public is een model in ontwikkeling. De basis staat, maar TNO en PBL vinden bij toepassing van het model nog regelmatig bugs. Dit maakt dat resultaten vaak extra aandacht behoeven en dit geldt daarmee ook voor de gebruiker van het model. De gebruiker draagt zelf de verantwoordelijkheid voor een kritische beoordeling van de resultaten verkregen met Hestia en de ontwikkelingsfase van het model maakt de kans op bugs nu nog groter. Hier zouden we de gebruiker extra op willen attenderen: kijk goed waar je het model wel/niet voor in kan zetten en bij twijfel neem dan contact op met infohestia@pbl.nl. Mocht de gebruiker afwijken van standaardwaarden/berekeningen in de publieke versie van Hestia dan draagt de gebruiker ook verantwoordelijkheid om eventuele verschillen in uitkomsten met de standaardversie te verklaren.**
+
 PBL en TNO hebben de handen ineengeslagen voor de ontwikkeling van het innovatieve simulatiemodel Hestia, dat zich richt op de gebouwde omgeving. Hestia is een open source geografisch simulatiemodel dat alle woningen in Nederland modelleert, met als doel de effecten van beleid of andere invloeden te evalueren. Het model berekent naast de ontwikkeling van het gas-, elektriciteits- en warmteverbruik ook de kosten en baten van investeringen voor alle relevante actoren en vele andere aspecten gerelateerd aan de verduurzaming van woningen.
 
 Voor ieder jaar (van 2000 tot 2050) modelleert Hestia de energetische kwaliteit van de woningvoorraad, en simuleert tot op individueel woningniveau – en de aparte bouwdelen – het investeringsgedrag van woningeigenaren. Dat investeringsgedrag is gebaseerd op realistische business cases en trends in genomen maatregelen. De scenario’s worden opgebouwd vanuit feitelijke data onder andere afkomstig uit de (3D) BAG, CBS en KNMI. Deze data worden jaarlijks gekalibreerd en geüpdatet.
@@ -13,6 +16,7 @@ Het Hestia model is bedoeld om gebruikt te worden door experts die zich van de b
 - Standaardinstellingen en -aannames zijn niet voor elke studie geschikt en moeten per toepassing worden heroverwogen
 - Hestia laat veel aspecten van de werkelijkheid buiten beschouwing en kan dus niet als een absulute waarheid of voorspelling worden gebruikt
 - Modelresulaten moeten altijd kritisch worden bekeken en geverifieerd door de modelgebruiker
+
 
 
 ## Installatie
