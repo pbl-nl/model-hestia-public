@@ -18,7 +18,9 @@ container HestiaRun
 
 	//specifiek voor KEV:
 	parameter<string> KEVvariant := 'VV';
-
+	
+	//====== In het geval van het doen van een referentie batchrun: schrijf hier de naam van je batchrun op, je batchrun wordt onder dit mapje gesaved in je LD directory. Anders kun je dit negeren.
+	parameter<string> Experiment_name 		  := 'Test_project_1';
 
 	//====== Opbouw lijst van zichtjaren en rekenstappen
 	unit<uint8> all_rekenstap: nrofrows = 31, IsHidden = "True";

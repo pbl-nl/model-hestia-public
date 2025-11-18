@@ -17,7 +17,7 @@ container HestiaRun
 	parameter<string> Studiegebied            := Invoer/StudieGebied;
 	
 	//====== Schrijf hier de naam van je experiment op, je run wordt onder dit mapje gesaved in je LD directory
-	parameter<string> Experiment_name 		  := 'Test_KNMI_klimaatscenarios_before_1';
+	parameter<string> Experiment_name 		  := 'Test_project_1';
 
 	//specifiek voor KEV:
 	parameter<string> KEVvariant := 'VV';
