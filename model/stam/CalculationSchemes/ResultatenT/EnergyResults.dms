@@ -64,8 +64,15 @@ container EnergyResults: isHidden = "true"
 		{
 			container WarmteKoudeLevering
 			{
-				attribute<GJ_yr> V_koude  (PlanRegio) := KoudeLevering/totaal;
-				attribute<GJ_yr> V_warmte (PlanRegio) := WarmteLevering_30/totaal + WarmteLevering_50/Totaal + WarmteLevering_70/Totaal;
+				attribute<GJ_yr> V_koude    (PlanRegio) := KoudeLevering/totaal;
+				attribute<GJ_yr> V_warmte   (PlanRegio) := WarmteLevering_30/totaal + WarmteLevering_50/Totaal + WarmteLevering_70/Totaal;
+				attribute<nrasl> asl_warmte (PlanRegio) := ='sum( Allocatie/'+Classifications/BebouwingsSector/name+'/BO/nrAansluitingen 
+																* float64( OR(
+																		Allocatie/'+Classifications/BebouwingsSector/name+'/Metervraag/Warmte_30  > 0.0[GJ_yr], 
+																		Allocatie/'+Classifications/BebouwingsSector/name+'/Metervraag/Warmte_50  > 0.0[GJ_yr],
+																		Allocatie/'+Classifications/BebouwingsSector/name+'/Metervraag/Warmte_70  > 0.0[GJ_yr]
+																	)), Bebouwing/'+Classifications/BebouwingsSector/name+'/PlanRegio_rel)';
+
 			}
 
 			container WarmteLevering_30 := for_each_nedv(Classifications/BebouwingsSector/name

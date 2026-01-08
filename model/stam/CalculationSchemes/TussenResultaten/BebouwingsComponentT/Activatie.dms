@@ -29,6 +29,7 @@ container Activatie
 			parameter<ratio> R_Naleving       := makedefined(ZBA/Naleving[ZBA_rel],0.0[ratio]) , ishidden = "True";
 			attribute<bool>  Naleving    (BO) := rnd_uniform(JaarSeed * 104u, BO, range(float32, 0d, 1d)) < R_Naleving;
 			attribute<bool>  InDoelgroep (BO) := ='OR('+ AsItemList( replace('ZBA/doelgroep/@ED[ZBA_rel] && BO/Eigendom_rel == Classifications/Eigendom/V/@ED', '@ED', Classifications/Eigendom/name) ) +')';
+			attribute<bool> BouwjaarVoldaan (BO) := MakeDefined(BO/bouwjaar,  0w) >= MakeDefined(ZBA/Voorwaarde/MinBouwjaar[ZBA_rel], 0w)     && MakeDefined(BO/bouwjaar,  0w) < MakeDefined(ZBA/Voorwaarde/MaxBouwjaar[ZBA_rel], 9999w);
 
 			container LabelVoorwaarde := for_each_nedv(
 				  Classifications/Schillabel/name
@@ -39,7 +40,7 @@ container Activatie
 				attribute<bool> Voldaan (BO) := ='merge(uint8(Energielabel_rel), bool, '+AsItemList(Classifications/Schillabel/name)+')';
 			}
 
-			attribute<bool> BoSelectie(BO) := Naleving && LabelVoorwaarde/Voldaan && InDoelgroep;
+			attribute<bool> BoSelectie(BO) := Naleving && LabelVoorwaarde/Voldaan && InDoelgroep && BouwjaarVoldaan;
 			container Grondslag := for_each_nedv(
 				  classifications/bouwdeel/name
 				, 'ZBA/Grondslag/'+classifications/bouwdeel/name+'[ZBA_rel] && BoSelectie' 
@@ -68,9 +69,10 @@ container Activatie
 
 	attribute<bool>    Verhuismoment (..) := rnd_uniform(JaarSeed * 2u, .., range(float32, 0d, 1d)) < Classifications/WoningType/Verhuiskans[BO/WoningType_rel];
 	
-	attribute<float64> KoudeKans     (..) := rnd_uniform(JaarSeed * 3u, .., range(float32, 0d, 1d)), isHidden = "True";
-	attribute<bool>    KoudemomentB  (..) := KoudeKans   > 1.0[ratio] - StartKoudeBasis  , Descr = "Jaarlijkse kans dat een gebouweigenaar besluit te starten met de basisvraag naar koude in te vullen" , isHidden = "True";
-	attribute<bool>    KoudemomentP  (..) := KoudeKans   > 1.0[ratio] - StartOokKoudePiek, Descr = "Jaarlijkse kans dat een gebouweigenaar besluit te starten ook de piekvraag naar koude in te vullen, indien ook al basis ingevuld" , isHidden = "True";
+	attribute<float64> KoudeKansB    (..) := rnd_uniform(JaarSeed * 3u, .., range(float32, 0d, 1d)), isHidden = "True";
+	attribute<float64> KoudeKansP    (..) := rnd_uniform(JaarSeed * 4u, .., range(float32, 0d, 1d)), isHidden = "True";
+	attribute<bool>    KoudemomentB  (..) := KoudeKansB > 1.0[ratio] - StartKoudeBasis  , Descr = "Jaarlijkse kans dat een gebouweigenaar besluit te starten met de basisvraag naar koude in te vullen" , isHidden = "True";
+	attribute<bool>    KoudemomentP  (..) := KoudeKansP > 1.0[ratio] - StartOokKoudePiek, Descr = "Jaarlijkse kans dat een gebouweigenaar besluit te starten ook de piekvraag naar koude in te vullen, indien ook al basis ingevuld" , isHidden = "True";
 
 	parameter<ratio> increment        := 1.0/(1.0-SpreidingsFactor)*StaartFactor, isHidden = "True";
 
@@ -121,7 +123,11 @@ container Activatie
 		attribute<bool> TWp (...) := (InstallatiePerProduct/TWp == InstallatiePerProduct/TWb) ? TWb : (Verhuismoment || Producten_EOL/TWp) || Beleid/BeleidsActivatie/TW;
 
 		attribute<bool> KDb (...) := InstallatiePerProduct/KDb == Classifications/Installatie/V/gebiedsOptie ? false : Beleid/BeleidsActivatie/KD || (InstallatiePerProduct/KDb == InstallatiePerProduct/RVb) ? RVb : (Verhuismoment || Producten_EOL/KDb || (InstallatiePerProduct/KDb == Classifications/Installatie/V/geen && KoudemomentB));
-		attribute<bool> KDp (...) := Beleid/BeleidsActivatie/KD || ((InstallatiePerProduct/KDb == InstallatiePerProduct/KDp) && (InstallatiePerProduct/KDp != Classifications/Installatie/V/geen)) ? KDb : (Verhuismoment || Producten_EOL/KDb || (InstallatiePerProduct/KDp == Classifications/Installatie/V/geen && KoudemomentP && KDb));	
+		
+		attribute<bool> KDp (...) :=
+			   Beleid/BeleidsActivatie/KD // actief indien door beleid bepaald
+			|| ((InstallatiePerProduct/KDb == InstallatiePerProduct/KDp) && (InstallatiePerProduct/KDp != Classifications/Installatie/V/geen)) ? KDb //installaties basis/piek zijn hetzelfde (en niet geen), dan gelijk aan basis
+			: (Verhuismoment || Producten_EOL/KDb || (InstallatiePerProduct/KDp == Classifications/Installatie/V/geen && KoudemomentP && KDb));	
 
 		attribute<bool> VT  (...) := Beleid/BeleidsActivatie/VT || Bouwdelen/RenovatieMoment || Zichtjaar_jaar - InstallatiePerProduct/LastVervanging/VT >= Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/Levensduur [ InstallatiePerProduct/VT ] 	;
 	//	attribute<bool> VT  (...) := Beleid/BeleidsActivatie/VT || Zichtjaar_jaar - InstallatiePerProduct/LastVervanging/VT >= Invoer/Kengetallen/OverigeInstallaties/VT/Installatietypes/Levensduur [ InstallatiePerProduct/VT ] 	;
@@ -153,7 +159,15 @@ container Activatie
 	attribute<bool> ProductVervanging  (..) := ='add('+AsItemList('uint8(Producten/'+Classifications/product/name+')')+') > 0b';
 
 	attribute<bool> KanNietActiveren   (..) := =Invoer/DefaultInstellingen/Basis/RuimtelijkeOntwikkelingAan ? 
-		'MakeDefined(sub_or_null(Sloopjaar, Zichtjaar_jaar), 9999w) < 10[yr_uint16] || MakeDefined(sub_or_null(Zichtjaar_jaar, Bouwjaar), 9999w) < 10[yr_uint16] || Afbouw || Aanbouw || not(nrAansluitingen > 0.0[nrAsl])' :
+		'  MakeDefined(sub_or_null(Sloopjaar, Zichtjaar_jaar), 9999w) < 10[yr_uint16] 
+		|| MakeDefined(sub_or_null(Zichtjaar_jaar, Bouwjaar),  9999w) < 10[yr_uint16]
+		|| Afbouw 
+		|| Aanbouw 
+		|| not(nrAansluitingen > 0.0[nrAsl])
+		|| InstallatiePerProduct/RVb == Classifications/Installatie/V/Bioketel 
+		|| InstallatiePerProduct/RVb == Classifications/Installatie/V/Pelletkachel
+		|| InstallatiePerProduct/RVp == Classifications/Installatie/V/Bioketel 
+		|| InstallatiePerProduct/RVp == Classifications/Installatie/V/Pelletkachel' :
 		'const(false,..)';
 	attribute<bool> BouwdeelActief     (..) := =RekenStapName == 'StartJaar' ? 'const(false,..)' : 'BouwdeelVervanging && not(KanNietActiveren)';
 	attribute<bool> ProductActief      (..) := =RekenStapName == 'StartJaar' ? 'const(false,..)' : 'ProductVervanging  && not(KanNietActiveren)';

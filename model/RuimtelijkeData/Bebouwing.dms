@@ -66,6 +66,7 @@ container Bebouwing : isHidden = "True"
 
 		attribute<nrAsl> nrAansluitingen_i := =replace(unionExpr, '@ATTR', 'nrAansluitingen_i');
 		attribute<m2> Oppervlakte_i        := =replace(unionExpr, '@ATTR', 'Oppervlakte_i');
+		attribute<BAG/import/pand> pand_rel           := union_data(.,  BagWoning/pand_rel, const(null_u[BAG/import/pand], VastgoedProjectie/results));
 
 		attribute<Classifications/combines/WBE> ModelObjectKey := =replace(unionExpr, '@ATTR', 'ModelObjectKey');
 
@@ -146,39 +147,5 @@ container Bebouwing : isHidden = "True"
 			attribute<Classifications/BouwjaarUtilBestaand> BouwjaarUtilBestaand_rel (..) := BAG/vbo_utiliteit_studiegebied/BouwjaarUtilBestaand_rel;
 			attribute<string>                               BouwJaarExcel            (..) := Classifications/BouwjaarUtilBestaand/excel_code[BouwjaarUtilBestaand_rel];
 		}
-	}
-
-/*		container Util_Nieuwbouw_Inbreiding :=
-			for_each_nedv(
-				RuimtelijkeData/Nieuwbouw/ZU/hasNieuwbouw ? RuimtelijkeData/Nieuwbouw/ZU/name : ''
-				,	RuimtelijkeData/Nieuwbouw/ZU/Periode_Eindjaar > 2010w && strlen(RuimtelijkeData/Nieuwbouw/ZU/wlo_filename_Nieuwbouw) > 0 
-				?	'int32(sum( '
-						'Util/Oppervlakte_i * ' +
-						'float64(Util/BebouwingsTypeDomein/UtilTypeNieuwbouw_rel[Util/BebouwingsType] == '+string(RuimtelijkeData/Nieuwbouw/ZU/nr_2)+'[uint8])'
-					+	', Util/point[rdc_grids/m100]'
-					')'
-					'*max_elem(float64(RuimtelijkeData/Nieuwbouw/InbreidingUtilFactor/'+RuimtelijkeData/Nieuwbouw/ZU/name+') - 1.0 , 0.0)'
-					')'
-				:	'const(0i, Geography/rdc_grids/m100)'
-				,	Geography/rdc_grids/m100, int32
-			);
-
-		container Util_Nieuwbouw_Nieuwbouw :=
-			for_each_nedv(
-				RuimtelijkeData/Nieuwbouw/ZU/hasNieuwbouw ? RuimtelijkeData/Nieuwbouw/ZU/name : ''
-				,	RuimtelijkeData/Nieuwbouw/ZU/Periode_Eindjaar > 2010w && strlen(RuimtelijkeData/Nieuwbouw/ZU/wlo_filename_Nieuwbouw) > 0 
-					?	'int32(RuimtelijkeData/Nieuwbouw/UtilOppervlak/'+RuimtelijkeData/Nieuwbouw/ZU/name +')'
-						''
-					:	'const(0i, Geography/rdc_grids/m100)'
-				,	Geography/rdc_grids/m100, int32
-			);
-
-		container NieuwbouwUtil :=
-			for_each_nedv(
-				RuimtelijkeData/Nieuwbouw/ZU/hasNieuwbouw ? RuimtelijkeData/Nieuwbouw/ZU/name : ''
-				,	'Util_Nieuwbouw_Nieuwbouw/'+RuimtelijkeData/Nieuwbouw/ZU/name + ' + Util_Nieuwbouw_Inbreiding/'+RuimtelijkeData/Nieuwbouw/ZU/name
-				,	Geography/rdc_grids/m100, int32
-			);
-		container Nieuwbouw := =SpecifiekeInstellingen/NieuwbouwInputTemplate + '()';*/
-	
+	}	
 }

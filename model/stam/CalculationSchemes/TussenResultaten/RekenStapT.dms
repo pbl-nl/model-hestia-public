@@ -12,6 +12,7 @@ template RekenstapT
 	// end case parameters
 
 	parameter<Classifications/Zichtjaar> Zichtjaar_rel  := rlookup(RekenstapName, Classifications/Zichtjaar/name), ishidden = "true";
+	parameter<Rekenstap>                 Rekenstap_rel  := rlookup(RekenstapName, RekenStap/name), ishidden = "true";
 	parameter<yr_uint16>                 Zichtjaar_jaar := Classifications/Zichtjaar/jaar[Zichtjaar_rel], ishidden = "true";
 	parameter<string>                    ZichtjaarName  := Classifications/Zichtjaar/name[Zichtjaar_rel], ishidden = "true";
 	parameter<Classifications/periode>   Periode_rel    := Classifications/ZichtJaar/Periode_rel[Zichtjaar_rel], ishidden = "true";
@@ -22,8 +23,16 @@ template RekenstapT
 	container    VraagKentallen         := SpecifiekeInstellingen/VraagKentallen, ishidden = "true";
 	container    AanbodKentallen        := SpecifiekeInstellingen/AanbodKentallen, ishidden = "true";
 
-	attribute<ratio> KlimaatFactorMap        (Geography/rdc_grids/m100) := MakeDefined(KlimaatFactorMapPartial, mean(KlimaatFactorMapPartial));
+	attribute<ratio> KlimaatFactorMap        (Geography/rdc_grids/m100) := MakeDefined(KlimaatFactorMapPartial, mean(KlimaatFactorMapPartial)) * DiffKEVcleanmean; //LET OP: aangepast voor KEV2024
 	attribute<ratio> KlimaatFactorMapPartial (Geography/rdc_grids/m100) := ='Invoer/RuimtelijkeData/klimaat/Grid/Kaart/'+ RekenstapName +'[ratio]', ishidden = "true";	
+
+	// specifieke code om KEV2024 aan te laten sluiten bij reeks uit NEV-RS
+	parameter<ratio> KEVklimaatmean                                     := Invoer/RuimtelijkeData/Klimaat/KEVklimaatfactor[Zichtjaar_rel];
+	parameter<ratio> MeancleanEffect                                    := mean(KlimaatFactorMapPartial[BebouwingsComponenten/Woning/BO/gridm100_rel]);
+	//parameter<ratio> DiffKEVcleanmean                                   := KEVklimaatmean / MeancleanEffect; // Enkel voor de KEV
+	parameter<ratio> DiffKEVcleanmean                                   := Zichtjaar_jaar < 2020[yr_uint16] ? 1.00[ratio] : KEVklimaatmean / MeancleanEffect;
+	
+	// end specifieke code
 
 	container ZichtjaarBeleid := Invoer/Beleid/PerJaar(Zichtjaar_jaar);
 		
@@ -32,7 +41,7 @@ template RekenstapT
 		container afweging := SpecifiekeInstellingen/Voorkeuren/afweging
 		{
 		}
-		unit<uint8> ActieveGebiedsOptie := range(uint8, 0b, uint8(GebiedsOpties/aantal)) // te kiezen keten van: { GeoTermie, RestWarmte, ... } LET OP: laatste cijfer moet gelijk zijn aan aantal regels onder 'union_data('
+		unit<uint8> ActieveGebiedsOptie := range(uint8, 0b, uint8(GebiedsOpties/aantal))
 		{
 			attribute<string> name := SchemaName;
 
@@ -153,7 +162,7 @@ template RekenstapT
 		for_each_ne(
 			Voorkeuren/ActieveGebiedsOptie/name,
 			'CalculationSchemes/AanbodOpties/'+Voorkeuren/ActieveGebiedsOptie/SchemaName+'(
-				'+MakeDefined(Voorkeuren/ActieveGebiedsOptie/name[id(Voorkeuren/ActieveGebiedsOptie)-1b]+'/Results', 'BestaandWarmtenet/result')+')'
+				'+MakeDefined(Voorkeuren/ActieveGebiedsOptie/name[sub_or_null(id(Voorkeuren/ActieveGebiedsOptie), 1b)]+'/Results', 'BestaandWarmtenet/result')+')'
 		), IsHidden = "True"
 		{
 			parameter<string> ResultStateName := MakeDefined(last(Voorkeuren/ActieveGebiedsOptie/name)+'/Results', 'BestaandWarmtenet/result');
