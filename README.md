@@ -1,8 +1,7 @@
-﻿# Hestia 1.1.0 - Simulatie model gebouwde omgeving Nederland
+﻿# Hestia 1.2.0 - Simulatie model gebouwde omgeving Nederland
 ![goddess-hestia_medium](https://github.com/RuudvandenWijngaart/VestaDV/assets/96182097/e2f3578d-6d44-4c40-853b-107187a1baa7)
 
-**Update 7 Oktober 2025: 
-Hestia Public is een model in ontwikkeling. De basis staat, maar TNO en PBL vinden bij toepassing van het model nog regelmatig bugs. Dit maakt dat resultaten vaak extra aandacht behoeven en dit geldt daarmee ook voor de gebruiker van het model. De gebruiker draagt zelf de verantwoordelijkheid voor een kritische beoordeling van de resultaten verkregen met Hestia en de ontwikkelingsfase van het model maakt de kans op bugs nu nog groter. Hier zouden we de gebruiker extra op willen attenderen: kijk goed waar je het model wel/niet voor in kan zetten en bij twijfel neem dan contact op met infohestia@pbl.nl. Mocht de gebruiker afwijken van standaardwaarden/berekeningen in de publieke versie van Hestia dan draagt de gebruiker ook verantwoordelijkheid om eventuele verschillen in uitkomsten met de standaardversie te verklaren. Bovendien dient in het geval van een afwijking van de publieke versie de gebruiker in een eventuele publicatie te vermelden dat het om een afwijkende versie van Hestia gaat, met de vermelding "Organisatie X -afwijkende versie van Hestia" of "Persoon X -afwijkende versie van Hestia".**
+**Hestia Public is een model in ontwikkeling. De basis staat, maar TNO en PBL vinden bij toepassing van het model nog regelmatig bugs. Dit maakt dat resultaten vaak extra aandacht behoeven en dit geldt daarmee ook voor de gebruiker van het model. De gebruiker draagt zelf de verantwoordelijkheid voor een kritische beoordeling van de resultaten verkregen met Hestia en de ontwikkelingsfase van het model maakt de kans op bugs nu nog groter. Hier zouden we de gebruiker extra op willen attenderen: kijk goed waar je het model wel/niet voor in kan zetten en bij twijfel neem dan contact op met infohestia@pbl.nl. Mocht de gebruiker afwijken van standaardwaarden/berekeningen in de publieke versie van Hestia dan draagt de gebruiker ook verantwoordelijkheid om eventuele verschillen in uitkomsten met de standaardversie te verklaren. Bovendien dient in het geval van een afwijking van de publieke versie de gebruiker in een eventuele publicatie te vermelden dat het om een afwijkende versie van Hestia gaat, met de vermelding "Organisatie X -afwijkende versie van Hestia" of "Persoon X -afwijkende versie van Hestia".**
 
 PBL en TNO hebben de handen ineengeslagen voor de ontwikkeling van het innovatieve simulatiemodel Hestia, dat zich richt op de gebouwde omgeving. Hestia is een open source geografisch simulatiemodel dat alle woningen in Nederland modelleert, met als doel de effecten van beleid of andere invloeden te evalueren. Het model berekent naast de ontwikkeling van het gas-, elektriciteits- en warmteverbruik ook de kosten en baten van investeringen voor alle relevante actoren en vele andere aspecten gerelateerd aan de verduurzaming van woningen.
 
@@ -21,7 +20,7 @@ Het Hestia model is bedoeld om gebruikt te worden door experts die zich van de b
 ## Installatie
 <details>
 <summary><b>GeoDMS software</b></summary>
-<p>Open source Geographic Data & Model Software (GeoDMS) wordt actief ontwikkeld voor het maken van (geografisch expliciete) plannings ondersteunings systemen. Navigeer voor de installatie van GeoDMS naar de <a href="https://github.com/ObjectVision/GeoDMS/releases">releases</a> pagina van <a href="https://github.com/ObjectVision/GeoDMS">GeoDMS</a> en volg de installatie stappen. De huidige publieke versie van Hestia is getest met GeoDMS versie 14.4.2</p>
+<p>Open source Geographic Data & Model Software (GeoDMS) wordt actief ontwikkeld voor het maken van (geografisch expliciete) plannings ondersteunings systemen. Navigeer voor de installatie van GeoDMS naar de <a href="https://github.com/ObjectVision/GeoDMS/releases">releases</a> pagina van <a href="https://github.com/ObjectVision/GeoDMS">GeoDMS</a> en volg de installatie stappen. De huidige publieke versie van Hestia is getest met GeoDMS versie 17.9.6</p>
 </details>
 <details>
 <summary><b>Brondata</b></summary>
@@ -110,18 +109,8 @@ Een specifieke aanleiding voor een tekort aan geheugen kan zijn dat er in een zi
 ## Meer informatie
 In het Functioneel Ontwerp wordt de werking van Hestia tot in detail beschreven. Het Functioneel Ontwerp is als pdf-document te vinden onder het pad: doc :arrow_right: PBL-2023-Functioneel-ontwerp-Hestia-1.0-5196. In hoofdstuk 3, Scenario, wordt verder ingegaan op mogelijke aanpassingen aan de scenarioinstellingen. Dit betreft onder andere klimaatscenario's, kostenontwikkelingcurves en beleid.
 
-Voordat u aan de slag gaat met Hestia, willen we u vragen om wat eenvoudige gegevens ter informatie te versturen naar het Hestia team. De reden dat we dit vragen is om een idee te krijgen van hoe Hestia wordt gebruikt. vragen we u daarom de volgende gegevens door te sturen naar info-hestia@pbl.nl:
-
-- Naam
-- Emailadres
-- Telefoonnummer
-- Organisatie/bedrijf
-- Korte beschrijving van het doel waarvoor u Hestia wil gebruiken
-
-Dit is geheel vrijblijvend, maar wordt zeer gewaardeerd.
-Ook voor andere vragen, feedback en suggestie kunt u mailen naar info-hestia@pbl.
-
 # Links:
 - https://www.pbl.nl/publicaties/functioneel-ontwerp-hestia-10
 - https://energy.nl/simulatiemodel-hestia
 - https://www.tno.nl/nl/newsroom/insights/2023/06/hestia-woningvoorraad-in-beeld/
+- https://dataportaal.pbl.nl/Hestia 
